@@ -1,0 +1,187 @@
+! SIGNAL,2019,I.A.MOROZOV@INP.NSK.SU
+! SIMPLIFIED FORTRAN IMPLEMENTATION OF S$FREQUENCY[] FUNCTION (WITH PARABOLIC INTERPOLATION OF REFINED SPECTRA)
+
+! MAIN FUNCTION:
+! <OUT>=SEARCH(<ORD>,<ARR>)
+! <ORD> -- COSINE WINDOW ORDER (INTEGER)
+! <ARR> -- INPUT SIGNAL (COMPLEX) WITH POWER OF TWO LENGTH, NO LENGTH CHECK IS PERFORMED
+! <OUT> -- FREQUENCY ESTIMATION (REAL)
+
+!EXAMPLE
+! PROGRAM EXAMPLE
+!   USE FREQUENCY
+!   IMPLICIT NONE
+!   INTEGER,PARAMETER :: RK=SELECTED_REAL_KIND(15,307)
+!   REAL(RK),PARAMETER :: PI=3.141592653589793238460_RK
+!   REAL(RK),PARAMETER :: TWO_PI=2.0_RK*PI
+!   COMPLEX(RK),DIMENSION(NUM) :: ARR
+!   INTEGER :: I
+!   ! GENERATE TEST SIGNAL
+!   DO I=1,NUM,1
+!     ! FLA = 2
+!     ! ARR(I)=SIN(2._RK*PI*0.123456789_RK*REAL(I,RK))
+!     ! FLA = 1
+!     ARR(I)=CMPLX(SIN(2._RK*PI*0.123456789_RK*REAL(I,RK)),COS(2._RK*PI*0.123456789_RK*REAL(I,RK)),RK)
+!   END DO
+!   ARR=ARR + 0.1_RK
+!   ! SEARCH FREQUENCY
+!   WRITE(*,*) SEARCH(1,ARR)
+! END PROGRAM EXAMPLE
+
+MODULE FREQUENCY
+    IMPLICIT NONE
+    PUBLIC :: SEARCH
+    PRIVATE
+    INTEGER,PARAMETER :: RK=SELECTED_REAL_KIND(15,307)
+    REAL(RK),PARAMETER :: PI=3.141592653589793238460_RK
+    REAL(RK),PARAMETER :: TWO_PI=2.0_RK*PI
+    ! SIGNAL LENGTH (POWER OF TWO)
+    INTEGER,PARAMETER :: NUM=2048
+    ! COMPLEX SIGNAL FLAG (FLA=2 FOR REAL INPUT SIGNAL AND FLA=1 FOR COMPLEX INPUT SIGNAL)
+    INTEGER,PARAMETER :: FLA=1
+CONTAINS
+    ! DISCRETE FOURIER TRANSFORM
+    SUBROUTINE FFT(NUM,DIR,ARR)
+        IMPLICIT NONE
+        INTEGER,INTENT(IN) :: NUM
+        INTEGER,INTENT(IN) :: DIR
+        COMPLEX(RK),DIMENSION(NUM),INTENT(INOUT) :: ARR
+        INTEGER :: N,I,J,M,LIM,STE
+        REAL(RK) :: PIM,PRE,ANG,WR,WI,WPR,WPI,WX
+        REAL(RK),DIMENSION(2*NUM) :: DAT
+        DAT(1:2*NUM:2)=REAL(ARR,RK)
+        DAT(2:2*NUM:2)=REAL(ARR*CMPLX(0.0_RK,-1.0_RK,RK),RK)
+        N=2*NUM
+        J=1
+        DO I=1,N,2
+            IF(J.GT.I)THEN
+                PRE=DAT(J)
+                PIM=DAT(J+1)
+                DAT(J)=DAT(I)
+                DAT(J+1)=DAT(I+1)
+                DAT(I)=PRE
+                DAT(I+1)=PIM
+            ENDIF
+            M=N/2
+1           IF ((M.GE.2).AND.(J.GT.M)) THEN
+                J=J-M
+                M=M/2
+                GOTO 1
+            ENDIF
+            J=J+M
+        ENDDO
+        LIM=2
+2       IF (N.GT.LIM) THEN
+            STE=2*LIM
+            ANG=REAL(DIR,RK)*TWO_PI/REAL(LIM,RK)
+            WPI=SIN(ANG)
+            ANG=SIN(0.5_RK*ANG)
+            WPR=-2.0_RK*ANG*ANG
+            WR=1.0_RK
+            WI=0.0_RK
+            DO M=1,LIM,2
+                DO I=M,N,STE
+                    J=I+LIM
+                    PRE=WR*DAT(J)-WI*DAT(J+1)
+                    PIM=WR*DAT(J+1)+WI*DAT(J)
+                    DAT(J)=DAT(I)-PRE
+                    DAT(J+1)=DAT(I+1)-PIM
+                    DAT(I)=DAT(I)+PRE
+                    DAT(I+1)=DAT(I+1)+PIM
+                ENDDO
+                WX=WR
+                WR=WR*WPR-WI*WPI+WR
+                WI=WI*WPR+WX*WPI+WI
+            ENDDO
+            LIM=STE
+            GOTO 2
+        ENDIF
+        ARR=CMPLX(DAT(1:2*NUM:2),DAT(2:2*NUM:2),RK)
+        RETURN
+    END SUBROUTINE FFT
+    ! DISCRETE (LINEAR) FRACTIONAL FOURIER TRANSFORM
+    SUBROUTINE FFRFT(NUM,PAR,ARR)
+        IMPLICIT NONE
+        INTEGER,INTENT(IN) :: NUM
+        REAL(RK),INTENT(IN) :: PAR
+        COMPLEX(RK),DIMENSION(NUM),INTENT(INOUT) :: ARR
+        COMPLEX(RK),DIMENSION(2*NUM) :: ONE,TWO
+        INTEGER :: I
+        REAL(RK) :: FAC,MUL
+        FAC=PAR*PI/REAL(NUM,RK)
+        DO I=1,NUM,1
+            MUL=FAC*REAL(I-1)**2
+            ONE(I)=ARR(I)*EXP(CMPLX(0.0_RK,MUL,RK))
+            TWO(I)=EXP(CMPLX(0.0_RK,-MUL,RK))
+        END DO
+        ONE(NUM+1:2*NUM:1)=0._RK 
+        DO I=NUM+1,2*NUM,1
+            TWO(I)=EXP(CMPLX(0.0_RK,-FAC*REAL(I-1-2*NUM,RK)**2,RK))
+        END DO
+        CALL FFT(2*NUM,+1,ONE)
+        CALL FFT(2*NUM,+1,TWO)
+        ONE=ONE*TWO
+        CALL FFT(2*NUM,-1,ONE)
+        ARR=ONE(1:NUM:1)/REAL(2*NUM,RK)
+        DO I=1,NUM,1
+            ARR(I)=ARR(I)*EXP(CMPLX(0.0_RK,FAC*REAL(I-1)**2,RK))
+        END DO
+    END SUBROUTINE FFRFT
+    ! FACTORIAL
+    RECURSIVE FUNCTION FACTORIAL(N) RESULT(M)
+        IMPLICIT NONE
+        INTEGER :: N,M
+        IF(N==0) THEN
+            M=1
+        ELSE
+            M=N*FACTORIAL(N-1)
+        END IF
+    END FUNCTION FACTORIAL
+    ! WINDOW
+    SUBROUTINE WINDOW(ORD,ARR) 
+        IMPLICIT NONE
+        INTEGER:: ORD
+        COMPLEX(RK),DIMENSION(NUM) :: ARR,WIN
+        INTEGER :: I
+        REAL(RK) :: MUL
+        MUL=2._RK**ORD*REAL(FACTORIAL(ORD),RK)**2/REAL(FACTORIAL(2*ORD),RK)
+        DO I=1,NUM,1
+            WIN(I)=MUL*(1._RK+cos(TWO_PI*(REAL(I-1,RK)/REAL(NUM,RK)-0.5_RK)))**ORD
+        END DO
+        ARR=ARR*WIN
+    END SUBROUTINE WINDOW
+    ! FREQUENCY SEARCH (LARGEST AMPLITUDE)
+    FUNCTION SEARCH(ORD,ARR)
+        IMPLICIT NONE
+        REAL(RK) :: SEARCH
+        INTEGER :: ORD
+        COMPLEX(RK),DIMENSION(NUM) :: ARR
+        COMPLEX(RK),DIMENSION(NUM) :: FOU
+        REAL(RK),DIMENSION(NUM) :: SPE
+        REAL(RK) :: FAC
+        INTEGER :: FST,CND
+        INTEGER :: I
+        ! REMOVE MEAN
+        ARR=ARR-SUM(ARR)/REAL(NUM,RK)
+        ! APPLY WINDOW
+        CALL WINDOW(ORD,ARR)
+        ! FFT
+        FOU=ARR
+        CALL FFT(NUM,1,FOU)
+        FST=MAXLOC(ABS(FOU(1:NUM/FLA:1)),1)
+        FAC=TWO_PI*REAL(FST-2,RK)/REAL(NUM,RK)
+        ! MODULATE SIGNAL
+        DO I=1,NUM,1
+            ARR(I)=ARR(I)*EXP(CMPLX(0.0_RK,FAC*REAL(I-1,RK),RK))
+        END DO
+        ! FFRFT
+        CALL FFRFT(NUM,2.0_RK/REAL(NUM,RK),ARR)
+        SPE=LOG10(ABS(ARR/2)+1.E-16_RK)
+        CND=MAXLOC(SPE,1)
+        ! PARABOLA
+        SEARCH=REAL(CND,RK)-0.5_RK+(SPE(-1+CND)-SPE(CND))/(SPE(-1+CND)-2._RK*SPE(CND)+SPE(1+CND))
+        ! RESULT
+        SEARCH=(REAL(FST,RK)-2._RK+2._RK*(SEARCH-1._RK)/REAL(NUM,RK))/REAL(NUM,RK)
+        RETURN
+    END FUNCTION SEARCH
+END MODULE FREQUENCY
