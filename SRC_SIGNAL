@@ -123,6 +123,27 @@ S$PAD$ZEROS[                                   (* -- PAD ZEROS (LIST) *)
   S$SIG_                                       (* -- SIGNAL TO PAD ZEROS TO (LIST) *)
 ] := Developer`ToPackedArray[Flatten[List[ConstantArray[N[0],S$LEF],S$SIG,ConstantArray[N[0],S$RIG]]]] ;
 (* ################################################################################################################################################################ *)
+(* IMPROVED SIGNAL MEAN *) 
+(* ################################################################################################################################################################ *)
+ClearAll[S$MEAN] ;
+S$MEAN::usage = "S$MEAN[SIG,POI] -- more accurate mean computation for given signal <SIG> (list) based on first number of points <POI> (integer) (returns signal mean, should be used  with non-zero window order) " ;
+S$MEAN[                                        (* -- IMPROVED MEAN COMPUTATION *)
+	S$SIG_,                                    (* -- INPUT SIGNAL (LIST) *)
+	S$POI_:5                                   (* -- NUMBER OF POINTS TO USE (INTEGER) *)
+] := Block[
+	{S$MEA,S$FUN,S$ADD},
+	S$MEA = Mean[S$SIG] ;
+	S$FUN[S$COR_?NumericQ] := Block[
+		{S$DAT},
+		S$DAT = Subtract[S$SIG,Plus[S$MEA,S$COR]];
+		S$DAT = Take[S$DAT,S$WINDOW$LENGTH] ;
+		S$DAT = Times[S$DAT,S$WINDOW$DATA] ;
+		S$DAT = S$SPECTRA[S$DAT] ;
+		Total[Take[S$DAT,S$POI]]
+	] ;
+	Plus[S$MEA,ReplaceAll[S$ADD,Last[Quiet[FindMinimum[S$FUN[S$ADD],List[S$ADD,0.0],Rule[Method,"Newton"]]]]]]
+] ;
+(* ################################################################################################################################################################ *)
 (* SIGNAL PROCESS FUNCTION (APPLIED TO INPUT SIGNAL BEFORE WINDOW) *) 
 (* ################################################################################################################################################################ *)
 ClearAll[S$PROCESS] ;
@@ -1306,6 +1327,7 @@ S$INFORMATION[] := List[
 	Inactive[S$SPECTRA],
 	Inactive[S$FIND$PEAKS],
 	Inactive[S$PAD$ZEROS],
+	Inactive[S$MEAN],
 	Inactive[S$PROCESS],
 	Inactive[S$PRINT$VARIABLES],
 	Inactive[S$SET$VARIABLES],
@@ -1355,5 +1377,6 @@ S$INFORMATION[] := List[
 (* ################################################################################################################################################################ *)
 (* CHANGE LOG // NOTES *)
 (* ################################################################################################################################################################ *)
-(* 08/20/2019 : S$FREQUENCY[<SIG>] REPLACED BY S$FREQUENCY[1,<SIG>] FOR SAFETY REASONS (FORTRAN VERSION STILL USES MAX INSTEAD OF 1ST PEAK) *)
-(* 08/20/2019 : S$NAFF ADDED *)
+(* 07/20/2019 : S$FREQUENCY[<SIG>] REPLACED BY S$FREQUENCY[1,<SIG>] FOR SAFETY REASONS (FORTRAN VERSION STILL USES MAX INSTEAD OF 1ST PEAK) *)
+(* 07/20/2019 : S$NAFF ADDED *)
+(* 08/02/2019 : S$MEAN ADDED *)
