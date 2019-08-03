@@ -155,16 +155,19 @@ CONTAINS
         IMPLICIT NONE
         REAL(RK) :: SEARCH
         INTEGER :: ORD
-        COMPLEX(RK),DIMENSION(NUM) :: ARR
+        COMPLEX(RK),DIMENSION(NUM) :: ARR, WIN
         COMPLEX(RK),DIMENSION(NUM) :: FOU
         REAL(RK),DIMENSION(NUM) :: SPE
         REAL(RK) :: FAC
         INTEGER :: FST,CND
         INTEGER :: I
+        ! WINDOW
+        WIN = 1.0_RK 
+        CALL WINDOW(ORD,WIN)
         ! REMOVE MEAN
-        ARR=ARR-SUM(ARR)/REAL(NUM,RK)
+        ARR=ARR-SUM(WIN*ARR)/SUM(WIN)
         ! APPLY WINDOW
-        CALL WINDOW(ORD,ARR)
+        ARR = WIN*ARR
         ! FFT
         FOU=ARR
         CALL FFT(NUM,1,FOU)
