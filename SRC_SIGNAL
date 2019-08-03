@@ -234,9 +234,9 @@ S$FREQUENCY[                                   (* -- ESTIMATE MAIN FREQUENCY (LI
 		(* Define full signal length (no zeros padding) *)
 		S$LEN = S$WINDOW$LENGTH ;
 		(* Take number of points specified by S$WINDOW$LENGTH variable from start *)
-		S$ORB = Take[S$ORB,List[1,S$WINDOW$LENGTH]] ;	
+		S$ORB = Take[S$SIG,List[1,S$WINDOW$LENGTH]] ;	
 		(* Process signal *)
-		S$ORB = S$PROCESS[S$SIG] ;
+		S$ORB = S$PROCESS[S$ORB] ;
 		(* Apply window function *)
 		S$ORB = Times[S$WINDOW$DATA,S$ORB] ;
 		(* Compute Fourier amplitude spectra *)
@@ -287,9 +287,9 @@ S$FREQUENCY[                                   (* -- ESTIMATE PEAK FREQUENCY (LI
 		(* Define full signal length (no zeros padding) *)
 		S$LEN = S$WINDOW$LENGTH ;
 		(* Take number of points specified by S$WINDOW$LENGTH variable from start *)
-		S$ORB = Take[S$ORB,List[1,S$WINDOW$LENGTH]] ;			
+		S$ORB = Take[S$SIG,List[1,S$WINDOW$LENGTH]] ;			
 		(* Process signal *)
-		S$ORB = S$PROCESS[S$SIG] ;	
+		S$ORB = S$PROCESS[S$ORB] ;	
 		(* Apply window function *)
 		S$ORB = Times[S$WINDOW$DATA,S$ORB] ;
 		(* Compute Fourier amplitude spectra *)
