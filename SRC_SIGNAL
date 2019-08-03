@@ -123,7 +123,7 @@ S$PAD$ZEROS[                                   (* -- PAD ZEROS (LIST) *)
   S$SIG_                                       (* -- SIGNAL TO PAD ZEROS TO (LIST) *)
 ] := Developer`ToPackedArray[Flatten[List[ConstantArray[N[0],S$LEF],S$SIG,ConstantArray[N[0],S$RIG]]]] ;
 (* ################################################################################################################################################################ *)
-(* IMPROVED SIGNAL MEAN *) 
+(* SIGNAL MEAN (BY OPTIMIZATION) *) 
 (* ################################################################################################################################################################ *)
 ClearAll[S$MEAN] ;
 S$MEAN::usage = "S$MEAN[SIG,POI] -- more accurate mean computation for given signal <SIG> (list) based on first number of points <POI> (integer) (returns signal mean, should be used  with non-zero window order) " ;
@@ -142,6 +142,17 @@ S$MEAN[                                        (* -- IMPROVED MEAN COMPUTATION *
 		Total[Take[S$DAT,S$POI]]
 	] ;
 	Plus[S$MEA,ReplaceAll[S$ADD,Last[Quiet[FindMinimum[S$FUN[S$ADD],List[S$ADD,0.0],Rule[Method,"Newton"]]]]]]
+] ;
+(* ################################################################################################################################################################ *)
+(* SIGNAL MEAN (WEIGHTED) *) 
+(* ################################################################################################################################################################ *)
+ClearAll[S$WEIGHTED$MEAN] ;
+S$WEIGHTED$MEAN::usage = "S$WEIGHTED$MEAN[SIG] -- compute weighted mean for given signal <SIG> (list) (uses defined S$WINDOW$DATA) " ;
+S$WEIGHTED$MEAN[                               (* -- WEIGHTED MEAN *)
+	S$SIG_                                     (* -- INPUT SIGNAL (LIST) *)
+] := Divide[
+	Total[Times[S$SIG,S$WINDOW$DATA],Rule[Method,"CompensatedSummation"]],
+	Total[S$WINDOW$DATA,Rule[Method,"CompensatedSummation"]]
 ] ;
 (* ################################################################################################################################################################ *)
 (* SIGNAL PROCESS FUNCTION (APPLIED TO INPUT SIGNAL BEFORE WINDOW) *) 
@@ -222,10 +233,10 @@ S$FREQUENCY[                                   (* -- ESTIMATE MAIN FREQUENCY (LI
 		{S$LEN,S$ORB,S$FOU,S$BIN,S$MOD,S$MAX,S$INT,S$DAT},
 		(* Define full signal length (no zeros padding) *)
 		S$LEN = S$WINDOW$LENGTH ;
+		(* Take number of points specified by S$WINDOW$LENGTH variable from start *)
+		S$ORB = Take[S$ORB,List[1,S$WINDOW$LENGTH]] ;	
 		(* Process signal *)
 		S$ORB = S$PROCESS[S$SIG] ;
-		(* Take number of points specified by S$WINDOW$LENGTH variable from start *)
-		S$ORB = Take[S$ORB,List[1,S$WINDOW$LENGTH]] ;		
 		(* Apply window function *)
 		S$ORB = Times[S$WINDOW$DATA,S$ORB] ;
 		(* Compute Fourier amplitude spectra *)
@@ -275,10 +286,10 @@ S$FREQUENCY[                                   (* -- ESTIMATE PEAK FREQUENCY (LI
 		{S$LEN,S$ORB,S$FOU,S$BIN,S$MOD,S$MAX,S$INT,S$DAT},
 		(* Define full signal length (no zeros padding) *)
 		S$LEN = S$WINDOW$LENGTH ;
-		(* Process signal *)
-		S$ORB = S$PROCESS[S$SIG] ;
 		(* Take number of points specified by S$WINDOW$LENGTH variable from start *)
-		S$ORB = Take[S$ORB,List[1,S$WINDOW$LENGTH]] ;		
+		S$ORB = Take[S$ORB,List[1,S$WINDOW$LENGTH]] ;			
+		(* Process signal *)
+		S$ORB = S$PROCESS[S$SIG] ;	
 		(* Apply window function *)
 		S$ORB = Times[S$WINDOW$DATA,S$ORB] ;
 		(* Compute Fourier amplitude spectra *)
@@ -1328,6 +1339,7 @@ S$INFORMATION[] := List[
 	Inactive[S$FIND$PEAKS],
 	Inactive[S$PAD$ZEROS],
 	Inactive[S$MEAN],
+	Inactive[S$WEIGHTED$MEAN],
 	Inactive[S$PROCESS],
 	Inactive[S$PRINT$VARIABLES],
 	Inactive[S$SET$VARIABLES],
@@ -1380,3 +1392,4 @@ S$INFORMATION[] := List[
 (* 07/20/2019 : S$FREQUENCY[<SIG>] REPLACED BY S$FREQUENCY[1,<SIG>] FOR SAFETY REASONS (FORTRAN VERSION STILL USES MAX INSTEAD OF 1ST PEAK) *)
 (* 07/20/2019 : S$NAFF ADDED *)
 (* 08/02/2019 : S$MEAN ADDED *)
+(* 08/03/2019 : S$WEIGHTED$MEAN ADDED, S$PROCESS ACTS ON SIGNALS WITH LENGTH S$WINDOW$LENGTH *)
