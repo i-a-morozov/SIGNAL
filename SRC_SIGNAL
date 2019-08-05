@@ -63,14 +63,14 @@ S$COSINE$WINDOW[                               (* -- GENERATE COSINE WINDOW DATA
   S$ORD_,                                      (* -- WINDOW ORDER (INTEGER OR REAL) *)
   S$LEN_                                       (* -- WINDOW LENGTH // NUMBER OF POINTS (INTEGER) *)
 ] := If[
-	SameQ[N[S$ORD],N[0]],
-	ConstantArray[N[1],S$LEN],
-	Times[
-		Power[Plus[1,1],S$ORD],
-		Power[Factorial[S$ORD],Plus[1,1]],
-		Power[Factorial[Times[Plus[1,1],S$ORD]],Subtract[0,1]],
-		Power[Plus[1,Cos[Times[2,Pi,Subtract[Divide[Subtract[N[Range[S$LEN]],1],S$LEN],Divide[1,2]]]]],S$ORD]
-	]
+  SameQ[N[S$ORD],N[0]],
+  ConstantArray[N[1],S$LEN],
+  Times[
+    Power[Plus[1,1],S$ORD],
+    Power[Factorial[S$ORD],Plus[1,1]],
+    Power[Factorial[Times[Plus[1,1],S$ORD]],Subtract[0,1]],
+    Power[Plus[1,Cos[Times[2,Pi,Subtract[Divide[Subtract[N[Range[S$LEN]],1],S$LEN],Divide[1,2]]]]],S$ORD]
+  ]
 ] ;
 (* ################################################################################################################################################################ *)
 (* WINDOW DATA *)
@@ -92,10 +92,10 @@ S$SPECTRA[                                     (* -- COMPUTE FOURIER POWER SPECT
   S$SIG_,                                      (* -- SIGNAL (LIST) *)
   S$OPT:OptionsPattern[]                       (* -- OPTIONS(S) *)
 ] := Block[
-	{S$FOU},
-	S$FOU = Plus[Abs[Fourier[S$SIG,Rule[FourierParameters,OptionValue["FourierParameters"]]]],Power[N[10],Subtract[0,16]]] ;
-	S$FOU = If[OptionValue["Complex"],S$FOU,Take[S$FOU,List[1,Floor[Divide[Length[S$FOU],Plus[1,1]]]]]] ;
-	If[OptionValue["Normalized"],Divide[S$FOU,Max[S$FOU]],Log10[S$FOU]] 
+  {S$FOU},
+  S$FOU = Plus[Abs[Fourier[S$SIG,Rule[FourierParameters,OptionValue["FourierParameters"]]]],Power[N[10],Subtract[0,16]]] ;
+  S$FOU = If[OptionValue["Complex"],S$FOU,Take[S$FOU,List[1,Floor[Divide[Length[S$FOU],Plus[1,1]]]]]] ;
+  If[OptionValue["Normalized"],Divide[S$FOU,Max[S$FOU]],Log10[S$FOU]] 
 ] ;
 (* ################################################################################################################################################################ *)
 (* FIND DATA PEAK POSITIONS *)
@@ -107,10 +107,10 @@ S$FIND$PEAKS[                                  (* -- FIND PEAK POSITIONS (LIST) 
   S$DAT_,                                      (* -- DATA (LIST) OR SEQUENCE (CORRECT ARGUMENT FOR FindPeaks[]) *)
   S$OPT:OptionsPattern[FindPeaks]              (* -- OPTIONS(S) *)
 ] := Block[
-	{S$POS},
-	S$POS = FindPeaks[S$DAT,0,S$OPT,Rule[Padding,1]] ;
-	S$POS = Part[Reverse[SortBy[S$POS,Last]],All,1] ;
-	If[Greater[Length[S$POS],S$NUM],Take[S$POS,List[1,S$NUM]],S$POS]
+  {S$POS},
+  S$POS = FindPeaks[S$DAT,0,S$OPT,Rule[Padding,1]] ;
+  S$POS = Part[Reverse[SortBy[S$POS,Last]],All,1] ;
+  If[Greater[Length[S$POS],S$NUM],Take[S$POS,List[1,S$NUM]],S$POS]
 ] ;
 (* ################################################################################################################################################################ *)
 (* PAD ZEROS *)
@@ -128,20 +128,20 @@ S$PAD$ZEROS[                                   (* -- PAD ZEROS (LIST) *)
 ClearAll[S$MEAN] ;
 S$MEAN::usage = "S$MEAN[SIG,POI] -- more accurate mean computation for given signal <SIG> (list) based on first number of points <POI> (integer) (returns signal mean, should be used  with non-zero window order) " ;
 S$MEAN[                                        (* -- IMPROVED MEAN COMPUTATION *)
-	S$SIG_,                                    (* -- INPUT SIGNAL (LIST) *)
-	S$POI_:5                                   (* -- NUMBER OF POINTS TO USE (INTEGER) *)
+  S$SIG_,                                      (* -- INPUT SIGNAL (LIST) *)
+  S$POI_:5                                     (* -- NUMBER OF POINTS TO USE (INTEGER) *)
 ] := Block[
-	{S$MEA,S$FUN,S$ADD},
-	S$MEA = Mean[S$SIG] ;
-	S$FUN[S$COR_?NumericQ] := Block[
-		{S$DAT},
-		S$DAT = Subtract[S$SIG,Plus[S$MEA,S$COR]];
-		S$DAT = Take[S$DAT,S$WINDOW$LENGTH] ;
-		S$DAT = Times[S$DAT,S$WINDOW$DATA] ;
-		S$DAT = S$SPECTRA[S$DAT] ;
-		Total[Take[S$DAT,S$POI]]
-	] ;
-	Plus[S$MEA,ReplaceAll[S$ADD,Last[Quiet[FindMinimum[S$FUN[S$ADD],List[S$ADD,0.0],Rule[Method,"Newton"]]]]]]
+  {S$MEA,S$FUN,S$ADD},
+  S$MEA = Mean[S$SIG] ;
+  S$FUN[S$COR_?NumericQ] := Block[
+    {S$DAT},
+    S$DAT = Subtract[S$SIG,Plus[S$MEA,S$COR]];
+    S$DAT = Take[S$DAT,S$WINDOW$LENGTH] ;
+    S$DAT = Times[S$DAT,S$WINDOW$DATA] ;
+    S$DAT = S$SPECTRA[S$DAT] ;
+    Total[Take[S$DAT,S$POI]]
+  ] ;
+  Plus[S$MEA,ReplaceAll[S$ADD,Last[Quiet[FindMinimum[S$FUN[S$ADD],List[S$ADD,0.0],Rule[Method,"Newton"]]]]]]
 ] ;
 (* ################################################################################################################################################################ *)
 (* SIGNAL MEAN (WEIGHTED) *) 
@@ -149,10 +149,10 @@ S$MEAN[                                        (* -- IMPROVED MEAN COMPUTATION *
 ClearAll[S$WEIGHTED$MEAN] ;
 S$WEIGHTED$MEAN::usage = "S$WEIGHTED$MEAN[SIG] -- compute weighted mean for given signal <SIG> (list) (uses defined S$WINDOW$DATA) " ;
 S$WEIGHTED$MEAN[                               (* -- WEIGHTED MEAN *)
-	S$SIG_                                     (* -- INPUT SIGNAL (LIST) *)
+  S$SIG_                                       (* -- INPUT SIGNAL (LIST) *)
 ] := Divide[
-	Total[Times[S$SIG,S$WINDOW$DATA],Rule[Method,"CompensatedSummation"]],
-	Total[S$WINDOW$DATA,Rule[Method,"CompensatedSummation"]]
+  Total[Times[S$SIG,S$WINDOW$DATA],Rule[Method,"CompensatedSummation"]],
+  Total[S$WINDOW$DATA,Rule[Method,"CompensatedSummation"]]
 ] ;
 (* ################################################################################################################################################################ *)
 (* SIGNAL PROCESS FUNCTION (APPLIED TO INPUT SIGNAL BEFORE WINDOW) *) 
@@ -166,21 +166,21 @@ S$PROCESS = Function[Subtract[Slot[1],Mean[Slot[1]]]] ;
 ClearAll[S$PRINT$VARIABLES] ;
 S$PRINT$VARIABLES::usage = "S$PRINT$VARIABLES[] -- print global variables " ;
 S$PRINT$VARIABLES[] := Column[
-	List[
-		StringTemplate["S$SAMPLING$RATE         :    `1`"][S$SAMPLING$RATE],
-		StringTemplate["S$COMPLEX$FLAG          :    `1`"][S$COMPLEX$FLAG],
-		StringTemplate["S$RANGE                 :    `1`"][S$RANGE],
-		StringTemplate["S$WINDOW$ORDER          :    `1`"][S$WINDOW$ORDER],
-		StringTemplate["S$WINDOW$LENGTH         :    `1`"][S$WINDOW$LENGTH],
-		StringTemplate["S$INTERPOLATION$ORDER   :    `1`"][S$INTERPOLATION$ORDER],
-		StringTemplate["S$INTERPOLATION$POINTS  :    `1`"][S$INTERPOLATION$POINTS],
-		StringTemplate["S$FIT$LENGTH            :    `1`"][S$FIT$LENGTH],
-		StringTemplate["S$FIT$METHOD            :    `1`"][S$FIT$METHOD],
-		StringTemplate["S$PROCESS               :    `1`"][S$PROCESS],
-		"",
-		ListPlot[S$WINDOW$DATA,Rule[PlotTheme,"Detailed"],Rule[PlotStyle,Black],Rule[AspectRatio,1/2],Rule[ImageSize,400]]
-	],
-	Rule[Alignment,Left]
+  List[
+    StringTemplate["S$SAMPLING$RATE         :    `1`"][S$SAMPLING$RATE],
+    StringTemplate["S$COMPLEX$FLAG          :    `1`"][S$COMPLEX$FLAG],
+    StringTemplate["S$RANGE                 :    `1`"][S$RANGE],
+    StringTemplate["S$WINDOW$ORDER          :    `1`"][S$WINDOW$ORDER],
+    StringTemplate["S$WINDOW$LENGTH         :    `1`"][S$WINDOW$LENGTH],
+    StringTemplate["S$INTERPOLATION$ORDER   :    `1`"][S$INTERPOLATION$ORDER],
+    StringTemplate["S$INTERPOLATION$POINTS  :    `1`"][S$INTERPOLATION$POINTS],
+    StringTemplate["S$FIT$LENGTH            :    `1`"][S$FIT$LENGTH],
+    StringTemplate["S$FIT$METHOD            :    `1`"][S$FIT$METHOD],
+    StringTemplate["S$PROCESS               :    `1`"][S$PROCESS],
+    "",
+    ListPlot[S$WINDOW$DATA,Rule[PlotTheme,"Detailed"],Rule[PlotStyle,Black],Rule[AspectRatio,1/2],Rule[ImageSize,400]]
+  ],
+  Rule[Alignment,Left]
 ] ;
 (* ################################################################################################################################################################ *)
 (* SET GLOBAL VARIABLES (S$PROCESS FUNCTION IS NOT DEFINED BY S$SET$VARIABLES) *)
@@ -201,18 +201,18 @@ S$SET$VARIABLES[                               (* -- SET GLOBAL VARIABLES *)
   S$MET_,                                      (* -- FIT METHOD *)
   S$OPT:OptionsPattern[]                       (* -- OPTIONS *)
 ] := Block[
-	{},
-	S$SAMPLING$RATE = S$SAM ;
-	S$COMPLEX$FLAG = S$FLA ;
-	S$RANGE = N[If[S$COMPLEX$FLAG,S$SAMPLING$RATE,Divide[S$SAMPLING$RATE,2]]] ;
-	S$WINDOW$ORDER = S$ORD ;
-	S$WINDOW$LENGTH = S$WIN ;
-	S$WINDOW$DATA = S$COSINE$WINDOW[S$WINDOW$ORDER,S$WINDOW$LENGTH] ;
-	S$INTERPOLATION$ORDER = S$INT ;
-	S$INTERPOLATION$POINTS = S$POI ;
-	S$FIT$LENGTH = S$FIT ;
-	S$FIT$METHOD = S$MET ;
-	If[OptionValue["Verbose"],Print[S$PRINT$VARIABLES[]]] ;
+  {},
+  S$SAMPLING$RATE = S$SAM ;
+  S$COMPLEX$FLAG = S$FLA ;
+  S$RANGE = N[If[S$COMPLEX$FLAG,S$SAMPLING$RATE,Divide[S$SAMPLING$RATE,2]]] ;
+  S$WINDOW$ORDER = S$ORD ;
+  S$WINDOW$LENGTH = S$WIN ;
+  S$WINDOW$DATA = S$COSINE$WINDOW[S$WINDOW$ORDER,S$WINDOW$LENGTH] ;
+  S$INTERPOLATION$ORDER = S$INT ;
+  S$INTERPOLATION$POINTS = S$POI ;
+  S$FIT$LENGTH = S$FIT ;
+  S$FIT$METHOD = S$MET ;
+  If[OptionValue["Verbose"],Print[S$PRINT$VARIABLES[]]] ;
 ] ;
 (* ################################################################################################################################################################ *)
 (* ESTIMATE MAIN FREQUENCY (LARGEST FOURIER AMPLITUDE, MIGHT NOT BE FUNDAMENTAL) *)
@@ -229,51 +229,51 @@ S$FREQUENCY::usage = "S$FREQUENCY[SIG] -- estimate main frequency (i.e. with lar
 S$FREQUENCY[                                   (* -- ESTIMATE MAIN FREQUENCY (LIST) *)
   S$SIG_                                       (* -- INPUT SIGNAL (LIST) *)
 ] := Catch[
-	Block[
-		{S$LEN,S$ORB,S$FOU,S$BIN,S$MOD,S$MAX,S$INT,S$DAT},
-		(* Define full signal length (no zeros padding) *)
-		S$LEN = S$WINDOW$LENGTH ;
-		(* Take number of points specified by S$WINDOW$LENGTH variable from start *)
-		S$ORB = Take[S$SIG,List[1,S$WINDOW$LENGTH]] ;	
-		(* Process signal *)
-		S$ORB = S$PROCESS[S$ORB] ;
-		(* Apply window function *)
-		S$ORB = Times[S$WINDOW$DATA,S$ORB] ;
-		(* Compute Fourier amplitude spectra *)
-		S$FOU = S$SPECTRA[S$ORB,Rule["Complex",S$COMPLEX$FLAG]] ;
-		(* Extract maximum bin position *)
-		S$BIN = Extract[Position[S$FOU,Max[S$FOU]],List[1,1]] ;	
-		(* Check bin position (max bin is near zero) *)
-		If[Less[Subtract[S$BIN,2],0],Throw[List[N[Times[S$SAMPLING$RATE,Divide[S$BIN,S$LEN]]],1,S$BIN]]] ;	
-		(* Define shifted frequency for resonance exitation (see frequency identification example in Fourier documentation) *)
-		S$MOD = N[Times[S$SAMPLING$RATE,Divide[Subtract[S$BIN,2],S$LEN]]] ;	
-		(* Compute modulated signal *)
-		S$ORB = Times[S$ORB,Exp[Times[2,Pi,I,S$MOD,N[Divide[Range[0,Subtract[S$LEN,1]],S$SAMPLING$RATE]]]]] ;
-		(* Compute fine resolution spectra from modulaed signal (linear fractional Fourier) *)
-		S$FOU = S$SPECTRA[S$ORB,Rule["Complex",True],Rule["FourierParameters",List[0,Divide[2,S$LEN]]]] ;
-		(* Find modulated spectra maximum position *)
-		S$MAX = Extract[Position[S$FOU,Max[S$FOU]],List[1,1]] ;
-		(* Return frequency approximation if interpolation is not used *)
-		If[SameQ[S$INTERPOLATION$ORDER,0],Throw[List[N[Times[S$SAMPLING$RATE,Power[S$LEN,-1],Plus[-2,S$BIN,Times[2,Power[S$LEN,-1],Plus[-1,S$MAX]]]]],2,S$BIN]]] ;
-		(* Continue with nonzero interpolation order *)
-		(* Set number of interpolation points *)
-		S$INT = S$INTERPOLATION$POINTS ;
-		(* Generate list of bin positions near maximum *)
-		S$INT = Flatten[List[Reverse[Subtract[S$MAX,Range[S$INT]]],S$MAX,Plus[S$MAX,Range[S$INT]]]] ;
-		(* Remove out of range points *)
-		S$INT = DeleteCases[S$INT,PatternTest[Blank[],NonPositive]] ;
-		S$INT = TakeWhile[S$INT,Function[Less[Slot[1],S$LEN]]] ;
-		(* Return frequency approximation if interpolation is not successful (points are out of range) *)
-		If[UnsameQ[Length[S$INT],Plus[Times[2,S$INTERPOLATION$POINTS],1]],Throw[List[N[Times[S$SAMPLING$RATE,Power[S$LEN,-1],Plus[-2,S$BIN,Times[2,Power[S$LEN,-1],Plus[-1,S$MAX]]]]],3,S$BIN]]] ;		
-		(* Data to interpolate *)
-		S$DAT = Transpose[List[N[S$INT],Part[S$FOU,S$INT]]] ;
-		(* Interpolate data *)
-		S$DAT = Interpolation[S$DAT,Rule[InterpolationOrder,S$INTERPOLATION$ORDER],Rule[Method,"Spline"]] ;
-		(* Find maximum position in modulated signal *)
-		S$MAX = Extract[Quiet[FindRoot[D[S$DAT[S$ROT],S$ROT],{S$ROT,S$MAX},Rule[Method,"Newton"],Rule[MaxIterations,Infinity],Rule[AccuracyGoal,16],Rule[PrecisionGoal,16]]],List[1,2]] ;
-		(* Return frequency approximation *)
-		List[N[Times[S$SAMPLING$RATE,Power[S$LEN,-1],Plus[-2,S$BIN,Times[2,Power[S$LEN,-1],Plus[-1,S$MAX]]]]],4,S$BIN]		
-	]
+  Block[
+    {S$LEN,S$ORB,S$FOU,S$BIN,S$MOD,S$MAX,S$INT,S$DAT},
+    (* Define full signal length (no zeros padding) *)
+    S$LEN = S$WINDOW$LENGTH ;
+    (* Take number of points specified by S$WINDOW$LENGTH variable from start *)
+    S$ORB = Take[S$SIG,List[1,S$WINDOW$LENGTH]] ;  
+    (* Process signal *)
+    S$ORB = S$PROCESS[S$ORB] ;
+    (* Apply window function *)
+    S$ORB = Times[S$WINDOW$DATA,S$ORB] ;
+    (* Compute Fourier amplitude spectra *)
+    S$FOU = S$SPECTRA[S$ORB,Rule["Complex",S$COMPLEX$FLAG]] ;
+    (* Extract maximum bin position *)
+    S$BIN = Extract[Position[S$FOU,Max[S$FOU]],List[1,1]] ;  
+    (* Check bin position (max bin is near zero) *)
+    If[Less[Subtract[S$BIN,2],0],Throw[List[N[Times[S$SAMPLING$RATE,Divide[S$BIN,S$LEN]]],1,S$BIN]]] ;  
+    (* Define shifted frequency for resonance exitation (see frequency identification example in Fourier documentation) *)
+    S$MOD = N[Times[S$SAMPLING$RATE,Divide[Subtract[S$BIN,2],S$LEN]]] ;  
+    (* Compute modulated signal *)
+    S$ORB = Times[S$ORB,Exp[Times[2,Pi,I,S$MOD,N[Divide[Range[0,Subtract[S$LEN,1]],S$SAMPLING$RATE]]]]] ;
+    (* Compute fine resolution spectra from modulaed signal (linear fractional Fourier) *)
+    S$FOU = S$SPECTRA[S$ORB,Rule["Complex",True],Rule["FourierParameters",List[0,Divide[2,S$LEN]]]] ;
+    (* Find modulated spectra maximum position *)
+    S$MAX = Extract[Position[S$FOU,Max[S$FOU]],List[1,1]] ;
+    (* Return frequency approximation if interpolation is not used *)
+    If[SameQ[S$INTERPOLATION$ORDER,0],Throw[List[N[Times[S$SAMPLING$RATE,Power[S$LEN,-1],Plus[-2,S$BIN,Times[2,Power[S$LEN,-1],Plus[-1,S$MAX]]]]],2,S$BIN]]] ;
+    (* Continue with nonzero interpolation order *)
+    (* Set number of interpolation points *)
+    S$INT = S$INTERPOLATION$POINTS ;
+    (* Generate list of bin positions near maximum *)
+    S$INT = Flatten[List[Reverse[Subtract[S$MAX,Range[S$INT]]],S$MAX,Plus[S$MAX,Range[S$INT]]]] ;
+    (* Remove out of range points *)
+    S$INT = DeleteCases[S$INT,PatternTest[Blank[],NonPositive]] ;
+    S$INT = TakeWhile[S$INT,Function[Less[Slot[1],S$LEN]]] ;
+    (* Return frequency approximation if interpolation is not successful (points are out of range) *)
+    If[UnsameQ[Length[S$INT],Plus[Times[2,S$INTERPOLATION$POINTS],1]],Throw[List[N[Times[S$SAMPLING$RATE,Power[S$LEN,-1],Plus[-2,S$BIN,Times[2,Power[S$LEN,-1],Plus[-1,S$MAX]]]]],3,S$BIN]]] ;    
+    (* Data to interpolate *)
+    S$DAT = Transpose[List[N[S$INT],Part[S$FOU,S$INT]]] ;
+    (* Interpolate data *)
+    S$DAT = Interpolation[S$DAT,Rule[InterpolationOrder,S$INTERPOLATION$ORDER],Rule[Method,"Spline"]] ;
+    (* Find maximum position in modulated signal *)
+    S$MAX = Extract[Quiet[FindRoot[D[S$DAT[S$ROT],S$ROT],{S$ROT,S$MAX},Rule[Method,"Newton"],Rule[MaxIterations,Infinity],Rule[AccuracyGoal,16],Rule[PrecisionGoal,16]]],List[1,2]] ;
+    (* Return frequency approximation *)
+    List[N[Times[S$SAMPLING$RATE,Power[S$LEN,-1],Plus[-2,S$BIN,Times[2,Power[S$LEN,-1],Plus[-1,S$MAX]]]]],4,S$BIN]    
+  ]
 ] ;
 (* ################################################################################################################################################################ *)
 (* ESTIMATE PEAK FREQUENCY (SPECIFIED PEAK) *)
@@ -282,51 +282,51 @@ S$FREQUENCY[                                   (* -- ESTIMATE PEAK FREQUENCY (LI
   S$NUM_,                                      (* -- PEAK NUMBER (INTEGER), E.G. <NUM> = 2 -- SECOND LARGEST PEAK *)
   S$SIG_                                       (* -- INPUT SIGNAL (LIST) *)
 ] := Catch[
-	Block[
-		{S$LEN,S$ORB,S$FOU,S$BIN,S$MOD,S$MAX,S$INT,S$DAT},
-		(* Define full signal length (no zeros padding) *)
-		S$LEN = S$WINDOW$LENGTH ;
-		(* Take number of points specified by S$WINDOW$LENGTH variable from start *)
-		S$ORB = Take[S$SIG,List[1,S$WINDOW$LENGTH]] ;			
-		(* Process signal *)
-		S$ORB = S$PROCESS[S$ORB] ;	
-		(* Apply window function *)
-		S$ORB = Times[S$WINDOW$DATA,S$ORB] ;
-		(* Compute Fourier amplitude spectra *)
-		S$FOU = S$SPECTRA[S$ORB,Rule["Complex",S$COMPLEX$FLAG]] ;	
-		(* Extract given bin position *)
-		S$BIN = Last[S$FIND$PEAKS[S$NUM,S$FOU]] ;
-		(* Check bin position (near zero) *)
-		If[Less[Subtract[S$BIN,2],0],Throw[List[N[Times[S$SAMPLING$RATE,Divide[S$BIN,S$LEN]]],1,S$BIN]]] ;
-		(* Define shifted frequency for resonance exitation (see frequency identification example in Fourier documentation) *)
-		S$MOD = N[Times[S$SAMPLING$RATE,Divide[Subtract[S$BIN,2],S$LEN]]] ;
-		(* Compute modulated signal *)
-		S$ORB = Times[S$ORB,Exp[Times[2,Pi,I,S$MOD,N[Divide[Range[0,Subtract[S$LEN,1]],S$SAMPLING$RATE]]]]] ;
-		(* Compute fine resolution spectra from modulaed signal*)
-		S$FOU = S$SPECTRA[S$ORB,Rule["Complex",True],Rule["FourierParameters",List[0,Divide[2,S$LEN]]]] ;
-		(* Find modulated spectra maximum position *)
-		S$MAX = Extract[Position[S$FOU,Max[S$FOU]],List[1,1]] ;
-		(* Return frequency approximation if interpolation is not used *)
-		If[SameQ[S$INTERPOLATION$ORDER,0],Throw[List[N[Times[S$SAMPLING$RATE,Power[S$LEN,-1],Plus[-2,S$BIN,Times[2,Power[S$LEN,-1],Plus[-1,S$MAX]]]]],2,S$BIN]]] ;		
-		(* Continue with nonzero interpolation order *)
-		(* Set number of interpolation points *)
-		S$INT = S$INTERPOLATION$POINTS ;
-		(* Generate list of bin positions near maximum *)
-		S$INT = Flatten[List[Reverse[Subtract[S$MAX,Range[S$INT]]],S$MAX,Plus[S$MAX,Range[S$INT]]]] ;
-		(* Remove out of range points *)
-		S$INT = DeleteCases[S$INT,PatternTest[Blank[],NonPositive]] ;
-		S$INT = TakeWhile[S$INT,Function[Less[Slot[1],S$LEN]]] ;
-		(* Return frequency approximation if interpolation is not successful (points are out of range) *)
-		If[UnsameQ[Length[S$INT],Plus[Times[2,S$INTERPOLATION$POINTS],1]],Throw[List[N[Times[S$SAMPLING$RATE,Power[S$LEN,-1],Plus[-2,S$BIN,Times[2,Power[S$LEN,-1],Plus[-1,S$MAX]]]]],3,S$BIN]]] ;		
-		(* Data to interpolate *)
-		S$DAT = Transpose[List[N[S$INT],Part[S$FOU,S$INT]]] ;
-		(* Interpolate data *)
-		S$DAT = Interpolation[S$DAT,Rule[InterpolationOrder,S$INTERPOLATION$ORDER],Rule[Method,"Spline"]] ;
-		(* Find maximum position in modulated signal *)
-		S$MAX = Extract[Quiet[FindRoot[D[S$DAT[S$ROT],S$ROT],{S$ROT,S$MAX},Rule[Method,"Newton"],Rule[MaxIterations,Infinity],Rule[AccuracyGoal,16],Rule[PrecisionGoal,16]]],List[1,2]] ;
-		(* Return frequency approximation *)
-		List[N[Times[S$SAMPLING$RATE,Power[S$LEN,-1],Plus[-2,S$BIN,Times[2,Power[S$LEN,-1],Plus[-1,S$MAX]]]]],4,S$BIN]		
-	] 
+  Block[
+    {S$LEN,S$ORB,S$FOU,S$BIN,S$MOD,S$MAX,S$INT,S$DAT},
+    (* Define full signal length (no zeros padding) *)
+    S$LEN = S$WINDOW$LENGTH ;
+    (* Take number of points specified by S$WINDOW$LENGTH variable from start *)
+    S$ORB = Take[S$SIG,List[1,S$WINDOW$LENGTH]] ;      
+    (* Process signal *)
+    S$ORB = S$PROCESS[S$ORB] ;  
+    (* Apply window function *)
+    S$ORB = Times[S$WINDOW$DATA,S$ORB] ;
+    (* Compute Fourier amplitude spectra *)
+    S$FOU = S$SPECTRA[S$ORB,Rule["Complex",S$COMPLEX$FLAG]] ;  
+    (* Extract given bin position *)
+    S$BIN = Last[S$FIND$PEAKS[S$NUM,S$FOU]] ;
+    (* Check bin position (near zero) *)
+    If[Less[Subtract[S$BIN,2],0],Throw[List[N[Times[S$SAMPLING$RATE,Divide[S$BIN,S$LEN]]],1,S$BIN]]] ;
+    (* Define shifted frequency for resonance exitation (see frequency identification example in Fourier documentation) *)
+    S$MOD = N[Times[S$SAMPLING$RATE,Divide[Subtract[S$BIN,2],S$LEN]]] ;
+    (* Compute modulated signal *)
+    S$ORB = Times[S$ORB,Exp[Times[2,Pi,I,S$MOD,N[Divide[Range[0,Subtract[S$LEN,1]],S$SAMPLING$RATE]]]]] ;
+    (* Compute fine resolution spectra from modulaed signal*)
+    S$FOU = S$SPECTRA[S$ORB,Rule["Complex",True],Rule["FourierParameters",List[0,Divide[2,S$LEN]]]] ;
+    (* Find modulated spectra maximum position *)
+    S$MAX = Extract[Position[S$FOU,Max[S$FOU]],List[1,1]] ;
+    (* Return frequency approximation if interpolation is not used *)
+    If[SameQ[S$INTERPOLATION$ORDER,0],Throw[List[N[Times[S$SAMPLING$RATE,Power[S$LEN,-1],Plus[-2,S$BIN,Times[2,Power[S$LEN,-1],Plus[-1,S$MAX]]]]],2,S$BIN]]] ;    
+    (* Continue with nonzero interpolation order *)
+    (* Set number of interpolation points *)
+    S$INT = S$INTERPOLATION$POINTS ;
+    (* Generate list of bin positions near maximum *)
+    S$INT = Flatten[List[Reverse[Subtract[S$MAX,Range[S$INT]]],S$MAX,Plus[S$MAX,Range[S$INT]]]] ;
+    (* Remove out of range points *)
+    S$INT = DeleteCases[S$INT,PatternTest[Blank[],NonPositive]] ;
+    S$INT = TakeWhile[S$INT,Function[Less[Slot[1],S$LEN]]] ;
+    (* Return frequency approximation if interpolation is not successful (points are out of range) *)
+    If[UnsameQ[Length[S$INT],Plus[Times[2,S$INTERPOLATION$POINTS],1]],Throw[List[N[Times[S$SAMPLING$RATE,Power[S$LEN,-1],Plus[-2,S$BIN,Times[2,Power[S$LEN,-1],Plus[-1,S$MAX]]]]],3,S$BIN]]] ;    
+    (* Data to interpolate *)
+    S$DAT = Transpose[List[N[S$INT],Part[S$FOU,S$INT]]] ;
+    (* Interpolate data *)
+    S$DAT = Interpolation[S$DAT,Rule[InterpolationOrder,S$INTERPOLATION$ORDER],Rule[Method,"Spline"]] ;
+    (* Find maximum position in modulated signal *)
+    S$MAX = Extract[Quiet[FindRoot[D[S$DAT[S$ROT],S$ROT],{S$ROT,S$MAX},Rule[Method,"Newton"],Rule[MaxIterations,Infinity],Rule[AccuracyGoal,16],Rule[PrecisionGoal,16]]],List[1,2]] ;
+    (* Return frequency approximation *)
+    List[N[Times[S$SAMPLING$RATE,Power[S$LEN,-1],Plus[-2,S$BIN,Times[2,Power[S$LEN,-1],Plus[-1,S$MAX]]]]],4,S$BIN]    
+  ] 
 ] ;
 (* ################################################################################################################################################################ *)
 (* GENERATE HARMONICS (FREQUENCIES ARE DEFINED ABS(MOD(2*S$RANGE,-S$RANGE))) *)
@@ -337,14 +337,14 @@ S$HARMONICS[                                   (* -- GENERATE HARMONICS FOR GIVE
   S$ORD_Integer,                               (* -- MAXIMUM ORDER *)
   S$FUN_List                                   (* -- LIST OF FUNDAMENTAL FREQUENCIES (BASIS) *)
 ] := Block[
-	{S$NUM,S$REP,S$ITR,S$TAB},
-	S$REP = Rule[Array[S$NUM,Length[S$FUN]],Abs[Mod[Dot[S$FUN,Array[S$NUM,Length[S$FUN]]],Times[2,S$RANGE],-S$RANGE]]] ;
-	S$ITR = Map[Function[List[Slot[1],Range[-S$ORD,+S$ORD]]],Array[S$NUM,Length[S$FUN]]] ;
-	S$ITR = MapAt[Select[NonNegative],S$ITR,List[1,2]] ;
-	S$TAB = Flatten[Apply[Table,Join[List[S$REP],S$ITR]]] ;
-	S$TAB = Select[S$TAB,Function[LessEqual[Total[Abs[First[Slot[1]]]],S$ORD]]] ;
-	S$TAB = Association[Rest[DeleteCases[S$TAB,Rule[List[Repeated[0],_?Negative,___],_]]]] ;
-	KeySortBy[S$TAB,Function[Total[Abs[Slot[1]]]]]
+  {S$NUM,S$REP,S$ITR,S$TAB},
+  S$REP = Rule[Array[S$NUM,Length[S$FUN]],Abs[Mod[Dot[S$FUN,Array[S$NUM,Length[S$FUN]]],Times[2,S$RANGE],-S$RANGE]]] ;
+  S$ITR = Map[Function[List[Slot[1],Range[-S$ORD,+S$ORD]]],Array[S$NUM,Length[S$FUN]]] ;
+  S$ITR = MapAt[Select[NonNegative],S$ITR,List[1,2]] ;
+  S$TAB = Flatten[Apply[Table,Join[List[S$REP],S$ITR]]] ;
+  S$TAB = Select[S$TAB,Function[LessEqual[Total[Abs[First[Slot[1]]]],S$ORD]]] ;
+  S$TAB = Association[Rest[DeleteCases[S$TAB,Rule[List[Repeated[0],_?Negative,___],_]]]] ;
+  KeySortBy[S$TAB,Function[Total[Abs[Slot[1]]]]]
 ] ;
 (* ################################################################################################################################################################ *)
 (* IDENTIFY HARMONICS *)
@@ -362,20 +362,20 @@ S$IDENTIFY[                                    (* -- IDENTIFY HARMONICS (LIST) *
   S$FRE_List,                                  (* -- LIST OF FREQUENCIES TO IDENTIFY, ABS(MOD(2 S$RANGE,-S$RANGE)) (LIST)*)
   S$OPT:OptionsPattern[]                       (* -- OPTION(S) *)
 ] := Block[
-	{S$TAB,S$SEL},
-	S$TAB = S$HARMONICS[S$ORD,S$FUN] ;
-	S$SEL = Map[
-		Function[
-			Block[
-				{S$HAR,S$IND,S$DIF},
-				S$HAR = Slot[1] ;
-				List[S$IND,S$DIF] = Apply[List,First[Normal[Take[Sort[Abs[Subtract[S$TAB,Slot[1]]]],List[1,1]]]]] ;
-				List[S$HAR,Abs[Mod[Dot[S$IND,S$FUN],Times[2,S$RANGE],-S$RANGE]],S$DIF,S$IND]
-			]
-		] , 
-		S$FRE
-	] ;	
-	If[OptionValue["Table"],List[S$SEL,S$TAB],S$SEL]
+  {S$TAB,S$SEL},
+  S$TAB = S$HARMONICS[S$ORD,S$FUN] ;
+  S$SEL = Map[
+    Function[
+      Block[
+        {S$HAR,S$IND,S$DIF},
+        S$HAR = Slot[1] ;
+        List[S$IND,S$DIF] = Apply[List,First[Normal[Take[Sort[Abs[Subtract[S$TAB,Slot[1]]]],List[1,1]]]]] ;
+        List[S$HAR,Abs[Mod[Dot[S$IND,S$FUN],Times[2,S$RANGE],-S$RANGE]],S$DIF,S$IND]
+      ]
+    ] , 
+    S$FRE
+  ] ;  
+  If[OptionValue["Table"],List[S$SEL,S$TAB],S$SEL]
 ] ;
 (* ################################################################################################################################################################ *)
 (* GENERATE SIGNAL MODEL *)
@@ -392,46 +392,46 @@ S$GENERATE$MODEL[                              (* -- GENERATE SIGNAL MODEL *)
   S$FRE_List,                                  (* -- LIST OF FREQUENCIES (LIST)*)
   S$OPT:OptionsPattern[]                       (* -- OPTION(S) *)
 ] := Block[
-	{S$NUM,S$COS,S$SIN,S$EXP,S$CON,S$PAR,S$MOD,S$AVE,S$VAR,S$DAT},
-	(* Number of frequencies *)
-	S$NUM = Length[S$FRE] ;
-	(* Generate parameter symbols (NonlinearModelFit[]) *)
-	S$COS = ToExpression[Array[StringTemplate["S$COS$`1`"],S$NUM]] ;
-	S$SIN = ToExpression[Array[StringTemplate["S$SIN$`1`"],S$NUM]] ;
-	S$EXP = ToExpression[Array[StringTemplate["S$EXP$`1`"],S$NUM]] ;
-	S$CON = List[
-		Apply[GreaterEqual,Map[Total,Power[Transpose[List[S$COS,S$SIN]],2]]]
-	] ;
-	S$MOD = Map[Total,Transpose[List[Times[S$COS,Cos[Times[2,Pi,S$PAR,S$FRE]]],Times[S$SIN,Sin[Times[2,Pi,S$PAR,S$FRE]]]]]] ;
-	S$MOD = Flatten[List[S$AVE,S$MOD]] ;
-	S$VAR = List[S$AVE,S$COS,S$SIN] ;
-	S$DAT = List[S$MOD,Flatten[S$VAR],S$PAR] ;
-	Which[
-		SameQ[OptionValue["Type"],NonlinearModelFit],
-		If[
-			OptionValue["Damping"],
-			If[
-				OptionValue["Constraints"],
-				List[
-					List[First[MapAt[Composition[Total,Function[Times[Slot[1],Flatten[List[1,Exp[Times[S$EXP,S$PAR,Subtract[0,1]]]]]]]],S$DAT,1]],S$CON],
-					Flatten[List[S$VAR,S$EXP]],
-					S$PAR
-				],
-				List[
-					First[MapAt[Composition[Total,Function[Times[Slot[1],Flatten[List[1,Exp[Times[S$EXP,S$PAR,Subtract[0,1]]]]]]]],S$DAT,1]],
-					Flatten[List[S$VAR,S$EXP]],
-					S$PAR
-				]				
-			],
-			If[
-				OptionValue["Constraints"],
-				MapAt[Composition[Function[List[Slot[1],First[S$CON]]],Total],S$DAT,1],
-				MapAt[Total,S$DAT,1]
-			]
-		],
-		Or[SameQ[OptionValue["Type"],LinearModelFit],SameQ[OptionValue["Type"],GeneralizedLinearModelFit]],
-		List[Flatten[List[Cos[Times[2,Pi,S$PAR,S$FRE]],Sin[Times[2,Pi,S$PAR,S$FRE]]]],S$PAR]
-	] 
+  {S$NUM,S$COS,S$SIN,S$EXP,S$CON,S$PAR,S$MOD,S$AVE,S$VAR,S$DAT},
+  (* Number of frequencies *)
+  S$NUM = Length[S$FRE] ;
+  (* Generate parameter symbols (NonlinearModelFit[]) *)
+  S$COS = ToExpression[Array[StringTemplate["S$COS$`1`"],S$NUM]] ;
+  S$SIN = ToExpression[Array[StringTemplate["S$SIN$`1`"],S$NUM]] ;
+  S$EXP = ToExpression[Array[StringTemplate["S$EXP$`1`"],S$NUM]] ;
+  S$CON = List[
+    Apply[GreaterEqual,Map[Total,Power[Transpose[List[S$COS,S$SIN]],2]]]
+  ] ;
+  S$MOD = Map[Total,Transpose[List[Times[S$COS,Cos[Times[2,Pi,S$PAR,S$FRE]]],Times[S$SIN,Sin[Times[2,Pi,S$PAR,S$FRE]]]]]] ;
+  S$MOD = Flatten[List[S$AVE,S$MOD]] ;
+  S$VAR = List[S$AVE,S$COS,S$SIN] ;
+  S$DAT = List[S$MOD,Flatten[S$VAR],S$PAR] ;
+  Which[
+    SameQ[OptionValue["Type"],NonlinearModelFit],
+    If[
+      OptionValue["Damping"],
+      If[
+        OptionValue["Constraints"],
+        List[
+          List[First[MapAt[Composition[Total,Function[Times[Slot[1],Flatten[List[1,Exp[Times[S$EXP,S$PAR,Subtract[0,1]]]]]]]],S$DAT,1]],S$CON],
+          Flatten[List[S$VAR,S$EXP]],
+          S$PAR
+        ],
+        List[
+          First[MapAt[Composition[Total,Function[Times[Slot[1],Flatten[List[1,Exp[Times[S$EXP,S$PAR,Subtract[0,1]]]]]]]],S$DAT,1]],
+          Flatten[List[S$VAR,S$EXP]],
+          S$PAR
+        ]        
+      ],
+      If[
+        OptionValue["Constraints"],
+        MapAt[Composition[Function[List[Slot[1],First[S$CON]]],Total],S$DAT,1],
+        MapAt[Total,S$DAT,1]
+      ]
+    ],
+    Or[SameQ[OptionValue["Type"],LinearModelFit],SameQ[OptionValue["Type"],GeneralizedLinearModelFit]],
+    List[Flatten[List[Cos[Times[2,Pi,S$PAR,S$FRE]],Sin[Times[2,Pi,S$PAR,S$FRE]]]],S$PAR]
+  ] 
 ] ;
 (* ################################################################################################################################################################ *)
 (* FIT MODEL PARAMETERS (ONLY REAL PART OF INPUT SIGNAL IS FITTED) *)
@@ -448,19 +448,19 @@ S$FIT$MODEL[                                   (* -- FIT MODEL FOR GIVEN FREQUEN
   S$SIG_List,                                  (* -- INPUT SIGNAL DATA (LIST), {{X1,Y1},{X2,Y2},...} WITH X1 < X2 < ... *)
   S$OPT:OptionsPattern[]                       (* -- OPTION(S) *) 
 ] := Block[
-	{S$TYP,S$ARG,S$STA,S$RES},
-	S$TYP = OptionValue["Type"] ;
-	S$ARG = If[SameQ[S$TYP,NonlinearModelFit],List[Rule[MaxIterations,Infinity],Rule[AccuracyGoal,Infinity],Rule[Method,S$FIT$METHOD]],List[]] ;
-	S$STA = Which[
-		SameQ[S$TYP,NonlinearModelFit],
-		List["RSquared","AIC","BIC"],
-		SameQ[S$TYP,LinearModelFit],
-		List["RSquared","AIC","BIC"],
-		SameQ[S$TYP,GeneralizedLinearModelFit],
-		List["PearsonChiSquare","AIC","BIC"]
-	] ;
-	S$RES = Quiet[S$TYP[Re[S$SIG],Apply[Sequence,S$GENERATE$MODEL[S$FRE,S$OPT]],Apply[Sequence,S$ARG]]] ;
-	List[OptionValue["Type"],Transpose[List[S$STA,S$RES[S$STA]]],S$RES]		
+  {S$TYP,S$ARG,S$STA,S$RES},
+  S$TYP = OptionValue["Type"] ;
+  S$ARG = If[SameQ[S$TYP,NonlinearModelFit],List[Rule[MaxIterations,Infinity],Rule[AccuracyGoal,Infinity],Rule[Method,S$FIT$METHOD]],List[]] ;
+  S$STA = Which[
+    SameQ[S$TYP,NonlinearModelFit],
+    List["RSquared","AIC","BIC"],
+    SameQ[S$TYP,LinearModelFit],
+    List["RSquared","AIC","BIC"],
+    SameQ[S$TYP,GeneralizedLinearModelFit],
+    List["PearsonChiSquare","AIC","BIC"]
+  ] ;
+  S$RES = Quiet[S$TYP[Re[S$SIG],Apply[Sequence,S$GENERATE$MODEL[S$FRE,S$OPT]],Apply[Sequence,S$ARG]]] ;
+  List[OptionValue["Type"],Transpose[List[S$STA,S$RES[S$STA]]],S$RES]    
 ] ;
 (* ################################################################################################################################################################ *)
 (*  QUASIPERIODIC DECOMPOSITION (SUBTRACT) *)
@@ -472,47 +472,47 @@ S$QUASIPERIODIC$SUBTRACT[                      (* -- QUASIPERIODIC DECOMPOSITION
   S$TYP_,                                      (* -- FIT TYPE *)
   S$SIG_List                                   (* -- SIGNAL (LIST) *)
 ] := Block[
-	{S$HAR,S$FIT,S$LIS,S$MAX,S$MOD,S$FRE,S$ERR,S$VAL,S$AMP,S$AVE,S$NOR},
-	(* SET DATA FOR FREQUENCY IDENTIFICATION *)
-	S$HAR = Take[S$SIG,List[1,S$WINDOW$LENGTH]] ;
-	(* SET DATA FOR MODEL FITTING (RANDOM SAMPLING) *)
-	S$FIT = Sort[RandomSample[Range[Length[S$SIG]],S$FIT$LENGTH]] ;
-	S$FIT = N[Transpose[List[Divide[S$FIT,S$SAMPLING$RATE],Part[Re[S$SIG],S$FIT]]]] ;
-	(* LIST OF FREQUENCY DATA *)
-	S$LIS = List[] ;
-	(* MAIN LOOP *)
-	Do[
-		List[
-			(* COMPUTE FREQUENCY DATA (FOR CURRENT LARGEST FOURIER AMPLITUDE) *)
-			S$MAX = List[S$FREQUENCY[1,S$HAR]] ;
-			(* APPEND TO FREQUENCY DATA *)
-			S$LIS = Join[S$LIS,S$MAX] ;
-			(* EXTRACT FREQUENCIES *)
-			S$FRE = Part[S$LIS,All,1] ;
-			(* FIT MODEL PARAMETERS *)
-			S$MOD = S$FIT$MODEL[S$FRE,S$FIT,Rule["Type",S$TYP]] ;
-			(* STATISTICAL INFORMATION *)
-			S$ERR = Most[S$MOD] ;
-			(* MODEL *)
-			S$MOD = Last[S$MOD] ;
-			(* LIST OF MODEL PARAMETERS (ZERO COMPONENT, COS AMPLITUDES, SIN AMPLITUDES) *)
-			S$AMP = If[UnsameQ[S$TYP,NonlinearModelFit],S$MOD["BestFitParameters"],Part[S$MOD["BestFitParameters"],All,2]] ;
-			(* COMPUTE RESIDUAL *)
-			S$HAR = Subtract[Take[S$SIG,List[1,S$WINDOW$LENGTH]],S$MOD["Function"][Divide[Range[S$WINDOW$LENGTH],S$SAMPLING$RATE]]] ;
-		],
-		List[S$ITR]
-	] ;
-	(* OUTPUT *)
-	S$AVE = First[S$AMP] ;
-	S$AMP = Transpose[Partition[Rest[S$AMP],Length[S$FRE]]] ;
-	S$NOR = Map[Norm,S$AMP] ;
-	S$AMP = Transpose[List[S$FRE,S$AMP]] ;
-	Association[
-		Rule["Information",Join[S$ERR,List[Part[S$LIS,All,2]],List[LessEqual[S$NOR]]]],
-		Rule["Frequencies",S$FRE],
-		Rule["Harmonics",Join[List[S$AVE],S$AMP]],
-		Rule["Function",S$MOD["Function"]]
-	] 
+  {S$HAR,S$FIT,S$LIS,S$MAX,S$MOD,S$FRE,S$ERR,S$VAL,S$AMP,S$AVE,S$NOR},
+  (* SET DATA FOR FREQUENCY IDENTIFICATION *)
+  S$HAR = Take[S$SIG,List[1,S$WINDOW$LENGTH]] ;
+  (* SET DATA FOR MODEL FITTING (RANDOM SAMPLING) *)
+  S$FIT = Sort[RandomSample[Range[Length[S$SIG]],S$FIT$LENGTH]] ;
+  S$FIT = N[Transpose[List[Divide[S$FIT,S$SAMPLING$RATE],Part[Re[S$SIG],S$FIT]]]] ;
+  (* LIST OF FREQUENCY DATA *)
+  S$LIS = List[] ;
+  (* MAIN LOOP *)
+  Do[
+    List[
+      (* COMPUTE FREQUENCY DATA (FOR CURRENT LARGEST FOURIER AMPLITUDE) *)
+      S$MAX = List[S$FREQUENCY[1,S$HAR]] ;
+      (* APPEND TO FREQUENCY DATA *)
+      S$LIS = Join[S$LIS,S$MAX] ;
+      (* EXTRACT FREQUENCIES *)
+      S$FRE = Part[S$LIS,All,1] ;
+      (* FIT MODEL PARAMETERS *)
+      S$MOD = S$FIT$MODEL[S$FRE,S$FIT,Rule["Type",S$TYP]] ;
+      (* STATISTICAL INFORMATION *)
+      S$ERR = Most[S$MOD] ;
+      (* MODEL *)
+      S$MOD = Last[S$MOD] ;
+      (* LIST OF MODEL PARAMETERS (ZERO COMPONENT, COS AMPLITUDES, SIN AMPLITUDES) *)
+      S$AMP = If[UnsameQ[S$TYP,NonlinearModelFit],S$MOD["BestFitParameters"],Part[S$MOD["BestFitParameters"],All,2]] ;
+      (* COMPUTE RESIDUAL *)
+      S$HAR = Subtract[Take[S$SIG,List[1,S$WINDOW$LENGTH]],S$MOD["Function"][Divide[Range[S$WINDOW$LENGTH],S$SAMPLING$RATE]]] ;
+    ],
+    List[S$ITR]
+  ] ;
+  (* OUTPUT *)
+  S$AVE = First[S$AMP] ;
+  S$AMP = Transpose[Partition[Rest[S$AMP],Length[S$FRE]]] ;
+  S$NOR = Map[Norm,S$AMP] ;
+  S$AMP = Transpose[List[S$FRE,S$AMP]] ;
+  Association[
+    Rule["Information",Join[S$ERR,List[Part[S$LIS,All,2]],List[LessEqual[S$NOR]]]],
+    Rule["Frequencies",S$FRE],
+    Rule["Harmonics",Join[List[S$AVE],S$AMP]],
+    Rule["Function",S$MOD["Function"]]
+  ] 
 ] ;
 (* ################################################################################################################################################################ *)
 (*  QUASIPERIODIC DECOMPOSITION (PEAKS) *)
@@ -524,39 +524,39 @@ S$QUASIPERIODIC$PEAKS[                         (* -- QUASIPERIODIC DECOMPOSITION
   S$TYP_,                                      (* -- FIT FUNTION (LinearModelFit, GeneralizedLinearModelFit, NonlinearModelFit) *)
   S$SIG_                                       (* -- SIGNAL (LIST) *)
 ] := Block[
-	{S$HAR,S$FIT,S$LIS,S$MOD,S$FRE,S$ERR,S$VAL,S$AMP,S$AVE,S$NOR},
-	(* SET DATA FOR FREQUENCY IDENTIFICATION *)
-	S$HAR = Take[S$SIG,List[1,S$WINDOW$LENGTH]] ;
-	(* SET DATA FOR MODEL FIT *)
-	S$FIT = Sort[RandomSample[Range[Length[S$SIG]],S$FIT$LENGTH]] ;
-	S$FIT = N[Transpose[List[Divide[S$FIT,S$SAMPLING$RATE],Part[Re[S$SIG],S$FIT]]]] ;
-	(* COMPUTE PEAKS DATA *)		
-	S$LIS = Map[Function[S$FREQUENCY[Slot[1],S$HAR]],Range[S$ITR]] ;
-	(* CLEAN PEAKS DATA (REMOVE FIRST BIN AND DUPLICATES), I.E. CASE=4 KEEP FREQUENCIES *)
-	S$LIS = DeleteDuplicates[Select[S$LIS,Function[SameQ[Part[Slot[1],2],4]]]] ;
-	(* PEAKS FREQUENCIES *)
-	S$FRE = Part[S$LIS,All,1] ;
-	(* PEAKS FLAGS *)
-	S$LIS = Part[S$LIS,All,2] ;
-	(* FIT MODEL PARAMETERS *)
-	S$MOD = S$FIT$MODEL[S$FRE,S$FIT,Rule["Type",S$TYP]] ;
-	(* STATISTICAL INFORMATION *)
-	S$ERR = Most[S$MOD] ;
-	(* MODEL *)
-	S$MOD = Last[S$MOD] ;
-	(* LIST OF MODEL PARAMETERS (ZERO COMPONENT, COS AMPLITUDES, SIN AMPLITUDES) *)
-	S$AMP = If[UnsameQ[S$TYP,NonlinearModelFit],S$MOD["BestFitParameters"],Part[S$MOD["BestFitParameters"],All,2]] ;
-	(* OUTPUT *)
-	S$AVE = First[S$AMP] ;
-	S$AMP = Transpose[Partition[Rest[S$AMP],Length[S$FRE]]] ;
-	S$NOR = Map[Norm,S$AMP] ;
-	S$AMP = Transpose[List[S$FRE,S$AMP]] ;
-	Association[
-		Rule["Information",Join[S$ERR,List[S$LIS],List[LessEqual[S$NOR]]]],
-		Rule["Frequencies",S$FRE],
-		Rule["Harmonics",Join[List[S$AVE],S$AMP]],
-		Rule["Function",S$MOD["Function"]]
-	]
+  {S$HAR,S$FIT,S$LIS,S$MOD,S$FRE,S$ERR,S$VAL,S$AMP,S$AVE,S$NOR},
+  (* SET DATA FOR FREQUENCY IDENTIFICATION *)
+  S$HAR = Take[S$SIG,List[1,S$WINDOW$LENGTH]] ;
+  (* SET DATA FOR MODEL FIT *)
+  S$FIT = Sort[RandomSample[Range[Length[S$SIG]],S$FIT$LENGTH]] ;
+  S$FIT = N[Transpose[List[Divide[S$FIT,S$SAMPLING$RATE],Part[Re[S$SIG],S$FIT]]]] ;
+  (* COMPUTE PEAKS DATA *)    
+  S$LIS = Map[Function[S$FREQUENCY[Slot[1],S$HAR]],Range[S$ITR]] ;
+  (* CLEAN PEAKS DATA (REMOVE FIRST BIN AND DUPLICATES), I.E. CASE=4 KEEP FREQUENCIES *)
+  S$LIS = DeleteDuplicates[Select[S$LIS,Function[SameQ[Part[Slot[1],2],4]]]] ;
+  (* PEAKS FREQUENCIES *)
+  S$FRE = Part[S$LIS,All,1] ;
+  (* PEAKS FLAGS *)
+  S$LIS = Part[S$LIS,All,2] ;
+  (* FIT MODEL PARAMETERS *)
+  S$MOD = S$FIT$MODEL[S$FRE,S$FIT,Rule["Type",S$TYP]] ;
+  (* STATISTICAL INFORMATION *)
+  S$ERR = Most[S$MOD] ;
+  (* MODEL *)
+  S$MOD = Last[S$MOD] ;
+  (* LIST OF MODEL PARAMETERS (ZERO COMPONENT, COS AMPLITUDES, SIN AMPLITUDES) *)
+  S$AMP = If[UnsameQ[S$TYP,NonlinearModelFit],S$MOD["BestFitParameters"],Part[S$MOD["BestFitParameters"],All,2]] ;
+  (* OUTPUT *)
+  S$AVE = First[S$AMP] ;
+  S$AMP = Transpose[Partition[Rest[S$AMP],Length[S$FRE]]] ;
+  S$NOR = Map[Norm,S$AMP] ;
+  S$AMP = Transpose[List[S$FRE,S$AMP]] ;
+  Association[
+    Rule["Information",Join[S$ERR,List[S$LIS],List[LessEqual[S$NOR]]]],
+    Rule["Frequencies",S$FRE],
+    Rule["Harmonics",Join[List[S$AVE],S$AMP]],
+    Rule["Function",S$MOD["Function"]]
+  ]
 ] ;
 (* ################################################################################################################################################################ *)
 (*  QUASIPERIODIC DECOMPOSITION (HARMONICS-L2) *)
@@ -569,31 +569,31 @@ S$QUASIPERIODIC$HARMONICS$L2[                  (* -- QUASIPERIODIC DECOMPOSITION
   S$TYP_,                                      (* -- FIT FUNTION (LinearModelFit, GeneralizedLinearModelFit, NonlinearModelFit) *)
   S$SIG_                                       (* -- SIGNAL (LIST) *)
 ] := Block[
-	{S$FRE,S$FIT,S$MOD,S$ERR,S$AMP,S$AVE,S$NOR},
-	(* GENERATE LIST OF HARMONICS *)
-	S$FRE = Values[S$HARMONICS[S$ORD,S$FUN]] ;
-	(* SET DATA FOR MODEL FIT *)
-	S$FIT = Sort[RandomSample[Range[Length[S$SIG]],S$FIT$LENGTH]] ;
-	S$FIT = N[Transpose[List[Divide[S$FIT,S$SAMPLING$RATE],Part[Re[S$SIG],S$FIT]]]] ;
-	(* FIT MODEL PARAMETERS *)
-	S$MOD = S$FIT$MODEL[S$FRE,S$FIT,Rule["Type",S$TYP]] ;
-	(* STATISTICAL INFORMATION *)
-	S$ERR = Most[S$MOD] ;
-	(* MODEL *)
-	S$MOD = Last[S$MOD] ;
-	(* LIST OF MODEL PARAMETERS (ZERO COMPONENT, COS AMPLITUDES, SIN AMPLITUDES) *)
-	S$AMP = If[UnsameQ[S$TYP,NonlinearModelFit],S$MOD["BestFitParameters"],Part[S$MOD["BestFitParameters"],All,2]] ;
-	(* OUTPUT *)
-	S$AVE = First[S$AMP] ;
-	S$AMP = Transpose[Partition[Rest[S$AMP],Length[S$FRE]]] ;
-	S$NOR = Map[Norm,S$AMP] ;
-	S$AMP = Transpose[List[S$FRE,S$AMP]] ;
-	Association[
-		Rule["Information",Join[S$ERR,List[ConstantArray[4,Length[S$FRE]]],List[LessEqual[S$NOR]]]],
-		Rule["Frequencies",S$FRE],
-		Rule["Harmonics",Join[List[S$AVE],S$AMP]],
-		Rule["Function",S$MOD["Function"]]
-	]	
+  {S$FRE,S$FIT,S$MOD,S$ERR,S$AMP,S$AVE,S$NOR},
+  (* GENERATE LIST OF HARMONICS *)
+  S$FRE = Values[S$HARMONICS[S$ORD,S$FUN]] ;
+  (* SET DATA FOR MODEL FIT *)
+  S$FIT = Sort[RandomSample[Range[Length[S$SIG]],S$FIT$LENGTH]] ;
+  S$FIT = N[Transpose[List[Divide[S$FIT,S$SAMPLING$RATE],Part[Re[S$SIG],S$FIT]]]] ;
+  (* FIT MODEL PARAMETERS *)
+  S$MOD = S$FIT$MODEL[S$FRE,S$FIT,Rule["Type",S$TYP]] ;
+  (* STATISTICAL INFORMATION *)
+  S$ERR = Most[S$MOD] ;
+  (* MODEL *)
+  S$MOD = Last[S$MOD] ;
+  (* LIST OF MODEL PARAMETERS (ZERO COMPONENT, COS AMPLITUDES, SIN AMPLITUDES) *)
+  S$AMP = If[UnsameQ[S$TYP,NonlinearModelFit],S$MOD["BestFitParameters"],Part[S$MOD["BestFitParameters"],All,2]] ;
+  (* OUTPUT *)
+  S$AVE = First[S$AMP] ;
+  S$AMP = Transpose[Partition[Rest[S$AMP],Length[S$FRE]]] ;
+  S$NOR = Map[Norm,S$AMP] ;
+  S$AMP = Transpose[List[S$FRE,S$AMP]] ;
+  Association[
+    Rule["Information",Join[S$ERR,List[ConstantArray[4,Length[S$FRE]]],List[LessEqual[S$NOR]]]],
+    Rule["Frequencies",S$FRE],
+    Rule["Harmonics",Join[List[S$AVE],S$AMP]],
+    Rule["Function",S$MOD["Function"]]
+  ]  
 ] ;
 (* ################################################################################################################################################################ *)
 (* ORTHOGONAL MATCHING PURSUIT *)
@@ -605,10 +605,10 @@ S$ORTHOGONAL$MATCHING$PURSUIT[
   S$VEC_,                                      (* -- VECTOR *)
   S$EPS_                                       (* -- ERROR *)
 ] := Block[
-	{S$SUP,S$RES},
-	S$SUP[] = List[] ;
-	S$SUP[S$ARG_] := S$SUP[] = Flatten[Sort[Join[S$SUP[],First[Position[S$ARG,Max[S$ARG]]]]]] ;
-	S$RES := Function[With[{S$LOC = Part[S$MAT,Span[1,All],Slot[1]]},Subtract[S$VEC,Dot[Dot[S$LOC,PseudoInverse[S$LOC]],S$VEC]]]] ;
+  {S$SUP,S$RES},
+  S$SUP[] = List[] ;
+  S$SUP[S$ARG_] := S$SUP[] = Flatten[Sort[Join[S$SUP[],First[Position[S$ARG,Max[S$ARG]]]]]] ;
+  S$RES := Function[With[{S$LOC = Part[S$MAT,Span[1,All],Slot[1]]},Subtract[S$VEC,Dot[Dot[S$LOC,PseudoInverse[S$LOC]],S$VEC]]]] ;
     Sow[NestWhile[Composition[S$RES,S$SUP,Function[Abs[Dot[Transpose[S$MAT],Slot[1]]]]],S$VEC,Function[Greater[Norm[Flatten[Slot[1]]],S$EPS]]]] ;
     N[Chop[Normal[SparseArray[Thread[Function[Rule[S$SUP[],Dot[PseudoInverse[Part[S$MAT,Span[1,All],S$SUP[]]],S$VEC]]][S$SUP[]]],Last[Dimensions[S$MAT]]]],S$EPS]]
 ] ;
@@ -623,30 +623,30 @@ S$QUASIPERIODIC$HARMONICS$L1[                  (* -- FIND COEFFICIENTS WITH COMP
   S$FAC_,                                      (* -- RATIO FACTOR (REAL IN [0,1], CHOOSE VALUE CLOSE TO 1 FOR BETTER PERFORMANCE, E.G. 0.8) *)
   S$ERR_,                                      (* -- ERROR (REAL) *)
   S$MET_,                                      (* -- METHOD (S$ORTHOGONAL$MATCHING$PURSUIT) *)
-  S$SIG_                                       (* -- SIGNAL (LIST) *)	
+  S$SIG_                                       (* -- SIGNAL (LIST) *)  
 ] := Block[
-	{S$TAB,S$MOD,S$PAR,S$COE,S$ROW,S$LEN,S$POS,S$MAT,S$VAL,S$SOL,S$AVE},
-	S$TAB = Values[S$HARMONICS[S$ORD,S$BAS]] ;
-	S$MOD = S$GENERATE$MODEL[S$TAB,Rule["Type",NonlinearModelFit]] ;
-	S$COE = First[Rest[S$MOD]] ;
-	S$ROW[S$PAR_] := Evaluate[N[D[First[S$MOD],List[S$COE]]]] ;
-	S$LEN = Floor[Times[Length[S$COE],S$FAC]] ;
-	S$POS = Sort[RandomSample[Range[1,Length[S$SIG]],S$LEN]] ;	
-	S$MAT = Map[S$ROW,Divide[S$POS,S$SAMPLING$RATE]] ;
-	S$VAL = Part[S$SIG,S$POS] ;	
-	S$SOL = S$MET[S$MAT,S$VAL,S$ERR] ;
-	S$AVE = First[S$SOL] ;
-	S$MOD = ReplaceAll[First[S$MOD],Thread[Rule[S$COE,S$SOL]]] ;
-	S$MOD = Apply[Function,List[S$PAR,S$MOD]] ;
-	S$SOL = Thread[Rule[S$TAB,Transpose[Partition[Rest[S$SOL],Divide[Length[Rest[S$SOL]],2]]]]] ;
-	S$SOL = DeleteCases[S$SOL,Rule[_,List[0.,0.]]] ;
-	S$SOL = Reverse[SortBy[S$SOL,Function[Norm[Last[Slot[1]]]]]] ;
-	Association[
-		Rule["Information",List[S$ORD,S$MET,List[Length[S$TAB],Length[S$SOL]]]],
-		Rule["Frequencies",Map[First,S$SOL]],
-		Rule["Harmonics",Join[List[S$AVE],Transpose[List[Map[First,S$SOL],Map[Last,S$SOL]]]]],
-		Rule["Function",S$MOD]
-	]		
+  {S$TAB,S$MOD,S$PAR,S$COE,S$ROW,S$LEN,S$POS,S$MAT,S$VAL,S$SOL,S$AVE},
+  S$TAB = Values[S$HARMONICS[S$ORD,S$BAS]] ;
+  S$MOD = S$GENERATE$MODEL[S$TAB,Rule["Type",NonlinearModelFit]] ;
+  S$COE = First[Rest[S$MOD]] ;
+  S$ROW[S$PAR_] := Evaluate[N[D[First[S$MOD],List[S$COE]]]] ;
+  S$LEN = Floor[Times[Length[S$COE],S$FAC]] ;
+  S$POS = Sort[RandomSample[Range[1,Length[S$SIG]],S$LEN]] ;  
+  S$MAT = Map[S$ROW,Divide[S$POS,S$SAMPLING$RATE]] ;
+  S$VAL = Part[S$SIG,S$POS] ;  
+  S$SOL = S$MET[S$MAT,S$VAL,S$ERR] ;
+  S$AVE = First[S$SOL] ;
+  S$MOD = ReplaceAll[First[S$MOD],Thread[Rule[S$COE,S$SOL]]] ;
+  S$MOD = Apply[Function,List[S$PAR,S$MOD]] ;
+  S$SOL = Thread[Rule[S$TAB,Transpose[Partition[Rest[S$SOL],Divide[Length[Rest[S$SOL]],2]]]]] ;
+  S$SOL = DeleteCases[S$SOL,Rule[_,List[0.,0.]]] ;
+  S$SOL = Reverse[SortBy[S$SOL,Function[Norm[Last[Slot[1]]]]]] ;
+  Association[
+    Rule["Information",List[S$ORD,S$MET,List[Length[S$TAB],Length[S$SOL]]]],
+    Rule["Frequencies",Map[First,S$SOL]],
+    Rule["Harmonics",Join[List[S$AVE],Transpose[List[Map[First,S$SOL],Map[Last,S$SOL]]]]],
+    Rule["Function",S$MOD]
+  ]    
 ] ;
 (* ################################################################################################################################################################ *)
 (* NAFF *)
@@ -654,45 +654,45 @@ S$QUASIPERIODIC$HARMONICS$L1[                  (* -- FIND COEFFICIENTS WITH COMP
 Clear[S$NAFF] ;
 S$NAFF::usage = "S$NAFF[NUM,SIG,LEV] -- implementation of Laskar's NAFF (without orthogonalization), compute <NUM> (integer) terms of quasiperiodic decomposition for given signal <SIG> (real or complex list) with chop level <LEV> (real), S$FREQUENCY[1,<...>] is used for frequency computation " ;
 S$NAFF[                                        (* -- LASKAR'S NAFF (WITHOUT ORTHOGONALIZATION) *) 
-	S$NUM_,                                    (* -- NUMBER OF ITERATIONS *)
-	S$SIG_,                                    (* -- INPUT SIGNAL (REAL OR COMPLEX) *)
-	S$LEV_:N[10^-10]                           (* -- CHOP LEVEL (REAL) *)
+  S$NUM_,                                      (* -- NUMBER OF ITERATIONS *)
+  S$SIG_,                                      (* -- INPUT SIGNAL (REAL OR COMPLEX) *)
+  S$LEV_:N[10^-10]                             (* -- CHOP LEVEL (REAL) *)
 ] := Block[
-	{S$FUN,S$AVE,S$ORB,S$DAT,S$FRE,S$DEL,S$AMP,S$CAS,S$PAR},
-	S$FUN = S$PROCESS ;
-	S$PROCESS = Identity ;
-	S$AVE = Mean[S$SIG] ;
-	S$ORB = Subtract[S$SIG,S$AVE] ;
-	S$DAT = Reap[	
-		Do[
-			List[
-				
-				S$FRE = First[S$FREQUENCY[1,S$ORB]] ;
-				S$DEL = Exp[Times[Subtract[0,Plus[1,1]],Pi,S$FRE,I,Range[S$WINDOW$LENGTH]]] ;
-				S$AMP = Divide[Total[Times[S$WINDOW$DATA,S$ORB,Conjugate[S$DEL]]],S$WINDOW$LENGTH] ;
-				S$ORB = Subtract[S$ORB,Times[S$AMP,S$DEL]] ;
-				Sow[List[S$FRE,S$AMP]]
-			],
-			S$NUM
-		]
-	] ;
-	S$PROCESS = S$FUN ;
-	S$DAT = First[Last[S$DAT]] ;
-	S$FRE = Map[First,S$DAT] ;
-	S$CAS = N[If[S$COMPLEX$FLAG,1,2]] ;
-	S$DAT = MapAt[Curry[Times][S$CAS],S$DAT,List[All,Subtract[0,1]]] ;
-	S$DAT = Map[
-		Function[
-			Block[
-				{S$ONE,S$TWO,S$OUT},
-				{S$ONE,S$TWO} = Slot[1] ;
-				S$OUT = ComplexExpand[ExpToTrig[Times[Exp[Times[Subtract[0,Plus[1,1]],Pi,I,S$ONE,S$PAR]],S$TWO]]] ;
-				Apply[Function,List[S$PAR,Chop[If[S$COMPLEX$FLAG,S$OUT,ComplexExpand[Re[S$OUT]]],Abs[S$LEV]]]]
-			]
-		],		
-		S$DAT
-	] ;
-	Transpose[List[S$FRE,S$DAT]]
+  {S$FUN,S$AVE,S$ORB,S$DAT,S$FRE,S$DEL,S$AMP,S$CAS,S$PAR},
+  S$FUN = S$PROCESS ;
+  S$PROCESS = Identity ;
+  S$AVE = Mean[S$SIG] ;
+  S$ORB = Subtract[S$SIG,S$AVE] ;
+  S$DAT = Reap[  
+    Do[
+      List[
+        
+        S$FRE = First[S$FREQUENCY[1,S$ORB]] ;
+        S$DEL = Exp[Times[Subtract[0,Plus[1,1]],Pi,S$FRE,I,Range[S$WINDOW$LENGTH]]] ;
+        S$AMP = Divide[Total[Times[S$WINDOW$DATA,S$ORB,Conjugate[S$DEL]]],S$WINDOW$LENGTH] ;
+        S$ORB = Subtract[S$ORB,Times[S$AMP,S$DEL]] ;
+        Sow[List[S$FRE,S$AMP]]
+      ],
+      S$NUM
+    ]
+  ] ;
+  S$PROCESS = S$FUN ;
+  S$DAT = First[Last[S$DAT]] ;
+  S$FRE = Map[First,S$DAT] ;
+  S$CAS = N[If[S$COMPLEX$FLAG,1,2]] ;
+  S$DAT = MapAt[Curry[Times][S$CAS],S$DAT,List[All,Subtract[0,1]]] ;
+  S$DAT = Map[
+    Function[
+      Block[
+        {S$ONE,S$TWO,S$OUT},
+        {S$ONE,S$TWO} = Slot[1] ;
+        S$OUT = ComplexExpand[ExpToTrig[Times[Exp[Times[Subtract[0,Plus[1,1]],Pi,I,S$ONE,S$PAR]],S$TWO]]] ;
+        Apply[Function,List[S$PAR,Chop[If[S$COMPLEX$FLAG,S$OUT,ComplexExpand[Re[S$OUT]]],Abs[S$LEV]]]]
+      ]
+    ],    
+    S$DAT
+  ] ;
+  Transpose[List[S$FRE,S$DAT]]
 ] ;
 (* ################################################################################################################################################################ *)
 (* PRONY'S METHOD (SIGNAL RECONSTRUCTION) *)
@@ -705,27 +705,27 @@ S$PRONY[                                       (* -- PRONY'S METHOD *)
   S$NUM_,                                      (* -- NUMBER OF SINGULAR VALUES (INTEGER) *)
   S$TOL_                                       (* -- EXPONENT ERROR (REAL) (REMOVES EXPONENTS LESS THEN <TOL>) *) 
 ] := Quiet[
-	Block[
-		{S$DAT,S$LEN,S$MAT,S$SVL,S$RAN,S$RHS,S$SOL,S$ROT,S$VAR,S$EXP,S$COE,S$OUT,S$ARG,S$PAR},
-		S$DAT = S$SIG ;
-		S$LEN = Length[S$DAT] ; 
-		S$MAT = Most[Partition[S$DAT,Floor[Divide[S$LEN,2]],1]] ;
-		S$MAT = Developer`ToPackedArray[S$MAT] ;
-		S$SVL = SingularValueList[S$MAT,S$NUM,Rule[Tolerance,0]] ;
-		S$RAN = Length[S$SVL] ;
-		S$MAT = Most[Partition[S$DAT,S$RAN,1]] ;
-		S$RHS = Drop[S$DAT,S$RAN] ; 
-		S$SOL = Dot[PseudoInverse[S$MAT],S$RHS] ;
-		S$ROT = ReplaceAll[S$VAR,NSolve[Equal[Subtract[Power[S$VAR,S$RAN],Dot[S$SOL,Power[S$VAR,Range[0,Subtract[S$RAN,1]]]]],0],S$VAR]] ;
-		S$EXP = Chop[Divide[Log[S$ROT],Times[2,Pi]],S$TOL] ;
-		S$EXP = Times[S$SAMPLING$RATE,S$EXP] ;
-		S$MAT = Map[Function[Power[S$ROT,Slot[1]]],Range[1,S$LEN]] ;
-		S$COE = Dot[PseudoInverse[S$MAT],S$DAT] ;
-		S$OUT = TrigExpand[ExpToTrig[Dot[S$COE,Exp[Times[2,Pi,S$EXP,S$PAR]]]]] ;
-		S$OUT = ReplaceAll[S$OUT,List[RuleDelayed[Cosh[S$ARG_],TrigToExp[Cosh[S$ARG]]],RuleDelayed[Sinh[S$ARG_],TrigToExp[Sinh[S$ARG]]]]] ;
-		S$OUT = Collect[S$OUT,Exp[__],Chop] ;
-		List[S$SVL/Length[S$SIG],S$EXP,Apply[Function,List[S$PAR,S$OUT]]]   		
-	]
+  Block[
+    {S$DAT,S$LEN,S$MAT,S$SVL,S$RAN,S$RHS,S$SOL,S$ROT,S$VAR,S$EXP,S$COE,S$OUT,S$ARG,S$PAR},
+    S$DAT = S$SIG ;
+    S$LEN = Length[S$DAT] ; 
+    S$MAT = Most[Partition[S$DAT,Floor[Divide[S$LEN,2]],1]] ;
+    S$MAT = Developer`ToPackedArray[S$MAT] ;
+    S$SVL = SingularValueList[S$MAT,S$NUM,Rule[Tolerance,0]] ;
+    S$RAN = Length[S$SVL] ;
+    S$MAT = Most[Partition[S$DAT,S$RAN,1]] ;
+    S$RHS = Drop[S$DAT,S$RAN] ; 
+    S$SOL = Dot[PseudoInverse[S$MAT],S$RHS] ;
+    S$ROT = ReplaceAll[S$VAR,NSolve[Equal[Subtract[Power[S$VAR,S$RAN],Dot[S$SOL,Power[S$VAR,Range[0,Subtract[S$RAN,1]]]]],0],S$VAR]] ;
+    S$EXP = Chop[Divide[Log[S$ROT],Times[2,Pi]],S$TOL] ;
+    S$EXP = Times[S$SAMPLING$RATE,S$EXP] ;
+    S$MAT = Map[Function[Power[S$ROT,Slot[1]]],Range[1,S$LEN]] ;
+    S$COE = Dot[PseudoInverse[S$MAT],S$DAT] ;
+    S$OUT = TrigExpand[ExpToTrig[Dot[S$COE,Exp[Times[2,Pi,S$EXP,S$PAR]]]]] ;
+    S$OUT = ReplaceAll[S$OUT,List[RuleDelayed[Cosh[S$ARG_],TrigToExp[Cosh[S$ARG]]],RuleDelayed[Sinh[S$ARG_],TrigToExp[Sinh[S$ARG]]]]] ;
+    S$OUT = Collect[S$OUT,Exp[__],Chop] ;
+    List[S$SVL/Length[S$SIG],S$EXP,Apply[Function,List[S$PAR,S$OUT]]]       
+  ]
 ] ;
 (* ################################################################################################################################################################ *)
 (* ESTIMATE SEVERAL FREQUENCIES (WITH S$QUASIPERIODIC$SUBTRACT[]) *)
@@ -744,21 +744,21 @@ S$DEVIATION::usage = "S$DEVIATION[SIG] -- estimate main frequency deviation for 
 S$DEVIATION[                                   (* -- MAIN FREQUENCY DEVIATION (LIST) *)
   S$SIG_                                       (* -- INPUT SIGNAL (LIST) *)
 ] := Map[
-	Composition[First,Function[S$FREQUENCY[1,Slot[1]]]],
-	List[
-		Take[S$SIG,+S$WINDOW$LENGTH],
-		Take[S$SIG,-S$WINDOW$LENGTH]
-	]
+  Composition[First,Function[S$FREQUENCY[1,Slot[1]]]],
+  List[
+    Take[S$SIG,+S$WINDOW$LENGTH],
+    Take[S$SIG,-S$WINDOW$LENGTH]
+  ]
 ] ;
 S$DEVIATION[                                   (* -- DEVIATION OF SELECTED PEAK *)
   S$NUM_Integer,                               (* -- PEAK NUMBER (INTEGER) *)
   S$SIG_List                                   (* -- INPUT SIGNAL (LIST) *)
 ] := Map[
-	Composition[First,Function[S$FREQUENCY[S$NUM,Slot[1]]]],
-	List[
-		Take[S$SIG,+S$WINDOW$LENGTH],
-		Take[S$SIG,-S$WINDOW$LENGTH]
-	]
+  Composition[First,Function[S$FREQUENCY[S$NUM,Slot[1]]]],
+  List[
+    Take[S$SIG,+S$WINDOW$LENGTH],
+    Take[S$SIG,-S$WINDOW$LENGTH]
+  ]
 ] ;
 S$DEVIATION[                                   (* -- DEVIATION OF SELECTED LIST OF PEAK *)
   S$NUM_List,                                  (* -- LIST OF PEAKS NUMBER (LIST OF INTEGERS) *)
@@ -773,9 +773,9 @@ S$SHIFT[                                       (* -- FREQUENCY AS A FUNCTION OF 
   S$SHI_,                                      (* -- SHIFT STEP (INTEGER) *)
   S$SIG_                                       (* -- INPUT SIGNAL (LIST) *)
 ] := Block[
-	{S$INI,S$IND},
-	S$INI = Range[1,Subtract[Length[S$SIG],S$WINDOW$LENGTH],S$SHI] ;
-	Table[First[S$FREQUENCY[1,Take[S$SIG,List[S$IND,Plus[S$IND,S$WINDOW$LENGTH]]]]],List[S$IND,S$INI]]	
+  {S$INI,S$IND},
+  S$INI = Range[1,Subtract[Length[S$SIG],S$WINDOW$LENGTH],S$SHI] ;
+  Table[First[S$FREQUENCY[1,Take[S$SIG,List[S$IND,Plus[S$IND,S$WINDOW$LENGTH]]]]],List[S$IND,S$INI]]  
 ] ;
 (* ################################################################################################################################################################ *)
 (* FMA (MAIN FREQUENCY, LARGEST PEAK, MIGHT NOT BE FUNDAMENTAL) *)
@@ -785,10 +785,10 @@ S$FMA::usage = "S$FMA[SIG] -- perform FMA based on the main frequency for list o
 S$FMA[                                         (* -- FMA (MAIN FREQUENCY) *)
   S$SIG_List                                   (* -- DATA (LIST OF SIGNALS), {SIGNAL_1,SIGNAL_2,...} *)
 ] := Block[
-	{S$DAT,S$DEV},
-	S$DAT = Map[S$DEVIATION,S$SIG] ;
-	S$DEV = Map[Composition[Abs,Apply[Subtract]],S$DAT] ;
-	List[S$DAT,S$DEV,Norm[S$DEV]] 
+  {S$DAT,S$DEV},
+  S$DAT = Map[S$DEVIATION,S$SIG] ;
+  S$DEV = Map[Composition[Abs,Apply[Subtract]],S$DAT] ;
+  List[S$DAT,S$DEV,Norm[S$DEV]] 
 ] 
 (* ################################################################################################################################################################ *)
 (* FMA (SELECTED PEAK) *)
@@ -797,10 +797,10 @@ S$FMA[                                         (* -- FMA (SELECTED PEAK) *)
   S$NUM_Integer,                               (* -- NUMBER OF FREQUENCIES TO USE (INTEGER) *)
   S$SIG_List                                   (* -- DATA {SIGNAL_1,SIGNAL_2,...} *)
 ] := Block[
-	{S$DAT, S$DEV},
-	S$DAT = Map[Function[S$DEVIATION[Range[S$NUM],Slot[1]]],S$SIG] ;
-	S$DEV = Map[Map[Composition[Abs,Apply[Subtract]]],S$DAT] ;
-	List[S$DAT,S$DEV,Map[Norm][S$DEV]]
+  {S$DAT, S$DEV},
+  S$DAT = Map[Function[S$DEVIATION[Range[S$NUM],Slot[1]]],S$SIG] ;
+  S$DEV = Map[Map[Composition[Abs,Apply[Subtract]]],S$DAT] ;
+  List[S$DAT,S$DEV,Map[Norm][S$DEV]]
 ] ;
 (* ################################################################################################################################################################ *)
 (* FMA (WINDOW SHIFT) *)
@@ -811,10 +811,10 @@ S$FMA$SHIFT[                                   (* -- FMA (MAIN FREQUENCY WITH WI
   S$SHI_Integer,                               (* -- SHIFT STEP, {INTEGER}  *)
   S$SIG_List                                   (* -- DATA {SIGNAL_1,SIGNAL_2,...} *)
 ] := Block[
-	{S$DAT, S$DEV},
-	S$DAT = Map[Function[S$SHIFT[S$SHI,Slot[1]]],S$SIG] ;
-	S$DEV = Map[StandardDeviation,S$DAT] ;
-	List[S$DAT,S$DEV,Norm[S$DEV]]
+  {S$DAT, S$DEV},
+  S$DAT = Map[Function[S$SHIFT[S$SHI,Slot[1]]],S$SIG] ;
+  S$DEV = Map[StandardDeviation,S$DAT] ;
+  List[S$DAT,S$DEV,Norm[S$DEV]]
 ] ;
 (* ################################################################################################################################################################ *)
 (* DATA BINARIZATION (3D DATA) *)
@@ -835,35 +835,35 @@ S$BINARIZE$REGION[                             (* -- BINARIZE 2D REGION BASED ON
   S$DAT_,                                      (* -- DATA TO PROCESS, {{X1,Y1,Z1},{X2,Y2,Z2},...} *)
   S$OPT:OptionsPattern[]                       (* -- OPTION(S) *)
 ] := Block[
-	{S$FUN,S$PAR,S$ERR,S$PX1,S$PX2,S$PY1,S$PY2,S$OUT,S$ADD,S$VAL,S$IND$HOR,S$IND$VER,S$IND},
-	(* SET DATA FUNCTION *)
-	S$FUN = OptionValue["Function"] ;
-	(* SET PARALLEL FUNCTION *)
-	S$PAR = If[OptionValue["Parallel"],Parallelize,Identity] ;
-	(* SET TOLERANCE VALUE *)
-	S$ERR = S$BINARIZE$ERROR ;
-	(* SET END POINTS FOR HORIZONTAL AND VERTICLE INTERVALS *)
-	List[S$PX1,S$PX2] = N[S$INT$HOR] ;
-	List[S$PY1,S$PY2] = N[S$INT$VER] ;
-	(* SELECT DATA INSIDE GIVEN REGION *)
-	S$OUT = S$DAT ;
-	S$OUT = S$PAR[Select[S$OUT,Function[LessEqual[S$PX1,Part[Slot[1],1],S$PX2]]]] ;
-	S$OUT = S$PAR[Select[S$OUT,Function[LessEqual[S$PY1,Part[Slot[1],2],S$PY2]]]] ;
-	S$OUT = Developer`ToPackedArray[S$OUT] ;
-	(* GENERATE CORNER POINTS FOR GIVEN LEVEL *) 
-	S$ADD =  List[List[S$PX1,S$PY1,OptionValue["Level"]],List[S$PX1,S$PY2,OptionValue["Level"]],List[S$PX2,S$PY1,OptionValue["Level"]],List[S$PX2,S$PY2,OptionValue["Level"]]] ;
-	(* ADD CORNER POINTS TO SELECTED DATA *)
-	S$OUT = Join[S$OUT,S$ADD] ;
-	(* LIST OF VALUES *)
-	S$VAL = Part[S$OUT,All,-1] ;
-	(* GENERATE INDEXES *)
-	S$IND$HOR = Plus[1,Floor[Times[Subtract[1,S$ERR],S$BIN$HOR,Rescale[Part[S$OUT,All,1]]]]] ;
-	S$IND$VER = Plus[1,Floor[Times[Subtract[1,S$ERR],S$BIN$VER,Rescale[Part[S$OUT,All,2]]]]] ;
-	S$IND = Transpose[List[S$IND$HOR,S$IND$VER]] ;
-	System`SetSystemOptions[Rule["SparseArrayOptions",List[Rule["TreatRepeatedEntries",Function[S$FUN[List[SlotSequence[1]]]]]]]] ;
-	S$OUT = SparseArray[Rule[S$IND,S$VAL],Automatic,OptionValue["Level"]] ;
-	System`SetSystemOptions[Rule["SparseArrayOptions",List[Rule["TreatRepeatedEntries",First]]]] ;
-	Reverse[Transpose[S$OUT]]
+  {S$FUN,S$PAR,S$ERR,S$PX1,S$PX2,S$PY1,S$PY2,S$OUT,S$ADD,S$VAL,S$IND$HOR,S$IND$VER,S$IND},
+  (* SET DATA FUNCTION *)
+  S$FUN = OptionValue["Function"] ;
+  (* SET PARALLEL FUNCTION *)
+  S$PAR = If[OptionValue["Parallel"],Parallelize,Identity] ;
+  (* SET TOLERANCE VALUE *)
+  S$ERR = S$BINARIZE$ERROR ;
+  (* SET END POINTS FOR HORIZONTAL AND VERTICLE INTERVALS *)
+  List[S$PX1,S$PX2] = N[S$INT$HOR] ;
+  List[S$PY1,S$PY2] = N[S$INT$VER] ;
+  (* SELECT DATA INSIDE GIVEN REGION *)
+  S$OUT = S$DAT ;
+  S$OUT = S$PAR[Select[S$OUT,Function[LessEqual[S$PX1,Part[Slot[1],1],S$PX2]]]] ;
+  S$OUT = S$PAR[Select[S$OUT,Function[LessEqual[S$PY1,Part[Slot[1],2],S$PY2]]]] ;
+  S$OUT = Developer`ToPackedArray[S$OUT] ;
+  (* GENERATE CORNER POINTS FOR GIVEN LEVEL *) 
+  S$ADD =  List[List[S$PX1,S$PY1,OptionValue["Level"]],List[S$PX1,S$PY2,OptionValue["Level"]],List[S$PX2,S$PY1,OptionValue["Level"]],List[S$PX2,S$PY2,OptionValue["Level"]]] ;
+  (* ADD CORNER POINTS TO SELECTED DATA *)
+  S$OUT = Join[S$OUT,S$ADD] ;
+  (* LIST OF VALUES *)
+  S$VAL = Part[S$OUT,All,-1] ;
+  (* GENERATE INDEXES *)
+  S$IND$HOR = Plus[1,Floor[Times[Subtract[1,S$ERR],S$BIN$HOR,Rescale[Part[S$OUT,All,1]]]]] ;
+  S$IND$VER = Plus[1,Floor[Times[Subtract[1,S$ERR],S$BIN$VER,Rescale[Part[S$OUT,All,2]]]]] ;
+  S$IND = Transpose[List[S$IND$HOR,S$IND$VER]] ;
+  System`SetSystemOptions[Rule["SparseArrayOptions",List[Rule["TreatRepeatedEntries",Function[S$FUN[List[SlotSequence[1]]]]]]]] ;
+  S$OUT = SparseArray[Rule[S$IND,S$VAL],Automatic,OptionValue["Level"]] ;
+  System`SetSystemOptions[Rule["SparseArrayOptions",List[Rule["TreatRepeatedEntries",First]]]] ;
+  Reverse[Transpose[S$OUT]]
 ] ;
 (* ################################################################################################################################################################ *)
 (* COLOR PLOT *)
@@ -891,40 +891,40 @@ S$COLOR$PLOT[                                  (* -- COLOR PLOT *)
   S$DAT_,                                      (* -- DATA *)
   S$OPT:OptionsPattern[]                       (* -- OPTION(S) *)
 ] := Block[
-	{S$MIN,S$MAX,S$SEL,S$LOC,S$COL,S$ARR},
-	(* SET COLOR INTERVAL *)
-	List[S$MIN,S$MAX] = N[S$INT] ;
-	(* SET COLOR FUNCTION *)
-	S$COL = Function[If[SameQ[Slot[1],N[S$LEV]],S$COLOR$PLOT$LEVEL,ColorData[S$COLOR$PLOT$COLOR][Rescale[Slot[1],S$INT]]]] ;
-	(* SET SELECTION FUNCTION *)
-	S$SEL = Function[Which[SameQ[Slot[1],N[S$LEV]],N[S$LEV],Less[S$MIN,Slot[1],S$MAX],Slot[1],GreaterEqual[Slot[1],S$MAX],S$MAX,LessEqual[Slot[1],S$MIN],S$MIN]] ;
-	(* ADJUST DATA (DATA VALUES OUTSIDE GIVEN INTERVAL ARE SHIFTED TO END POINTS) *)
-	S$LOC = Map[S$SEL,S$DAT,List[2]] ;
-	(* GENERATE ARRAY PLOT *)
-	S$ARR = ArrayPlot[
-		S$LOC,
-		FilterRules[List[S$OPT],Options[ArrayPlot]],
-		Rule[PlotLegends,False],
-		Rule[Frame,False],
-		Rule[ImagePadding,None],
-		Rule[PlotRangePadding,None],
-		Rule[ColorFunction,S$COL],
-		Rule[ColorFunctionScaling,False],
-		Rule[AspectRatio,1],
-		Rule[ImageSize,S$COLOR$PLOT$LIMIT]		
-	] ;
-	(* GENERATE FRAME AND ADD ARRAY PLOT *)
-	Graphics[
-		List[Opacity[0],Apply[Rectangle,Transpose[List[S$HOR,S$VER]]]],
-		FilterRules[List[S$OPT],Options[Graphics]],
-		Rule[Frame,True],
-		Rule[FrameStyle,Black],
-		Rule[ImageSize,600],
-		Rule[AspectRatio,1],
-		Rule[PlotRangePadding,None],
-		Rule[ImagePadding,S$COLOR$PLOT$PADDING],
-		Rule[Prolog,Inset[Image[S$ARR,Rule[AlignmentPoint,List[Left,0]]],List[First[S$HOR],First[S$VER]],Automatic,List[Apply[Subtract,S$HOR],Automatic]]]
-	]  	
+  {S$MIN,S$MAX,S$SEL,S$LOC,S$COL,S$ARR},
+  (* SET COLOR INTERVAL *)
+  List[S$MIN,S$MAX] = N[S$INT] ;
+  (* SET COLOR FUNCTION *)
+  S$COL = Function[If[SameQ[Slot[1],N[S$LEV]],S$COLOR$PLOT$LEVEL,ColorData[S$COLOR$PLOT$COLOR][Rescale[Slot[1],S$INT]]]] ;
+  (* SET SELECTION FUNCTION *)
+  S$SEL = Function[Which[SameQ[Slot[1],N[S$LEV]],N[S$LEV],Less[S$MIN,Slot[1],S$MAX],Slot[1],GreaterEqual[Slot[1],S$MAX],S$MAX,LessEqual[Slot[1],S$MIN],S$MIN]] ;
+  (* ADJUST DATA (DATA VALUES OUTSIDE GIVEN INTERVAL ARE SHIFTED TO END POINTS) *)
+  S$LOC = Map[S$SEL,S$DAT,List[2]] ;
+  (* GENERATE ARRAY PLOT *)
+  S$ARR = ArrayPlot[
+    S$LOC,
+    FilterRules[List[S$OPT],Options[ArrayPlot]],
+    Rule[PlotLegends,False],
+    Rule[Frame,False],
+    Rule[ImagePadding,None],
+    Rule[PlotRangePadding,None],
+    Rule[ColorFunction,S$COL],
+    Rule[ColorFunctionScaling,False],
+    Rule[AspectRatio,1],
+    Rule[ImageSize,S$COLOR$PLOT$LIMIT]    
+  ] ;
+  (* GENERATE FRAME AND ADD ARRAY PLOT *)
+  Graphics[
+    List[Opacity[0],Apply[Rectangle,Transpose[List[S$HOR,S$VER]]]],
+    FilterRules[List[S$OPT],Options[Graphics]],
+    Rule[Frame,True],
+    Rule[FrameStyle,Black],
+    Rule[ImageSize,600],
+    Rule[AspectRatio,1],
+    Rule[PlotRangePadding,None],
+    Rule[ImagePadding,S$COLOR$PLOT$PADDING],
+    Rule[Prolog,Inset[Image[S$ARR,Rule[AlignmentPoint,List[Left,0]]],List[First[S$HOR],First[S$VER]],Automatic,List[Apply[Subtract,S$HOR],Automatic]]]
+  ]    
 ] ;
 (* ################################################################################################################################################################ *)
 (* COLOR LEGEND *)
@@ -937,34 +937,34 @@ S$COLOR$LEGEND[                                (* -- COLOR LEGEND *)
   S$PLO_,                                      (* -- COLOR PLOT *)
   S$RAT_:15                                    (* -- SIZE RATIO *)
 ] := Block[
-	{S$COL, S$LEG, S$IMG},
-	S$COL = Function[If[SameQ[Slot[1],N[S$LEV]],S$COLOR$PLOT$LEVEL,ColorData[S$COLOR$PLOT$COLOR][Rescale[Slot[1],S$INT]]]] ;
-	S$LEG = List[Range[First[S$INT],Last[S$INT],Divide[Total[Abs[S$INT]],1000]]] ;
-	S$LEG = Reverse[Transpose[S$LEG]] ;
-	S$IMG = Times[ReplaceAll[ImageSize,Options[S$PLO]],ReplaceAll[AspectRatio,Options[S$PLO]]] ;
-	S$LEG = ArrayPlot[
-		S$LEG,
-		Rule[ImageSize,S$IMG],
-		Rule[PlotLegends,False],
-		Rule[Frame,False],
-		Rule[ImagePadding,None],
-		Rule[PlotRangePadding,None],
-		Rule[ColorFunction,S$COL],
-		Rule[ColorFunctionScaling,False],
-		Rule[AspectRatio,S$RAT],
-		Rule[ImageSize,S$COLOR$PLOT$LIMIT]
-	] ;
-	S$LEG = Graphics[
-		List[Opacity[0],Apply[Rectangle,Transpose[List[S$INT,S$INT]]]],
-		Rule[Frame,List[List[True,True],List[False,False]]],
-		Rule[FrameTicks,List[List[True,True],List[False,False]]],
-		Rule[FrameStyle,Black],
-		Rule[ImageSize,List[Automatic,S$IMG]],
-		Rule[AspectRatio,S$RAT],
-		Rule[PlotRangePadding,None],
-		Rule[ImagePadding,S$COLOR$PLOT$PADDING],
-		Rule[Prolog,Inset[Image[S$LEG,Rule[AlignmentPoint,List[Left,0]]],List[First[S$INT],First[S$INT]],Automatic,List[Apply[Subtract,S$INT],Automatic]]]
-	] 	
+  {S$COL, S$LEG, S$IMG},
+  S$COL = Function[If[SameQ[Slot[1],N[S$LEV]],S$COLOR$PLOT$LEVEL,ColorData[S$COLOR$PLOT$COLOR][Rescale[Slot[1],S$INT]]]] ;
+  S$LEG = List[Range[First[S$INT],Last[S$INT],Divide[Total[Abs[S$INT]],1000]]] ;
+  S$LEG = Reverse[Transpose[S$LEG]] ;
+  S$IMG = Times[ReplaceAll[ImageSize,Options[S$PLO]],ReplaceAll[AspectRatio,Options[S$PLO]]] ;
+  S$LEG = ArrayPlot[
+    S$LEG,
+    Rule[ImageSize,S$IMG],
+    Rule[PlotLegends,False],
+    Rule[Frame,False],
+    Rule[ImagePadding,None],
+    Rule[PlotRangePadding,None],
+    Rule[ColorFunction,S$COL],
+    Rule[ColorFunctionScaling,False],
+    Rule[AspectRatio,S$RAT],
+    Rule[ImageSize,S$COLOR$PLOT$LIMIT]
+  ] ;
+  S$LEG = Graphics[
+    List[Opacity[0],Apply[Rectangle,Transpose[List[S$INT,S$INT]]]],
+    Rule[Frame,List[List[True,True],List[False,False]]],
+    Rule[FrameTicks,List[List[True,True],List[False,False]]],
+    Rule[FrameStyle,Black],
+    Rule[ImageSize,List[Automatic,S$IMG]],
+    Rule[AspectRatio,S$RAT],
+    Rule[PlotRangePadding,None],
+    Rule[ImagePadding,S$COLOR$PLOT$PADDING],
+    Rule[Prolog,Inset[Image[S$LEG,Rule[AlignmentPoint,List[Left,0]]],List[First[S$INT],First[S$INT]],Automatic,List[Apply[Subtract,S$INT],Automatic]]]
+  ]   
 ] ;
 (* ################################################################################################################################################################ *)
 (* COMPUTE RESONANCE LINES (RETURNS EQUATIONS FOR LINES) *)
@@ -979,77 +979,77 @@ S$RESONANCE$LINES[                             (* -- GENERATE RESONANCE LINES *)
   S$VNUM_,                                     (* -- VERTICLE TUNE INTEGER PART *)
   List[S$VMIN_,S$VMAX_]                        (* -- VERTICLE TUNE RANEGE, {S$VMIN,S$VMAX} SHOULD BE IN {S$VNUM,S$VNUM+1} *)
 ] := Block[
-	{S$HOR,S$VER,S$NUM,S$ZER,S$ONE,S$TWO,S$SET,S$LIN,S$SEL,S$REG},
-	(* COMPUTE RESONANCE LINES WHEN ONE OF THE COEFFICIENTS IS EQUAL TO ZERO *)
-	S$ZER = Flatten[
-		List[
-			ReplaceAll[Equal[Times[S$ORD,S$HOR],S$NUM],Quiet[NSolve[LessEqual[0,Subtract[Divide[S$NUM,S$ORD],S$HNUM],1],S$NUM,Integers]]],
-			ReplaceAll[Equal[Times[S$ORD,S$VER],S$NUM],Quiet[NSolve[LessEqual[0,Subtract[Divide[S$NUM,S$ORD],S$VNUM],1],S$NUM,Integers]]]
-		]
-	] ;
-	(* COMPUTE INTEGER COMBINATIONS FOR GIVEN ORDER AND REMOVE ZEROS *)
-	S$SET = DeleteCases[
-		ReplaceAll[List[S$ONE,S$TWO],Solve[Equal[Plus[Abs[S$ONE],Abs[S$TWO]],S$ORD],List[S$ONE,S$TWO],Integers]],
-		Alternatives[List[0,_],List[_,0]]
-	] ;
-	(* FILTER SET *)
-	S$SET = DeleteCases[S$SET,List[S$ONE_,_] /; S$ONE < 0] ;
-	(* COMPUTE LINES FOR EARCH PAIR OF INTEGERS *)
-	S$LIN = Map[
-		Function[
-			Block[
-				{S$N,S$M},
-				{S$N,S$M} = Slot[1] ;
-				{
-					ReplaceAll[
-						Equal[Plus[Times[S$N,S$HOR ],Times[S$M,S$VER]],S$NUM],
-						NSolve[LessEqual[0,Times[Divide[1,S$N],Plus[S$NUM,Times[S$N,S$HNUM,Subtract[0,1]],Times[S$M,S$VNUM,Subtract[0,1]]]],1],S$NUM,Integers]
-					],
-					ReplaceAll[
-						Equal[Plus[Times[S$N,S$HOR ],Times[S$M,S$VER]],S$NUM],
-						NSolve[LessEqual[0,Times[Divide[1,S$N],Plus[S$NUM,Times[S$N,S$HNUM,Subtract[0,1]],Times[S$M,S$VNUM,Subtract[0,1]],Times[S$N,Subtract[0,1]]]],1],S$NUM,Integers]
-					],
-					ReplaceAll[
-						Equal[Plus[Times[S$N,S$HOR ],Times[S$M,S$VER]],S$NUM],
-						NSolve[LessEqual[0,Times[Divide[1,S$M],Plus[S$NUM,Times[S$N,S$HNUM,Subtract[0,1]],Times[S$M,S$VNUM,Subtract[0,1]]]],1],S$NUM,Integers]
-					],
-					ReplaceAll[
-						Equal[Plus[Times[S$N,S$HOR ],Times[S$M,S$VER]],S$NUM],
-						NSolve[LessEqual[0,Times[Divide[1,S$M],Plus[S$NUM,Times[S$N,S$HNUM,Subtract[0,1]],Times[S$M,S$VNUM,Subtract[0,1]],Times[S$M,Subtract[0,1]]]],1],S$NUM,Integers]
-					]
-				} 
-			]
-		],
-		S$SET
-	] ;
-	(* JOIN ALL CASES AND REMOVE DUPLICATES *)
-	S$LIN = DeleteDuplicates[Flatten[List[S$ZER,S$LIN]]] ;
-	(* TUNE REGION *)
-	S$REG = Line[List[List[S$HNUM+S$HMIN,S$VNUM+S$VMIN],List[S$HNUM+S$HMAX,S$VNUM+S$VMIN],List[S$HNUM+S$HMAX,S$VNUM+S$VMAX],List[S$HNUM+S$HMIN,S$VNUM+S$VMAX],List[S$HNUM+S$HMIN,S$VNUM+S$VMIN]]] ;
-	(* SELECT LINES *)
-	S$SEL = Map[
-		Function[
-			List[
-				Slot[1],
-				Quiet[
-					NSolve[
-						List[
-							Element[List[S$HOR,S$VER],S$REG],
-							Element[List[S$HOR,S$VER],ImplicitRegion[Slot[1],List[S$HOR,S$VER]]]
-						],
-						List[S$HOR,S$VER]
-					]
-				]
-			]
-		],
-		S$LIN
-	] ;
-	S$SEL = DeleteCases[S$SEL,List[_,List[]]] ;
-	S$SEL = DeleteCases[S$SEL,List[_,S$ONE_] /; Length[S$ONE] == 1] ;
-	S$SEL = DeleteCases[S$SEL,List[_,S$ONE_] /; Length[DeleteDuplicates[S$ONE]] == 1] ;
-	S$SEL = If[SameQ[S$SEL,List[]],List[],First[Transpose[S$SEL]]] ;
-	(* OUTPUT *)
-	ReplaceAll[S$SEL,Thread[Rule[List[S$HOR,S$VER],S$FRE]]]	
+  {S$HOR,S$VER,S$NUM,S$ZER,S$ONE,S$TWO,S$SET,S$LIN,S$SEL,S$REG},
+  (* COMPUTE RESONANCE LINES WHEN ONE OF THE COEFFICIENTS IS EQUAL TO ZERO *)
+  S$ZER = Flatten[
+    List[
+      ReplaceAll[Equal[Times[S$ORD,S$HOR],S$NUM],Quiet[NSolve[LessEqual[0,Subtract[Divide[S$NUM,S$ORD],S$HNUM],1],S$NUM,Integers]]],
+      ReplaceAll[Equal[Times[S$ORD,S$VER],S$NUM],Quiet[NSolve[LessEqual[0,Subtract[Divide[S$NUM,S$ORD],S$VNUM],1],S$NUM,Integers]]]
+    ]
+  ] ;
+  (* COMPUTE INTEGER COMBINATIONS FOR GIVEN ORDER AND REMOVE ZEROS *)
+  S$SET = DeleteCases[
+    ReplaceAll[List[S$ONE,S$TWO],Solve[Equal[Plus[Abs[S$ONE],Abs[S$TWO]],S$ORD],List[S$ONE,S$TWO],Integers]],
+    Alternatives[List[0,_],List[_,0]]
+  ] ;
+  (* FILTER SET *)
+  S$SET = DeleteCases[S$SET,List[S$ONE_,_] /; S$ONE < 0] ;
+  (* COMPUTE LINES FOR EARCH PAIR OF INTEGERS *)
+  S$LIN = Map[
+    Function[
+      Block[
+        {S$N,S$M},
+        {S$N,S$M} = Slot[1] ;
+        {
+          ReplaceAll[
+            Equal[Plus[Times[S$N,S$HOR ],Times[S$M,S$VER]],S$NUM],
+            NSolve[LessEqual[0,Times[Divide[1,S$N],Plus[S$NUM,Times[S$N,S$HNUM,Subtract[0,1]],Times[S$M,S$VNUM,Subtract[0,1]]]],1],S$NUM,Integers]
+          ],
+          ReplaceAll[
+            Equal[Plus[Times[S$N,S$HOR ],Times[S$M,S$VER]],S$NUM],
+            NSolve[LessEqual[0,Times[Divide[1,S$N],Plus[S$NUM,Times[S$N,S$HNUM,Subtract[0,1]],Times[S$M,S$VNUM,Subtract[0,1]],Times[S$N,Subtract[0,1]]]],1],S$NUM,Integers]
+          ],
+          ReplaceAll[
+            Equal[Plus[Times[S$N,S$HOR ],Times[S$M,S$VER]],S$NUM],
+            NSolve[LessEqual[0,Times[Divide[1,S$M],Plus[S$NUM,Times[S$N,S$HNUM,Subtract[0,1]],Times[S$M,S$VNUM,Subtract[0,1]]]],1],S$NUM,Integers]
+          ],
+          ReplaceAll[
+            Equal[Plus[Times[S$N,S$HOR ],Times[S$M,S$VER]],S$NUM],
+            NSolve[LessEqual[0,Times[Divide[1,S$M],Plus[S$NUM,Times[S$N,S$HNUM,Subtract[0,1]],Times[S$M,S$VNUM,Subtract[0,1]],Times[S$M,Subtract[0,1]]]],1],S$NUM,Integers]
+          ]
+        } 
+      ]
+    ],
+    S$SET
+  ] ;
+  (* JOIN ALL CASES AND REMOVE DUPLICATES *)
+  S$LIN = DeleteDuplicates[Flatten[List[S$ZER,S$LIN]]] ;
+  (* TUNE REGION *)
+  S$REG = Line[List[List[S$HNUM+S$HMIN,S$VNUM+S$VMIN],List[S$HNUM+S$HMAX,S$VNUM+S$VMIN],List[S$HNUM+S$HMAX,S$VNUM+S$VMAX],List[S$HNUM+S$HMIN,S$VNUM+S$VMAX],List[S$HNUM+S$HMIN,S$VNUM+S$VMIN]]] ;
+  (* SELECT LINES *)
+  S$SEL = Map[
+    Function[
+      List[
+        Slot[1],
+        Quiet[
+          NSolve[
+            List[
+              Element[List[S$HOR,S$VER],S$REG],
+              Element[List[S$HOR,S$VER],ImplicitRegion[Slot[1],List[S$HOR,S$VER]]]
+            ],
+            List[S$HOR,S$VER]
+          ]
+        ]
+      ]
+    ],
+    S$LIN
+  ] ;
+  S$SEL = DeleteCases[S$SEL,List[_,List[]]] ;
+  S$SEL = DeleteCases[S$SEL,List[_,S$ONE_] /; Length[S$ONE] == 1] ;
+  S$SEL = DeleteCases[S$SEL,List[_,S$ONE_] /; Length[DeleteDuplicates[S$ONE]] == 1] ;
+  S$SEL = If[SameQ[S$SEL,List[]],List[],First[Transpose[S$SEL]]] ;
+  (* OUTPUT *)
+  ReplaceAll[S$SEL,Thread[Rule[List[S$HOR,S$VER],S$FRE]]]  
 ] ;
 (* ################################################################################################################################################################ *)
 (* PLOT RESONANCE LINES *)
@@ -1065,20 +1065,20 @@ S$RESONANCE$PLOT[
   List[S$VMIN_,S$VMAX_],                       (* -- VERTICLE TUNE RANEGE, {S$VMIN,S$VMAX} SHOULD BE IN {S$VNUM,S$VNUM+1} *)
   S$OPT:OptionsPattern[]                       (* -- OPTION(S) *)
 ] := With[
-	{
-		S$LIN = S$RESONANCE$LINES[S$FRE,S$ORD,S$HNUM,List[S$HMIN,S$HMAX],S$VNUM,List[S$VMIN,S$VMAX]],
-		S$HOR = First[S$FRE],
-		S$VER = Last[S$FRE]
-	},
-	ContourPlot[
-		S$LIN,
-		List[S$HOR,-0.05+S$HNUM+S$HMIN,+0.05+S$HNUM+S$HMAX],
-		List[S$VER,-0.05+S$VNUM+S$VMIN,+0.05+S$VNUM+S$VMAX],
-		S$OPT,
-		Rule[PlotTheme,"Detailed"],
-		Rule[ContourStyle,Black],
-		Rule[ImageSize,600]
-	]
+  {
+    S$LIN = S$RESONANCE$LINES[S$FRE,S$ORD,S$HNUM,List[S$HMIN,S$HMAX],S$VNUM,List[S$VMIN,S$VMAX]],
+    S$HOR = First[S$FRE],
+    S$VER = Last[S$FRE]
+  },
+  ContourPlot[
+    S$LIN,
+    List[S$HOR,-0.05+S$HNUM+S$HMIN,+0.05+S$HNUM+S$HMAX],
+    List[S$VER,-0.05+S$VNUM+S$VMIN,+0.05+S$VNUM+S$VMAX],
+    S$OPT,
+    Rule[PlotTheme,"Detailed"],
+    Rule[ContourStyle,Black],
+    Rule[ImageSize,600]
+  ]
 ] ;
 (* ################################################################################################################################################################ *)
 (* SELECT POINTS CLOSE TO GIVEN RESONANCE *)
@@ -1091,9 +1091,9 @@ S$SELECT[                                      (* -- SELECT POINTS CLOSE TO GIVE
   S$DAT_,                                      (* -- DATA TO PROCESS *)
   S$IND_                                       (* -- FREQUENCY POSITIONS {POS1,POS2} (LIST OF INTEGERS) *)
 ] := Block[
-	{S$HOR,S$VER,S$INT},
-	{S$HOR,S$VER,S$INT} = S$RES ;
-	Developer`ToPackedArray[Select[S$DAT,Function[LessEqual[Abs[Subtract[Dot[List[S$HOR,S$VER],Part[Slot[1],S$IND]],S$INT]],S$DEL]]]]
+  {S$HOR,S$VER,S$INT},
+  {S$HOR,S$VER,S$INT} = S$RES ;
+  Developer`ToPackedArray[Select[S$DAT,Function[LessEqual[Abs[Subtract[Dot[List[S$HOR,S$VER],Part[Slot[1],S$IND]],S$INT]],S$DEL]]]]
 ] ;
 (* ################################################################################################################################################################ *)
 (* REFINE INITIAL CONDITIONS *)
@@ -1105,11 +1105,11 @@ S$REFINE$INITIALS[                             (* -- REFINE INITIAL CONDITIONS *
   S$AMP_,                                      (* -- MAX AMPLITUDE OF RANDOM PERTURBATION (REAL) *)
   S$DAT_                                       (* -- DATA TO PROCESS (ONLY FIRST TWO DIMENSIONS ARE PERTURBED) *)
 ] := Block[
-	{S$SEL, S$LEN, S$PER},
-	S$SEL = Part[S$DAT,All,List[1,2]] ;
-	S$LEN = Length[S$SEL] ;
-	S$PER = RandomReal[List[-S$AMP,+S$AMP],List[S$NUM,2,S$LEN]] ;
-	Flatten[Map[Composition[Function[Plus[S$SEL,Slot[1]]],Transpose],S$PER],1]
+  {S$SEL, S$LEN, S$PER},
+  S$SEL = Part[S$DAT,All,List[1,2]] ;
+  S$LEN = Length[S$SEL] ;
+  S$PER = RandomReal[List[-S$AMP,+S$AMP],List[S$NUM,2,S$LEN]] ;
+  Flatten[Map[Composition[Function[Plus[S$SEL,Slot[1]]],Transpose],S$PER],1]
 ] ;
 (* ################################################################################################################################################################ *)
 (* FILTER DATA *)
@@ -1122,19 +1122,19 @@ S$FILTER$DATA[                                 (* -- FILTER DATA *)
   S$VER_,                                      (* -- 2ND INDEX PARAMETERS, {B_J,{MIN_J,MAX_J}} *)
   S$DAT_                                       (* -- DATA TO FILTER, {DAT_1,DAT_2,...} = {{X_1,X_2,...,X_I,...,X_J,...}_1,...} *)
 ] := Block[
-	{S$IND$HOR,S$IND$VER,S$BIN$HOR,S$MIN$HOR,S$MAX$HOR,S$DEL$HOR,S$BIN$VER,S$MAX$VER,S$MIN$VER,S$DEL$VER,S$KEY,S$ASS},
-	{S$IND$HOR,S$IND$VER} = S$IND ;
-	{S$BIN$HOR,{S$MIN$HOR,S$MAX$HOR}} = S$HOR ;
-	S$DEL$HOR = Divide[Abs[Apply[Subtract,{S$MIN$HOR,S$MAX$HOR}]],S$BIN$HOR] ;
-	{S$BIN$VER,{S$MIN$VER,S$MAX$VER}} = S$VER ;
-	S$DEL$VER = Divide[Abs[Apply[Subtract,{S$MIN$VER,S$MAX$VER}]],S$BIN$VER] ;
-	S$KEY = Part[S$DAT,All,S$IND] ;
-	S$ASS = Association[Thread[Rule[S$KEY,S$DAT]]] ;
-	S$KEY = Select[S$KEY,Function[LessEqual[S$MIN$HOR,Part[Slot[1],1],S$MAX$HOR]]] ;
-	S$KEY = Select[S$KEY,Function[LessEqual[S$MIN$VER,Part[Slot[1],2],S$MAX$VER]]] ;
-	S$KEY = BinLists[S$KEY,{S$MIN$HOR,S$MAX$HOR,S$DEL$HOR},{S$MIN$VER,S$MAX$VER,S$DEL$VER}] ;
-	S$KEY = Map[First,DeleteCases[Flatten[S$KEY,1],List[]]] ;
-	Map[S$ASS,S$KEY]
+  {S$IND$HOR,S$IND$VER,S$BIN$HOR,S$MIN$HOR,S$MAX$HOR,S$DEL$HOR,S$BIN$VER,S$MAX$VER,S$MIN$VER,S$DEL$VER,S$KEY,S$ASS},
+  {S$IND$HOR,S$IND$VER} = S$IND ;
+  {S$BIN$HOR,{S$MIN$HOR,S$MAX$HOR}} = S$HOR ;
+  S$DEL$HOR = Divide[Abs[Apply[Subtract,{S$MIN$HOR,S$MAX$HOR}]],S$BIN$HOR] ;
+  {S$BIN$VER,{S$MIN$VER,S$MAX$VER}} = S$VER ;
+  S$DEL$VER = Divide[Abs[Apply[Subtract,{S$MIN$VER,S$MAX$VER}]],S$BIN$VER] ;
+  S$KEY = Part[S$DAT,All,S$IND] ;
+  S$ASS = Association[Thread[Rule[S$KEY,S$DAT]]] ;
+  S$KEY = Select[S$KEY,Function[LessEqual[S$MIN$HOR,Part[Slot[1],1],S$MAX$HOR]]] ;
+  S$KEY = Select[S$KEY,Function[LessEqual[S$MIN$VER,Part[Slot[1],2],S$MAX$VER]]] ;
+  S$KEY = BinLists[S$KEY,{S$MIN$HOR,S$MAX$HOR,S$DEL$HOR},{S$MIN$VER,S$MAX$VER,S$DEL$VER}] ;
+  S$KEY = Map[First,DeleteCases[Flatten[S$KEY,1],List[]]] ;
+  Map[S$ASS,S$KEY]
 ] ;
 (* ################################################################################################################################################################ *)
 (* SEARCH FREQUNCIES (SDDSNAFF) *)
@@ -1145,30 +1145,30 @@ S$SDDSNAFF[                                    (* -- SEARCH FREQUENCIES WITH SDD
   S$NUM_,                                      (* -- NUMBER OF FREQUENCIES TO SEARCH *)
   S$SIG_                                       (* -- INPUT SIGNAL *)
 ] := Block[
-	{S$RUN,S$DAT,S$EXT},
-	S$RUN = StringJoin[
-		"csv2sdds \\\n",
-		"  signal.csv -pipe=out \\\n",
-		"  -columnData=name=s,type=long \\\n",
-		"  -columnData=name=x,type=double |\\\n",
-		"sddsnaff \\\n",
-		"  -pipe \\\n",
-		"  -columns=s,x \\\n",
-		StringTemplate["  -terminateSearch=maxFrequencies=`1` \\\n"][S$NUM],
-		"  -iterateFrequency=cycleLimit=1000,accuracyLimit=0.000000000000001 |\\\n",
-		"sddsconvert \\\n",
-		"  -pipe=in signal.sdds \\\n",
-		"  -ascii"
-	] ;
-	Export["signal.csv",Transpose[List[Range[Length[S$SIG]],S$SIG]]] ;
-	S$EXT = Run[S$RUN] ;
-	S$DAT = Select[
-		Take[Import["signal.sdds","Table"],List[10,-1]],
-		Function[UnsameQ[Slot[1],List[-1.,-1.,-1.,-1.]]]
-	] ;
-	Run["rm signal.csv"] ;
-	Run["rm signal.sdds"] ;
-	List[S$EXT,S$DAT]
+  {S$RUN,S$DAT,S$EXT},
+  S$RUN = StringJoin[
+    "csv2sdds \\\n",
+    "  signal.csv -pipe=out \\\n",
+    "  -columnData=name=s,type=long \\\n",
+    "  -columnData=name=x,type=double |\\\n",
+    "sddsnaff \\\n",
+    "  -pipe \\\n",
+    "  -columns=s,x \\\n",
+    StringTemplate["  -terminateSearch=maxFrequencies=`1` \\\n"][S$NUM],
+    "  -iterateFrequency=cycleLimit=1000,accuracyLimit=0.000000000000001 |\\\n",
+    "sddsconvert \\\n",
+    "  -pipe=in signal.sdds \\\n",
+    "  -ascii"
+  ] ;
+  Export["signal.csv",Transpose[List[Range[Length[S$SIG]],S$SIG]]] ;
+  S$EXT = Run[S$RUN] ;
+  S$DAT = Select[
+    Take[Import["signal.sdds","Table"],List[10,-1]],
+    Function[UnsameQ[Slot[1],List[-1.,-1.,-1.,-1.]]]
+  ] ;
+  Run["rm signal.csv"] ;
+  Run["rm signal.sdds"] ;
+  List[S$EXT,S$DAT]
 ] ;
 (* ################################################################################################################################################################ *)
 (* DISCRETE HILBERT TRANSFORM *)
@@ -1178,11 +1178,11 @@ S$DHT::usage = "S$DHT[SIG] -- return discrete Hilbert transform S = U + I H[V] f
 S$DHT[                                         (* -- DISCRETE HILBERT TRANSFORM *)
   S$SIG_                                       (* -- INPUT SIGNAL (LIST OF REALS) *)
 ] := Block[
-	{S$PAR,S$LEN,S$FLA},
-	S$PAR = Rule[FourierParameters,List[1,-1]] ;
-	S$LEN = Length[S$SIG] ;
-	S$FLA = Boole[EvenQ[S$LEN]];
-	Plus[S$SIG,Times[I,Im[InverseFourier[Times[Fourier[S$SIG,S$PAR],PadRight[ArrayPad[ConstantArray[2,Subtract[Quotient[S$LEN,2],S$FLA]],List[1,S$FLA],1],S$LEN]],S$PAR]]]]
+  {S$PAR,S$LEN,S$FLA},
+  S$PAR = Rule[FourierParameters,List[1,-1]] ;
+  S$LEN = Length[S$SIG] ;
+  S$FLA = Boole[EvenQ[S$LEN]];
+  Plus[S$SIG,Times[I,Im[InverseFourier[Times[Fourier[S$SIG,S$PAR],PadRight[ArrayPad[ConstantArray[2,Subtract[Quotient[S$LEN,2],S$FLA]],List[1,S$FLA],1],S$LEN]],S$PAR]]]]
 ] /; Apply[And,Thread[Equal[Im[S$SIG],0]]] ;
 (* ################################################################################################################################################################ *)
 (* POWER SPECTRA LENGTH *)
@@ -1199,13 +1199,13 @@ S$PSL[                                         (* -- POWER SPECTRA LENGTH *)
   S$SIG_,                                      (* -- INPUT SIGNAL (LIST) *)
   S$OPT:OptionsPattern[]                       (* -- OPTION(S) *)
 ] := Block[
-	{S$DAT,S$LEN,S$SPE,S$DEL,S$DIF},
-	S$DAT = If[OptionValue["Standardize"],Standardize[S$SIG],Subtract[S$SIG,Mean[S$SIG]]] ;
-	S$LEN = Length[S$DAT] ;
-	S$DAT = Times[S$DAT,S$COSINE$WINDOW[OptionValue["WindowOrder"],S$LEN]] ;
-	S$SPE = N[Chop[Rest[S$SPECTRA[S$DAT,Rule["Normalized",True],Rule["Complex",OptionValue["Complex"]]]],OptionValue["Level"]]] ;
-	S$DEL = N[Divide[1,S$LEN]] ;
-	Total[Sqrt[Plus[Power[Differences[S$SPE],2],Power[S$DEL,2]]]]
+  {S$DAT,S$LEN,S$SPE,S$DEL,S$DIF},
+  S$DAT = If[OptionValue["Standardize"],Standardize[S$SIG],Subtract[S$SIG,Mean[S$SIG]]] ;
+  S$LEN = Length[S$DAT] ;
+  S$DAT = Times[S$DAT,S$COSINE$WINDOW[OptionValue["WindowOrder"],S$LEN]] ;
+  S$SPE = N[Chop[Rest[S$SPECTRA[S$DAT,Rule["Normalized",True],Rule["Complex",OptionValue["Complex"]]]],OptionValue["Level"]]] ;
+  S$DEL = N[Divide[1,S$LEN]] ;
+  Total[Sqrt[Plus[Power[Differences[S$SPE],2],Power[S$DEL,2]]]]
 ] ;
 (* ################################################################################################################################################################ *)
 (* FRACTAL DIMENSION ESTIMATION *)
@@ -1224,36 +1224,36 @@ S$FDE[                                         (* -- FRACTAL DIMENSION ESTIMATIO
   S$SIG_,                                      (* -- INPUT SIGNAL (LIST) *)
   S$OPT:OptionsPattern[]                       (* -- OPTION(S) *)
 ] := Block[
-	{S$ARG,S$OMG,S$LEN,S$DAT,S$MOD,S$OUT},
-	S$OMG = Log10[N[Divide[1,S$RAN]]] ;
-	S$LEN = Log10[
-		Map[
-			Composition[
-				Function[
-					S$PSL[
-						Slot[1],
-						Rule["WindowOrder",OptionValue["WindowOrder"]],
-						Rule["Standardize",OptionValue["Standardize"]],
-						Rule["Complex",OptionValue["Complex"]],
-						Rule["Level",OptionValue["Level"]]
-					]
-				],
-				Function[Take[S$SIG,List[1,Slot[1]]]]
-			],
-			S$RAN
-		]
-	] ;
-	S$DAT = Transpose[List[S$OMG,S$LEN]] ;
-	If[
-		SameQ[OptionValue["Method"],"Fit"],
-		S$MOD = LinearModelFit[S$DAT,List[S$ARG],S$ARG] ;
-		S$OUT = Subtract[1,Last[S$MOD["BestFitParameters"]]] ;
-	] ;
-	If[
-		SameQ[OptionValue["Method"],"Correlation"],
-		S$OUT = Apply[Correlation,Transpose[S$DAT]] ;
-	] ;
-	S$OUT	
+  {S$ARG,S$OMG,S$LEN,S$DAT,S$MOD,S$OUT},
+  S$OMG = Log10[N[Divide[1,S$RAN]]] ;
+  S$LEN = Log10[
+    Map[
+      Composition[
+        Function[
+          S$PSL[
+            Slot[1],
+            Rule["WindowOrder",OptionValue["WindowOrder"]],
+            Rule["Standardize",OptionValue["Standardize"]],
+            Rule["Complex",OptionValue["Complex"]],
+            Rule["Level",OptionValue["Level"]]
+          ]
+        ],
+        Function[Take[S$SIG,List[1,Slot[1]]]]
+      ],
+      S$RAN
+    ]
+  ] ;
+  S$DAT = Transpose[List[S$OMG,S$LEN]] ;
+  If[
+    SameQ[OptionValue["Method"],"Fit"],
+    S$MOD = LinearModelFit[S$DAT,List[S$ARG],S$ARG] ;
+    S$OUT = Subtract[1,Last[S$MOD["BestFitParameters"]]] ;
+  ] ;
+  If[
+    SameQ[OptionValue["Method"],"Correlation"],
+    S$OUT = Apply[Correlation,Transpose[S$DAT]] ;
+  ] ;
+  S$OUT  
 ] ;
 (* ################################################################################################################################################################ *)
 (* INDEX LEVEL (GLOBAL VARIABLE FOR SALI/GALI INDICATORS) *)
@@ -1299,24 +1299,24 @@ S$FLI = S$FLI$LAS ;
 ClearAll[S$FILTER$SVD] ;
 S$FILTER$SVD::usage = "S$FILTER$SVD[NUM,SIG] -- apply svd filter using <NUM> (integer) singular value pairs to given signal <SIG> (list) " ;
 Options[S$FILTER$SVD] = List[
-	Rule["Function",Mean]
+  Rule["Function",Mean]
 ] ;
 S$FILTER$SVD[
   S$NUM_,                                      (* -- NUMBER OF SINGULAR VALUE PAIRS TO KEEP (INTEGER) *)
   S$SIG_,                                      (* -- INPUT SIGNAL (LIST) *)
   S$OPT:OptionsPattern[]                       (* -- OPTION(S) *)
 ] := Block[
-	{S$DAT,S$LEN,S$MAT,S$MTU,S$MTW,S$MTV,S$SVL},
-	S$DAT = S$SIG ;
-	S$LEN = Length[S$DAT] ; 
-	S$MAT = Most[Partition[S$DAT,Floor[Divide[S$LEN,2]],1]] ;
-	S$MAT = Developer`ToPackedArray[S$MAT] ;
-	List[S$MTU,S$MTW,S$MTV] = SingularValueDecomposition[S$MAT,Rule[Tolerance,0]] ;
-	S$SVL = Take[Diagonal[S$MTW],Times[2,S$NUM]] ;
-	S$SVL = Flatten[Map[OptionValue["Function"],Partition[S$SVL,Plus[1,1]]]] ;
-	S$MTW = DiagonalMatrix[N[PadRight[S$SVL,Length[S$MTW]]]] ;
-	S$MAT = Dot[S$MTU,S$MTW,Transpose[S$MTV]] ;	
-	Flatten[List[Most[Part[S$MAT,1]],Part[S$MAT,-1],Last[S$SIG]]]
+  {S$DAT,S$LEN,S$MAT,S$MTU,S$MTW,S$MTV,S$SVL},
+  S$DAT = S$SIG ;
+  S$LEN = Length[S$DAT] ; 
+  S$MAT = Most[Partition[S$DAT,Floor[Divide[S$LEN,2]],1]] ;
+  S$MAT = Developer`ToPackedArray[S$MAT] ;
+  List[S$MTU,S$MTW,S$MTV] = SingularValueDecomposition[S$MAT,Rule[Tolerance,0]] ;
+  S$SVL = Take[Diagonal[S$MTW],Times[2,S$NUM]] ;
+  S$SVL = Flatten[Map[OptionValue["Function"],Partition[S$SVL,Plus[1,1]]]] ;
+  S$MTW = DiagonalMatrix[N[PadRight[S$SVL,Length[S$MTW]]]] ;
+  S$MAT = Dot[S$MTU,S$MTW,Transpose[S$MTV]] ;  
+  Flatten[List[Most[Part[S$MAT,1]],Part[S$MAT,-1],Last[S$SIG]]]
 ] ;
 (* ################################################################################################################################################################ *)
 (* INFO *)
@@ -1324,67 +1324,67 @@ S$FILTER$SVD[
 ClearAll[S$INFORMATION] ;
 S$INFORMATION::usage = "S$INFORMATION[] -- list of (inactive) functions and global variables " ;
 S$INFORMATION[] := List[
-	Inactive[S$SAMPLING$RATE],
-	Inactive[S$COMPLEX$FLAG],
-	Inactive[S$RANGE],
-	Inactive[S$WINDOW$ORDER],
-	Inactive[S$WINDOW$LENGTH],
-	Inactive[S$INTERPOLATION$ORDER],
-	Inactive[S$INTERPOLATION$POINTS],
-	Inactive[S$FIT$LENGTH],
-	Inactive[S$FIT$METHOD],
-	Inactive[S$COSINE$WINDOW],
-	Inactive[S$WINDOW$DATA],
-	Inactive[S$SPECTRA],
-	Inactive[S$FIND$PEAKS],
-	Inactive[S$PAD$ZEROS],
-	Inactive[S$MEAN],
-	Inactive[S$WEIGHTED$MEAN],
-	Inactive[S$PROCESS],
-	Inactive[S$PRINT$VARIABLES],
-	Inactive[S$SET$VARIABLES],
-	Inactive[S$FREQUENCY],
-	Inactive[S$HARMONICS],
-	Inactive[S$IDENTIFY],
-	Inactive[S$GENERATE$MODEL],
-	Inactive[S$FIT$MODEL],
-	Inactive[S$QUASIPERIODIC$SUBTRACT],
-	Inactive[S$QUASIPERIODIC$PEAKS],
-	Inactive[S$QUASIPERIODIC$HARMONICS$L2],
-	Inactive[S$ORTHOGONAL$MATCHING$PURSUIT],
-	Inactive[S$QUASIPERIODIC$HARMONICS$L1],
-	Inactive[S$NAFF],
-	Inactive[S$PRONY],
-	Inactive[S$FREQUENCY$LIST],
-	Inactive[S$DEVIATION],
-	Inactive[S$SHIFT],
-	Inactive[S$FMA],
-	Inactive[S$FMA$SHIFT],
-	Inactive[S$BINARIZE$REGION],
-	Inactive[S$COLOR$PLOT$LEVEL],
-	Inactive[S$COLOR$PLOT$COLOR],
-	Inactive[S$COLOR$PLOT$LIMIT],
-	Inactive[S$COLOR$PLOT$PADDING],
-	Inactive[S$COLOR$PLOT],
-	Inactive[S$COLOR$LEGEND],
-	Inactive[S$RESONANCE$LINES],
-	Inactive[S$RESONANCE$PLOT],
-	Inactive[S$SELECT],
-	Inactive[S$REFINE$INITIALS],
-	Inactive[S$FILTER$DATA],
-	Inactive[S$SDDSNAFF],
-	Inactive[S$DHT],
-	Inactive[S$PSL],
-	Inactive[S$FDE],
-	Inactive[S$INDEX$LEVEL],
-	Inactive[S$SALI],
-	Inactive[S$FLI$FUN],
-	Inactive[S$FLI$ONE],
-	Inactive[S$FLI$ALL],
-	Inactive[S$FLI$LAS],
-	Inactive[S$FLI],
-	Inactive[S$FILTER$SVD],
-	Inactive[S$INFORMATION]
+  Inactive[S$SAMPLING$RATE],
+  Inactive[S$COMPLEX$FLAG],
+  Inactive[S$RANGE],
+  Inactive[S$WINDOW$ORDER],
+  Inactive[S$WINDOW$LENGTH],
+  Inactive[S$INTERPOLATION$ORDER],
+  Inactive[S$INTERPOLATION$POINTS],
+  Inactive[S$FIT$LENGTH],
+  Inactive[S$FIT$METHOD],
+  Inactive[S$COSINE$WINDOW],
+  Inactive[S$WINDOW$DATA],
+  Inactive[S$SPECTRA],
+  Inactive[S$FIND$PEAKS],
+  Inactive[S$PAD$ZEROS],
+  Inactive[S$MEAN],
+  Inactive[S$WEIGHTED$MEAN],
+  Inactive[S$PROCESS],
+  Inactive[S$PRINT$VARIABLES],
+  Inactive[S$SET$VARIABLES],
+  Inactive[S$FREQUENCY],
+  Inactive[S$HARMONICS],
+  Inactive[S$IDENTIFY],
+  Inactive[S$GENERATE$MODEL],
+  Inactive[S$FIT$MODEL],
+  Inactive[S$QUASIPERIODIC$SUBTRACT],
+  Inactive[S$QUASIPERIODIC$PEAKS],
+  Inactive[S$QUASIPERIODIC$HARMONICS$L2],
+  Inactive[S$ORTHOGONAL$MATCHING$PURSUIT],
+  Inactive[S$QUASIPERIODIC$HARMONICS$L1],
+  Inactive[S$NAFF],
+  Inactive[S$PRONY],
+  Inactive[S$FREQUENCY$LIST],
+  Inactive[S$DEVIATION],
+  Inactive[S$SHIFT],
+  Inactive[S$FMA],
+  Inactive[S$FMA$SHIFT],
+  Inactive[S$BINARIZE$REGION],
+  Inactive[S$COLOR$PLOT$LEVEL],
+  Inactive[S$COLOR$PLOT$COLOR],
+  Inactive[S$COLOR$PLOT$LIMIT],
+  Inactive[S$COLOR$PLOT$PADDING],
+  Inactive[S$COLOR$PLOT],
+  Inactive[S$COLOR$LEGEND],
+  Inactive[S$RESONANCE$LINES],
+  Inactive[S$RESONANCE$PLOT],
+  Inactive[S$SELECT],
+  Inactive[S$REFINE$INITIALS],
+  Inactive[S$FILTER$DATA],
+  Inactive[S$SDDSNAFF],
+  Inactive[S$DHT],
+  Inactive[S$PSL],
+  Inactive[S$FDE],
+  Inactive[S$INDEX$LEVEL],
+  Inactive[S$SALI],
+  Inactive[S$FLI$FUN],
+  Inactive[S$FLI$ONE],
+  Inactive[S$FLI$ALL],
+  Inactive[S$FLI$LAS],
+  Inactive[S$FLI],
+  Inactive[S$FILTER$SVD],
+  Inactive[S$INFORMATION]
 ] ;
 (* ################################################################################################################################################################ *)
 (* CHANGE LOG // NOTES *)
