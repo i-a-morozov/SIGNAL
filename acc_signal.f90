@@ -224,6 +224,38 @@ MODULE SIGNAL
         ! RESULT
         FREQUENCY_=(REAL(FST,RK)-2._RK+2._RK*(FREQUENCY_-1._RK)/REAL(NUM,RK))/REAL(NUM,RK)   
     END FUNCTION FREQUENCY_
+    
+    PURE SUBROUTINE DECOMPOSITION_(AVE,WIN,SIG,ITR,FRE,COS_AMP,SIN_AMP)
+        !$ACC ROUTINE SEQ
+        REAL(RK),INTENT(IN) :: AVE
+        REAL(RK),DIMENSION(NUM),INTENT(IN) :: WIN
+        REAL(RK),DIMENSION(2*NUM),INTENT(IN) :: SIG
+        INTEGER,INTENT(IN) :: ITR
+        REAL(RK),DIMENSION(ITR),INTENT(OUT) :: FRE
+        REAL(RK),DIMENSION(ITR),INTENT(OUT) :: COS_AMP
+        REAL(RK),DIMENSION(ITR),INTENT(OUT) :: SIN_AMP
+        INTEGER :: I
+        REAL(RK),DIMENSION(2*NUM) :: ORB
+        REAL(RK),DIMENSION(NUM) :: RAN
+        REAL(RK),DIMENSION(2*NUM) :: DEL
+        ORB=SIG-AVE
+        RAN=REAL([(I,I=1,NUM,1)],RK)
+        DO I=1,ITR,1
+            FRE(I)=FREQUENCY_(AVE,WIN,ORB)
+            DEL(1:2*NUM:2)=+COS(TWO_PI*FRE(I)*RAN)
+            DEL(2:2*NUM:2)=-SIN(TWO_PI*FRE(I)*RAN)
+            COS_AMP(I)=SUM(SIG(1:2*NUM:2)*DEL(1:2*NUM:2)*WIN)+SUM(SIG(2:2*NUM:2)*DEL(2:2*NUM:2)*WIN)
+            SIN_AMP(I)=SUM(SIG(2:2*NUM:2)*DEL(1:2*NUM:2)*WIN)-SUM(SIG(1:2*NUM:2)*DEL(2:2*NUM:2)*WIN)
+            COS_AMP(I)=COS_AMP(I)/REAL(NUM,RK)
+            SIN_AMP(I)=SIN_AMP(I)/REAL(NUM,RK)
+            ORB(1:2*NUM:2)=ORB(1:2*NUM:2)-COS_AMP(I)*DEL(1:2*NUM:2)+SIN_AMP(I)*DEL(2:2*NUM:2)
+            ORB(2:2*NUM:2)=ORB(2:2*NUM:2)-COS_AMP(I)*DEL(2:2*NUM:2)-SIN_AMP(I)*DEL(1:2*NUM:2)
+        END DO
+        IF(FLA==0)THEN
+            COS_AMP = 2.0_RK*COS_AMP
+            SIN_AMP = 2.0_RK*SIN_AMP
+        END IF
+    END SUBROUTINE DECOMPOSITION_
 
 END MODULE SIGNAL
 
@@ -317,4 +349,92 @@ END MODULE SIGNAL
 !   !$ACC END PARALLEL LOOP
 !   !$ACC END DATA
 !   WRITE(*,*) OUT(1)-FRE
+! END PROGRAM EXAMPLE
+
+! ! EXAMPLE (NUM=2**12,FLA=0)
+! ! Real signal decomposition
+! ! gfortran -o example -O3 -ffast-math -march=native signal.f90 example.f90
+! ! example.f90:
+! PROGRAM EXAMPLE
+!     USE SIGNAL
+!     IMPLICIT NONE
+!     REAL(RK),PARAMETER :: F1=1._RK*0.123456789_RK
+!     REAL(RK),PARAMETER :: F2=2._RK*0.123456789_RK
+!     REAL(RK),PARAMETER :: F3=3._RK*0.123456789_RK
+!     REAL(RK),PARAMETER :: F4=4._RK*0.123456789_RK
+!     REAL(RK),PARAMETER :: A1=1.0_RK
+!     REAL(RK),PARAMETER :: B1=1.E-1_RK
+!     REAL(RK),PARAMETER :: A2=1.E-1_RK
+!     REAL(RK),PARAMETER :: B2=5.E-2_RK
+!     REAL(RK),PARAMETER :: A3=1.E-3_RK
+!     REAL(RK),PARAMETER :: B3=0.0_RK
+!     REAL(RK),PARAMETER :: A4=0.0_RK
+!     REAL(RK),PARAMETER :: B4=1.E-4_RK
+!     REAL(RK),DIMENSION(2*NUM) :: SIG
+!     REAL(RK),DIMENSION(NUM)   :: WIN
+!     REAL(RK)                  :: AVE
+!     INTEGER                   :: I
+!     REAL(RK),DIMENSION(4)     :: FRE, COS_AMP, SIN_AMP
+!     SIG(1:2*NUM:2)=REAL([(I,I=1,NUM,1)],RK)
+!     SIG(1:2*NUM:2)=A1*COS(TWO_PI*F1*SIG(1:2*NUM:2))+B1*SIN(TWO_PI*F1*SIG(1:2*NUM:2)) + &
+!                    A2*COS(TWO_PI*F2*SIG(1:2*NUM:2))+B2*SIN(TWO_PI*F2*SIG(1:2*NUM:2)) + &
+!                    A3*COS(TWO_PI*F3*SIG(1:2*NUM:2))+B3*SIN(TWO_PI*F3*SIG(1:2*NUM:2)) + &
+!                    A4*COS(TWO_PI*F4*SIG(1:2*NUM:2))+B4*SIN(TWO_PI*F4*SIG(1:2*NUM:2))
+!     SIG(2:2*NUM:2)=0.0_RK
+!     CALL WINDOW_(4,WIN)
+!     AVE = SUM(WIN)
+!     FRE = 0.0_RK
+!     COS_AMP=0.0_RK
+!     SIN_AMP=0.0_RK
+!     CALL DECOMPOSITION_(AVE,WIN,SIG,4,FRE,COS_AMP,SIN_AMP)
+!     DO I=1,4,1
+!         WRITE(*,*) FRE(I),COS_AMP(I),SIN_AMP(I)
+!     END DO
+! END PROGRAM EXAMPLE
+
+
+! ! EXAMPLE (NUM=2**12,FLA=1)
+! ! Complex signal decomposition
+! ! gfortran -o example -O3 -ffast-math -march=native signal.f90 example.f90
+! ! example.f90:
+! PROGRAM EXAMPLE
+!     USE SIGNAL
+!     IMPLICIT NONE
+!     REAL(RK),PARAMETER :: F1=1._RK*0.123456789_RK
+!     REAL(RK),PARAMETER :: F2=2._RK*0.123456789_RK
+!     REAL(RK),PARAMETER :: F3=3._RK*0.123456789_RK
+!     REAL(RK),PARAMETER :: F4=4._RK*0.123456789_RK
+!     REAL(RK),PARAMETER :: A1=1.0_RK
+!     REAL(RK),PARAMETER :: B1=1.E-1_RK
+!     REAL(RK),PARAMETER :: A2=1.E-1_RK
+!     REAL(RK),PARAMETER :: B2=5.E-2_RK
+!     REAL(RK),PARAMETER :: A3=1.E-3_RK
+!     REAL(RK),PARAMETER :: B3=0.0_RK
+!     REAL(RK),PARAMETER :: A4=0.0_RK
+!     REAL(RK),PARAMETER :: B4=1.E-4_RK
+!     REAL(RK),DIMENSION(2*NUM) :: SIG
+!     REAL(RK),DIMENSION(NUM)   :: WIN
+!     REAL(RK)                  :: AVE
+!     INTEGER                   :: I
+!     REAL(RK),DIMENSION(4)     :: FRE, COS_AMP, SIN_AMP    
+!     SIG(1:2*NUM:2)=REAL([(I,I=1,NUM,1)],RK)
+!     SIG(1:2*NUM:2)=A1*COS(TWO_PI*F1*SIG(1:2*NUM:2))+B1*SIN(TWO_PI*F1*SIG(1:2*NUM:2)) + &
+!                    A2*COS(TWO_PI*F2*SIG(1:2*NUM:2))+B2*SIN(TWO_PI*F2*SIG(1:2*NUM:2)) + &
+!                    A3*COS(TWO_PI*F3*SIG(1:2*NUM:2))+B3*SIN(TWO_PI*F3*SIG(1:2*NUM:2)) + &
+!                    A4*COS(TWO_PI*F4*SIG(1:2*NUM:2))+B4*SIN(TWO_PI*F4*SIG(1:2*NUM:2))
+!     
+!     SIG(2:2*NUM:2)=REAL([(I,I=1,NUM,1)],RK)
+!     SIG(2:2*NUM:2)=B1*COS(TWO_PI*F1*SIG(2:2*NUM:2))-A1*SIN(TWO_PI*F1*SIG(2:2*NUM:2)) + &
+!                    B2*COS(TWO_PI*F2*SIG(2:2*NUM:2))-A2*SIN(TWO_PI*F2*SIG(2:2*NUM:2)) + &
+!                    B3*COS(TWO_PI*F3*SIG(2:2*NUM:2))-A3*SIN(TWO_PI*F3*SIG(2:2*NUM:2)) + &
+!                    B4*COS(TWO_PI*F4*SIG(2:2*NUM:2))-A4*SIN(TWO_PI*F4*SIG(2:2*NUM:2))                
+!     CALL WINDOW_(4,WIN)
+!     AVE = SUM(WIN)
+!     FRE = 0.0_RK
+!     COS_AMP=0.0_RK
+!     SIN_AMP=0.0_RK
+!     CALL DECOMPOSITION_(AVE,WIN,SIG,4,FRE,COS_AMP,SIN_AMP)
+!     DO I=1,4,1
+!         WRITE(*,*) FRE(I),COS_AMP(I),SIN_AMP(I)
+!     END DO
 ! END PROGRAM EXAMPLE
