@@ -159,7 +159,7 @@ S$WEIGHTED$MEAN[                               (* -- WEIGHTED MEAN *)
 (* ################################################################################################################################################################ *)
 ClearAll[S$PROCESS] ;
 S$PROCESS::usage = "S$PROCESS -- signal process function " ;
-S$PROCESS = Function[Subtract[Slot[1],Mean[Slot[1]]]] ;
+S$PROCESS = Function[Subtract[Slot[1],S$WEIGHTED$MEAN[Slot[1]]]] ;
 (* ################################################################################################################################################################ *)
 (* PRINT GLOBAL VARIABLES *)
 (* ################################################################################################################################################################ *)
@@ -661,7 +661,7 @@ S$NAFF[                                        (* -- LASKAR'S NAFF (WITHOUT ORTH
   {S$FUN,S$AVE,S$ORB,S$DAT,S$FRE,S$DEL,S$AMP,S$CAS,S$PAR},
   S$FUN = S$PROCESS ;
   S$PROCESS = Identity ;
-  S$AVE = Mean[S$SIG] ;
+  S$AVE = S$WEIGHTED$MEAN[S$SIG] ;
   S$ORB = Subtract[S$SIG,S$AVE] ;
   S$DAT = Reap[  
     Do[
@@ -822,7 +822,7 @@ S$FMA$SHIFT[                                   (* -- FMA (MAIN FREQUENCY WITH WI
 ClearAll[S$BINARIZE$REGION] ;
 S$BINARIZE$REGION::usage = "S$BINARIZE$REGION[BINX,BINY,INTX,INTY,DATA] -- binarization of 3D data <DATA> = {{x1,y1,z1},...} (list) with <BINX> (integer) and <BINY> (integer) number of bins within region defined by <INTX> (list) and <INTY> (list) based on mean value (default), other fuction can be given in options <OPT> " ; 
 Options[S$BINARIZE$REGION] = List[
-  Rule["Function",Mean],                       (* -- FUNCTION TO APPLY *) 
+  Rule["Function",Max],                        (* -- FUNCTION TO APPLY *) 
   Rule["Parallel",False],                      (* -- PARALLEL FLAG *)
   Rule["Level",0.0]                            (* -- BASE/LEVEL VALUE *)
 ] ;
@@ -1393,3 +1393,5 @@ S$INFORMATION[] := List[
 (* 07/20/2019 : S$NAFF ADDED *)
 (* 08/02/2019 : S$MEAN ADDED *)
 (* 08/03/2019 : S$WEIGHTED$MEAN ADDED, S$PROCESS ACTS ON SIGNALS WITH LENGTH S$WINDOW$LENGTH *)
+(* 10/01/2019 : CHANGED DEFAULT OPTION VALUE OF "Function" IN S$BINARIZE$REGION TO "Max" (BETTER FOR FMA, SHOULE BE CHANGED FOR OTHER INDICATORS) *)
+(*              CHANGED DEFAULT VALUE OF S$PROCESS TO S$WEIGHTED$MEAN, ALSO CHANGED IN S$NAFF *)
