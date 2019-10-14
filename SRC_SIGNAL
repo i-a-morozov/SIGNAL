@@ -240,7 +240,7 @@ S$FREQUENCY[                                   (* -- ESTIMATE MAIN FREQUENCY (LI
     (* Apply window function *)
     S$ORB = Times[S$WINDOW$DATA,S$ORB] ;
     (* Compute Fourier amplitude spectra *)
-    S$FOU = S$SPECTRA[S$ORB,Rule["Complex",S$COMPLEX$FLAG]] ;
+    S$FOU = S$SPECTRA[S$ORB,Rule["Complex",S$COMPLEX$FLAG],Rule["FourierParameters",List[-1,1]]] ;
     (* Extract maximum bin position *)
     S$BIN = Extract[Position[S$FOU,Max[S$FOU]],List[1,1]] ;  
     (* Check bin position (max bin is near zero) *)
@@ -293,7 +293,7 @@ S$FREQUENCY[                                   (* -- ESTIMATE PEAK FREQUENCY (LI
     (* Apply window function *)
     S$ORB = Times[S$WINDOW$DATA,S$ORB] ;
     (* Compute Fourier amplitude spectra *)
-    S$FOU = S$SPECTRA[S$ORB,Rule["Complex",S$COMPLEX$FLAG]] ;  
+    S$FOU = S$SPECTRA[S$ORB,Rule["Complex",S$COMPLEX$FLAG],Rule["FourierParameters",List[-1,1]]] ;  
     (* Extract given bin position *)
     S$BIN = Last[S$FIND$PEAKS[S$NUM,S$FOU]] ;
     (* Check bin position (near zero) *)
