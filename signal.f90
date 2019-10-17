@@ -1,5 +1,5 @@
 ! SIGNAL,2019,I.A.MOROZOV@INP.NSK.SU
-! SIMPLIFIED FORTRAN IMPLEMENTATION OF S$FREQUENCY[] FUNCTION (PARABOLIC INTERPOLATION OF REFINED SPECTRA)
+! SIMPLIFIED FORTRAN IMPLEMENTATION OF S$FREQUENCY[] FUNCTION (PARABOLIC INTERPOLATION OF REFINED SPECTRA) AND S$NAFF[] FUNCTION
 
 ! MAIN FUNCTION(S):
 
@@ -29,7 +29,7 @@ MODULE SIGNAL
     PRIVATE
     
     INTEGER,PARAMETER  :: RK=REAL64                     ! REAL KIND
-    INTEGER,PARAMETER  :: NUM=1024                      ! SIGNAL LENGTH (POWER OF TWO)
+    INTEGER,PARAMETER  :: NUM=4096                      ! SIGNAL LENGTH (POWER OF TWO)
     INTEGER,PARAMETER  :: FLA=1                         ! COMPLEX SIGNAL FLAG (0/1 FOR REAL/COMPLEX INPUT)
     REAL(RK),PARAMETER :: PI=3.141592653589793238460_RK ! PI
     REAL(RK),PARAMETER :: TWO_PI=2.0_RK*PI              ! 2*PI
@@ -270,7 +270,7 @@ MODULE SIGNAL
     
 END MODULE SIGNAL
 
-! ! EXAMPLE (NUM=2**9,FLA=1)
+! ! EXAMPLE-01 (NUM=2**9,FLA=0/1) REAL/COMPLEX SIGNAL FREQUENCY
 ! ! gfortran -o example -O3 -ffast-math -march=native signal.f90 example.f90
 ! ! example.f90:
 ! PROGRAM EXAMPLE
@@ -294,7 +294,7 @@ END MODULE SIGNAL
 !   WRITE(*,*) FREQUENCY_(AVE,WIN,ARR)
 ! END PROGRAM EXAMPLE
 
-! ! EXAMPLE (NUM=2**9,FLA=1) (OPENMP)
+! ! EXAMPLE-02 (NUM=2**9,FLA=0/1) REAL/COMPLEX SIGNAL FREQUENCY (OPENMP) 
 ! ! gfortran -o example -O3 -ffast-math -march=native -fopenmp signal.f90 example.f90
 ! ! example.f90:
 ! PROGRAM EXAMPLE
@@ -327,7 +327,7 @@ END MODULE SIGNAL
 !   WRITE(*,*) OUT(1)-FRE
 ! END PROGRAM EXAMPLE
 
-! ! EXAMPLE (NUM=2**9,FLA=1) (OPENACC)
+! ! EXAMPLE-03 (NUM=2**9,FLA=0/1) REAL/COMPLEX SIGNAL FREQUENCY (OPENACC) 
 ! ! pgfortran -o example -fast -ta=nvidia signal.f90 example.f90
 ! ! example.f90:
 ! PROGRAM EXAMPLE
@@ -362,8 +362,7 @@ END MODULE SIGNAL
 !   WRITE(*,*) OUT(1)-FRE
 ! END PROGRAM EXAMPLE
 
-! ! EXAMPLE (NUM=2**12,FLA=0)
-! ! Real signal decomposition
+! ! EXAMPLE-04 (NUM=2**12,FLA=0) REAL SIGNAL DECOMPOSITION
 ! ! gfortran -o example -O3 -ffast-math -march=native signal.f90 example.f90
 ! ! example.f90:
 ! PROGRAM EXAMPLE
@@ -404,8 +403,7 @@ END MODULE SIGNAL
 ! END PROGRAM EXAMPLE
 
 
-! ! EXAMPLE (NUM=2**12,FLA=1)
-! ! Complex signal decomposition
+! ! EXAMPLE-05 (NUM=2**12,FLA=1) COMPLEX SIGNAL DECOMPOSITION
 ! ! gfortran -o example -O3 -ffast-math -march=native signal.f90 example.f90
 ! ! example.f90:
 ! PROGRAM EXAMPLE
