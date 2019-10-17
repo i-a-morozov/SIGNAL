@@ -2,7 +2,7 @@
 # QUASIPERIODIC DECOMPOSITION AND CHAOS INDICATORS IN WOLFRAM MATHEMATICA
 
 *Files*:
-1) 'SRC_SIGNAL'       main code (use Get[] function to load)
+1) 'SRC_SIGNAL'       main WM code (use Get[] function to load)
 2) 'signal.f90'       FORTAN module for frequency identification and signal decomposition (see EXAMPLE-08 in 'examples.nb')
 3) 'examples.nb'      SIGNAL examples
 4) 'data'             directory with examples' data
