@@ -1,7 +1,7 @@
 ! SIGNAL, 2018-2020, I.A.MOROZOV@INP.NSK.SU
 
 ! STATIC LIB
-! gfortran -c -cpp -std=f2018 -Wall -pedantic -O3 -ffast-math -march=native -Wno-unused-function signal.f90
+! gfortran -c -cpp -fPIC -std=f2018 -Wall -pedantic -O3 -ffast-math -march=native -Wno-unused-function signal.f90
 ! ar rcs libsignal.a signal.o
 
 #define __MINLOC__   MINLOC
