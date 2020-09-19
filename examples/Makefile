@@ -51,14 +51,14 @@ signal.o: signal.f90
 	$(fc) -c $(fcf) -Wno-unused-function signal.f90
 
 clean:
-	rm libsignal.a
-	rm signal.o
-	rm signal.mod
-	rm example01
-	rm example02
-	rm example03
-	rm example04
-	rm example05
-	rm example06
-	rm example07
-	rm example08
+	rm -f libsignal.a
+	rm -f  signal.o
+	rm -f  signal.mod
+	rm -f  example01
+	rm -f  example02
+	rm -f  example03
+	rm -f  example04
+	rm -f  example05
+	rm -f  example06
+	rm -f  example07
+	rm -f  example08
