@@ -1,4 +1,4 @@
-lib += -lsignal 
+lib += -lsignal
 lib += -llapack -lblas
 lib += -lm
 lib += -lfftw3
@@ -11,7 +11,14 @@ cc = gcc-10
 fcf = -cpp -std=f2018 -Wall -pedantic -O3 -ffast-math -march=native
 ccf = -std=c99 -Wall -pedantic -O3 -ffast-math -march=native
 
-all: example01 example02 example03 example04 example05 example06 example07 example08
+all: example01
+all: example02
+all: example03
+all: example04
+all: example05
+all: example06
+all: example07
+all: example08
 
 example01: libsignal.a signal.mod example01.f90
 	$(fc) -o example01 $(fcf) -L. -I. example01.f90 $(lib)
@@ -42,3 +49,16 @@ libsignal.a: signal.o
 
 signal.o: signal.f90
 	$(fc) -c $(fcf) -Wno-unused-function signal.f90
+
+clean:
+	rm libsignal.a
+	rm signal.o
+	rm signal.mod
+	rm example01
+	rm example02
+	rm example03
+	rm example04
+	rm example05
+	rm example06
+	rm example07
+	rm example08
