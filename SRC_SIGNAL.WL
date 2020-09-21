@@ -284,10 +284,10 @@ ClearAll[S$MAKE$SIGNAL$ROW] ;
 S$MAKE$SIGNAL$ROW[MATRIX_] := Flatten[List[First[MATRIX],Last[MATRIX]]] ;
 ClearAll[S$MAKE$SIGNAL$SUM] ;
 S$MAKE$SIGNAL$SUM[MATRIX_] := Block[
-  {NC, NR, ROTATE, DIAGONAL},
-  {NC, NR} = Dimensions[MATRIX] ;
+  {NR, NC, ROTATE, DIAGONAL},
+  {NR, NC} = Dimensions[MATRIX] ;
   ROTATE = Reverse[Transpose[MATRIX]] ;
-  DIAGONAL = Table[Diagonal[ROTATE,COUNT],{COUNT,2-NC,NC-1}] ;
+  DIAGONAL = Table[Diagonal[ROTATE,COUNT],{COUNT,1-NC,NR-1}] ;
   Map[Mean,DIAGONAL]
 ] ;
 ClearAll[S$MAKE$SIGNAL] ;
