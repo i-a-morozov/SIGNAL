@@ -12,6 +12,9 @@ double  frequency_(int*, int*, int*, double*, double*, double*) ;
 void    decomposition_(int*, int*, int*, double*, double*, double*, int*, double*, double*, double*) ;
 void    frequency_list_(int*, int*, int*, double*, double*, double*, int*, double*) ;
 void    amplitude_list_(int*, int*, double*, double*, double*, int*, double*, double*, double*) ;
+void    amplitude_(int*, double*, double*, double*, double*, double*, double*, double*) ;
 void    fit_(int*, double*, int*, double*, double*, double*, double*, double*) ;
 void    filter_(int*, double*, int*) ;
+void    compute_table_(int*) ;
+void    destroy_table_(int*) ;
 #endif
