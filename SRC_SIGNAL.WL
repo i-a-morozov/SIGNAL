@@ -659,7 +659,7 @@ S$FREQUENCY[                        (* -- ESTIMATE FREQUENCY (DTFT MAXIMUM SEARC
   SIGNAL_List,                      (* -- INPUT SIGNAL (LIST) *)
   SEARCH_,                          (* -- SEARCH FUNCTION (S$SEARCH$BINARY[] OR S$SEARCH$GOLDEN[]) *)
   LIMIT_Integer,                    (* -- MAXIMUM NUMBER OF ITERATIONS (INTEGER) *)
-  TOLERANCE_                        (* -- TOLERANCE (REAL) *)
+  TOLERANCE_,                       (* -- TOLERANCE (REAL) *)
   OPTIONS:OptionsPattern[]          (* -- OPTION(S) *)
 ] := Catch[
   Block[
