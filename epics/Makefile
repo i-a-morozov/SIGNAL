@@ -36,11 +36,11 @@ all: $(PROGRAM)
 .PHONY: clean realclean
 clean:
 	rm -rf build_*
-	rm libsignal.a
+	rm -f libsignal.a
 
 realclean: clean
 	rm -f $(foreach file,$(PROGRAM),$(BINDIR)/$(file))
-	rm libsignal.a
+	rm -f libsignal.a
 
 build_%:
 	mkdir $@

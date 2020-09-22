@@ -282,13 +282,42 @@ S$MAKE$MATRIX[                      (* -- MAKE MATRIX *)
 (* ################################################################################################################################################################ *)
 ClearAll[S$MAKE$SIGNAL$ROW] ;
 S$MAKE$SIGNAL$ROW[MATRIX_] := Flatten[List[First[MATRIX],Last[MATRIX]]] ;
-ClearAll[S$MAKE$SIGNAL$SUM] ;
-S$MAKE$SIGNAL$SUM[MATRIX_] := Block[
+ClearAll[S$MAKE$SIGNAL$SUM$DIAGONAL] ;
+S$MAKE$SIGNAL$SUM$DIAGONAL[MATRIX_] := Block[
   {NR, NC, ROTATE, DIAGONAL},
   {NR, NC} = Dimensions[MATRIX] ;
   ROTATE = Reverse[Transpose[MATRIX]] ;
   DIAGONAL = Table[Diagonal[ROTATE,COUNT],{COUNT,1-NC,NR-1}] ;
   Map[Mean,DIAGONAL]
+] ;
+ClearAll[S$MAKE$SIGNAL$SUM] ;
+S$MAKE$SIGNAL$SUM[MATRIX_] := Block[
+  {ROW, COL, ARRAY, SUM, SHIFT, START, COUNT, Q, P},
+  {ROW, COL} = Dimensions[MATRIX] ;
+  ARRAY = Flatten[Transpose[MATRIX]]    ;
+  SUM = Table[0,2*COL]  ;
+  SHIFT = 1 ;
+  Do[
+  {
+    START = Q ;
+    If[
+      Q > ROW,
+      START = Q + COL*SHIFT ;
+      SHIFT++ ;
+    ] ;
+    COUNT = 0 ;
+    Do[
+    {
+      SUM[[Q]] += ARRAY[[START+P*COL]] ;
+      COUNT++ ;
+    },
+    {P,0,Min[Q,COL]-SHIFT,1}
+    ] ;
+    SUM[[Q]]/=COUNT ;
+  },
+  {Q,1,2*COL,1}
+  ] ;
+  SUM
 ] ;
 ClearAll[S$MAKE$SIGNAL] ;
 S$MAKE$SIGNAL::usage = "
