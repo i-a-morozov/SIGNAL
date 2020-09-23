@@ -13,9 +13,9 @@ INCDIR += .
 LIBDIR += $(EPICS_BASE)/lib/$(EPICS_HOST_ARCH)
 LIBDIR += .
 
-LIB    += ca Com 
+LIB    += ca Com
 LIB    += m
-LIB    += signal lapack blas fftw3 gsl gslcblas gfortran
+LIB    += signal arpack lapack blas fftw3 gsl gslcblas gfortran
 
 CFLAG  += -O3
 CFLAG  += -std=c99 -Wall -pedantic
@@ -63,7 +63,7 @@ build_$(EPICS_HOST_ARCH)/%.o: %.c libsignal.a signal.h
 	# $(CC) -c $(CPPFLAG) $(CFLAG) $< -o $@
 
 libsignal.a: ../signal.f90
-	$(FC) -c -cpp -Wno-unused-function -std=f2018 -Wall -pedantic -O3 -ffast-math -march=native ../signal.f90
+	$(FC) -c -cpp -fPIC -frecursive -Wno-unused-function -std=f2018 -Wall -pedantic -O3 -ffast-math -march=native ../signal.f90
 	ar rcs libsignal.a signal.o
 	rm -f signal.o signal.mod
 

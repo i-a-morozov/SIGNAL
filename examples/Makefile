@@ -1,5 +1,5 @@
 lib += -lsignal
-lib += -llapack -lblas
+lib += -llapack -lblas -larpack
 lib += -lm
 lib += -lfftw3
 lib += -lgsl -lgslcblas
@@ -8,7 +8,7 @@ lib += -lgfortran
 fc = gfortran-10
 cc = gcc-10
 
-fcf = -cpp -std=f2018 -Wall -pedantic -O3 -ffast-math -march=native
+fcf = -cpp -std=f2018 -fPIC -frecursive -Wall -pedantic -O3 -ffast-math -march=native
 ccf = -std=c99 -Wall -pedantic -O3 -ffast-math -march=native
 
 all: example01

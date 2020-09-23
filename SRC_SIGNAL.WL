@@ -282,8 +282,8 @@ S$MAKE$MATRIX[                      (* -- MAKE MATRIX *)
 (* ################################################################################################################################################################ *)
 ClearAll[S$MAKE$SIGNAL$ROW] ;
 S$MAKE$SIGNAL$ROW[MATRIX_] := Flatten[List[First[MATRIX],Last[MATRIX]]] ;
-ClearAll[S$MAKE$SIGNAL$SUM$DIAGONAL] ;
-S$MAKE$SIGNAL$SUM$DIAGONAL[MATRIX_] := Block[
+ClearAll[S$MAKE$SIGNAL$DIAGONAL] ;
+S$MAKE$SIGNAL$$DIAGONAL[MATRIX_] := Block[
   {NR, NC, ROTATE, DIAGONAL},
   {NR, NC} = Dimensions[MATRIX] ;
   ROTATE = Reverse[Transpose[MATRIX]] ;
@@ -323,22 +323,12 @@ ClearAll[S$MAKE$SIGNAL] ;
 S$MAKE$SIGNAL::usage = "
 S$MAKE$SIGNAL[MATRIX] -- generate signal for given history matrix <MATRIX> (matrix)
 " ;
-Options[S$MAKE$SIGNAL] = List[
-  Rule["METHOD","ROW"]              (* -- SIGNAL CONSTRUCTION METHOD, "ROW" OR "SUM" *)
-] ;
 S$MAKE$SIGNAL[                      (* -- MAKE SIGNAL *)
   List[MATRIX__List],               (* -- INPUT HISTORY MATRIX (MATRIX) *)
-  OPTIONS:OptionsPattern[]
+  BUILDER_:S$MAKE$SIGNAL$DIAGONAL   (* -- BUILDER FUNCTION (S$MAKE$SIGNAL$ROW, S$MAKE$SIGNAL$SUM OR S$MAKE$SIGNAL$DIAGONAL (DEFAULT)) *)
 ] := Block[
   {SIGNAL},
-  If[
-    SameQ[OptionValue["METHOD"],"ROW"],
-    SIGNAL = S$MAKE$SIGNAL$ROW[List[MATRIX]] ;
-  ] ;
-  If[
-    SameQ[OptionValue["METHOD"],"SUM"],
-    SIGNAL = S$MAKE$SIGNAL$SUM[List[MATRIX]] ;
-  ] ;
+  SIGNAL = BUILDER[List[MATRIX]] ;
   SIGNAL = Developer`ToPackedArray[SIGNAL] ;
   SIGNAL
 ] ;
@@ -367,13 +357,10 @@ ClearAll[S$SVD$FILTER] ;
 S$SVD$FILTER::usage = "
 S$SVD$FILTER[NUMBER,SIGNAL] -- apply svd filter using <NUMBER> (integer) singular values to given signal <SIGNAL> (list)
 " ;
-Options[S$SVD$FILTER] = List[
-  Rule["METHOD","SUM"]              (* -- SIGNAL CONSTRUCTION METHOD, "ROW" OR "SUM" *)
-] ;
 S$SVD$FILTER[                       (* -- SVD FILTER *)
   NUMBER_Integer,                   (* -- NUMBER OF SINGULAR VALUE TO KEEP (INTEGER) *)
   SIGNAL_List,                      (* -- INPUT SIGNAL (LIST) *)
-  OPTIONS:OptionsPattern[]
+  BUILDER_:S$MAKE$SIGNAL$DIAGONAL   (* -- BUILDER FUNCTION (S$MAKE$SIGNAL$ROW, S$MAKE$SIGNAL$SUM OR S$MAKE$SIGNAL$DIAGONAL (DEFAULT)) *)
 ] := Block[
   {DATA,LENGTH,MATRIX,MTU,MTS,MTV,SVL},
   DATA = SIGNAL ;
@@ -381,7 +368,7 @@ S$SVD$FILTER[                       (* -- SVD FILTER *)
   MATRIX = S$MAKE$MATRIX[SIGNAL] ;
   List[MTU,MTS,MTV] = SingularValueDecomposition[MATRIX,NUMBER] ;
   MATRIX = Dot[MTU,MTS,Transpose[MTV]] ;
-  S$MAKE$SIGNAL[MATRIX,OPTIONS]
+  S$MAKE$SIGNAL[MATRIX,BUILDER]
 ] ;
 (* ################################################################################################################################################################ *)
 (* GENERATE HARMONICS *)
