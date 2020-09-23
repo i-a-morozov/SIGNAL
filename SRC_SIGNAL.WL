@@ -236,6 +236,25 @@ S$PAD$ZEROS[                        (* -- PAD ZEROS (LIST) *)
   RPAD_Integer,                     (* -- NUMBER OF RIGHT ZEROS (INTEGER) *)
   SIGNAL_List                       (* -- SIGNAL (LIST) *)
 ] := Developer`ToPackedArray[Flatten[List[ConstantArray[N[0],LPAD],SIGNAL,ConstantArray[N[0],RPAD]]]] ;
+ClearAll[S$NEXT$NUMBER] ;
+S$NEXT$NUMBER::usage = "
+S$NEXT$NUMBER[NUMBER] -- return next power of two number greater then <NUMBER> (integer)
+" ;
+S$NEXT$NUMBER[NUMBER_Integer] := 2^Ceiling[Log[N[NUMBER]]/Log[N[2.0]]] ;
+ClearAll[S$PAD$LENGTH] ;
+S$PAD$LENGTH::usage = "
+S$PAD$LENGTH[NUMBER] -- return numbers to pad (sum) to the next power of two
+" ;
+S$PAD$LENGTH[NUMBER_Integer] := Block[
+	{TOTAL},
+	TOTAL = Subtract[S$NEXT$NUMBER[NUMBER],NUMBER] ;
+	List[Floor[Divide[TOTAL,Plus[1,1]]],Ceiling[Divide[TOTAL,Plus[1,1]]]]
+] ;
+S$PAD$ZEROS[SIGNAL_List] := Block[
+  {LPAD, RPAD},
+  {LPAD, RPAD} = S$PAD$LENGTH[Length[SIGNAL]] ;
+  S$PAD$ZEROS[LPAD,RPAD,SIGNAL]
+] ;
 (* ################################################################################################################################################################ *)
 (* WINDOW WEIGHTED MEAN *)
 (* ################################################################################################################################################################ *)
