@@ -62,8 +62,8 @@ build_$(EPICS_HOST_ARCH)/%.o: %.c libsignal.a signal.h
 	$(CC) -c $(CPPFLAG) $(CFLAG) $< -o $@
 	# $(CC) -c $(CPPFLAG) $(CFLAG) $< -o $@
 
-libsignal.a: signal.f90
-	$(FC) -c -cpp -Wno-unused-function -std=f2018 -Wall -pedantic -O3 -ffast-math -march=native signal.f90
+libsignal.a: ../signal.f90
+	$(FC) -c -cpp -Wno-unused-function -std=f2018 -Wall -pedantic -O3 -ffast-math -march=native ../signal.f90
 	ar rcs libsignal.a signal.o
 	rm -f signal.o signal.mod
 

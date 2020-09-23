@@ -47,8 +47,8 @@ example08: libsignal.a signal.mod example08.f90
 libsignal.a: signal.o
 	ar rcs libsignal.a signal.o
 
-signal.o: signal.f90
-	$(fc) -c $(fcf) -Wno-unused-function signal.f90
+signal.o: ../signal.f90
+	$(fc) -c $(fcf) -Wno-unused-function ../signal.f90
 
 clean:
 	rm -f libsignal.a
