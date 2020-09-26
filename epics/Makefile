@@ -8,10 +8,10 @@ PROGRAM  = decomposition
 INCDIR += $(EPICS_BASE)/include/os/Linux
 INCDIR += $(EPICS_BASE)/include
 INCDIR += $(EPICS_BASE)/include/compiler/gcc
-INCDIR += .
+INCDIR += ../src
 
 LIBDIR += $(EPICS_BASE)/lib/$(EPICS_HOST_ARCH)
-LIBDIR += .
+LIBDIR += ../src
 
 LIB    += ca Com
 LIB    += m
@@ -36,11 +36,8 @@ all: $(PROGRAM)
 .PHONY: clean realclean
 clean:
 	rm -rf build_*
-	rm -f libsignal.a
-
-realclean: clean
-	rm -f $(foreach file,$(PROGRAM),$(BINDIR)/$(file))
-	rm -f libsignal.a
+	rm -f decomposition
+	rm -f *.mod *.smod
 
 build_%:
 	mkdir $@
@@ -58,13 +55,11 @@ build_$(EPICS_HOST_ARCH)/$(PROGRAM): $(OBJ)
 	$(CC) -o $@ $^ $(LDFLAG)
 	# $(CXX) -o $@ $^ $(LDFLAG)
 
-build_$(EPICS_HOST_ARCH)/%.o: %.c libsignal.a signal.h
+build_$(EPICS_HOST_ARCH)/%.o: %.c ../src/libsignal.a ../src/signal.h
 	$(CC) -c $(CPPFLAG) $(CFLAG) $< -o $@
 	# $(CC) -c $(CPPFLAG) $(CFLAG) $< -o $@
 
-libsignal.a: ../signal.f90
-	$(FC) -c -cpp -fPIC -frecursive -Wno-unused-function -std=f2018 -Wall -pedantic -O3 -ffast-math -march=native ../signal.f90
-	ar rcs libsignal.a signal.o
-	rm -f signal.o signal.mod
+../src/libsignal.a: ../src/*.f90
+	make -C ../src
 
 -include build_$(EPICS_HOST_ARCH)/*.d

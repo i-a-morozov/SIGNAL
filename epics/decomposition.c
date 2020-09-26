@@ -38,43 +38,60 @@ int main(){
     SEVCHK(ca_pend_io(pend), "error: ca_pend_io") ;
 
     // format
+    int flag = 0 ;
     double signal[2*length] ;
     convert_real_(&length, read, signal) ;
 
     // set window
     int order = 2 ;
     double window[length] ;
-    window_(&length, &order, window) ;
+    window_cos_(&length, &order, window) ;
     double total = 0.0 ;
     for(int i = 0; i < length; i++){
         total = total + window[i] ;
     }
 
-    int flag ;
+    double sequence[2*length] ;
+
+    // pre-process
+    remove_window_mean_(&length, &total, window, signal, sequence) ;
+    *signal = *sequence ;
+
+    // apply window
+    apply_window_(&length, window, signal, sequence) ;
+    *signal = *sequence ;
+
     int peak ;
-    double frequency  ;
+    int method = 2 ;
+    double frequency ;
 
-    // frequency (bin)
-    flag = 0 ;
+    // frequency_ (bin)
     peak = 0 ;
-    frequency = frequency_(&flag, &peak, &length, &total, window, signal) ;
+    frequency = frequency_(&flag, &peak, &method, &length, signal) ;
     printf("frequency_\n") ;
     printf("%.15f\n", frequency) ;
     printf("\n") ;
 
-    // frequency (peak)
-    flag = 0 ;
-    peak = 1 ;
-    frequency = frequency_(&flag, &peak, &length, &total, window, signal) ;
+    // frequency_ (peak)
     printf("frequency_\n") ;
-    printf("%.15f\n", frequency) ;
+    for (int i = 1; i <= 3 ; i++)
+    {
+        peak = i ;
+        frequency = frequency_(&flag, &peak, &method, &length, signal) ;
+        printf("%.15f\n", frequency) ;
+    }
     printf("\n") ;
 
-    // decomposition (subtract)
-    int loop = 3 ; 
+    // restore signal
+    convert_real_(&length, read, signal) ;
+
+    int mode ;
+    int loop = 3 ;
     double fre_amp[loop], cos_amp[loop], sin_amp[loop] ;
-    peak = 0 ;
-    decomposition_(&flag, &peak, &length, &total, window, signal, &loop, fre_amp, cos_amp, sin_amp) ;
+
+    // decomposition_ (subtract)
+    mode = 0 ;
+    decomposition_(&flag, &method, &mode, &length, &length, &total, window, signal, &loop, fre_amp, cos_amp, sin_amp) ;
     printf("decomposition_\n") ;
     for(int i = 0; i < loop; i++){
         printf("%.15f %.15f %.15f\n", fre_amp[i], cos_amp[i], sin_amp[i]) ;
@@ -84,31 +101,46 @@ int main(){
     }
     printf("\n") ;
 
-    // frequency list (subtract)
-    peak = 0 ;
-    frequency_list_(&flag, &peak, &length, &total, window, signal, &loop, fre_amp) ;
+    // frequency_list_ (subtract)
+    frequency_list_(&flag, &method, &mode, &length, &length, &total, window, signal, &loop, fre_amp) ;
     printf("frequency_list_\n") ;
     for(int i = 0; i < loop; i++){
         printf("%.15f\n", fre_amp[i]) ;
     }
     printf("\n") ;
 
-    // amplitude list (subtract)
+    // decomposition_ (peak)
+    mode = 1 ;
+    decomposition_(&flag, &method, &mode, &length, &length, &total, window, signal, &loop, fre_amp, cos_amp, sin_amp) ;
+    printf("decomposition_\n") ;
+    for(int i = 0; i < loop; i++){
+        printf("%.15f %.15f %.15f\n", fre_amp[i], cos_amp[i], sin_amp[i]) ;
+        fre_amp[i] = 0.0 ;
+        cos_amp[i] = 0.0 ;
+        sin_amp[i] = 0.0 ;
+    }
+    printf("\n") ;
+
+    // frequency_list_ (peak)
+    frequency_list_(&flag, &method, &mode, &length, &length, &total, window, signal, &loop, fre_amp) ;
+    printf("frequency_list_\n") ;
+    for(int i = 0; i < loop; i++){
+        printf("%.15f\n", fre_amp[i]) ;
+    }
+    printf("\n") ;
+
+    // amplitude_list_
     amplitude_list_(&flag, &length, &total, window, signal, &loop, fre_amp, cos_amp, sin_amp) ;
     printf("amplitude_list_\n") ;
     for(int i = 0; i < loop; i++){
         printf("%.15f %.15f %.15f\n", fre_amp[i], cos_amp[i], sin_amp[i]) ;
+        cos_amp[i] = 0.0 ;
+        sin_amp[i] = 0.0 ;
     }
     printf("\n") ;
 
-    // fit_
+    // fit_ (least squares)
     printf("fit_ \n") ;
-    for (int i = 1; i <= loop ; i++)
-    {
-        peak = i ;
-        frequency = frequency_(&flag, &peak, &length, &total, window, signal) ;
-        fre_amp[i-1] = frequency ;
-    }
     double mean ;
     double error ;
     fit_(&length, data, &loop, fre_amp, &mean, cos_amp, sin_amp, &error) ;

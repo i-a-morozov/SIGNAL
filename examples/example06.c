@@ -1,7 +1,3 @@
-// gfortran -c -cpp -std=f2018 -Wall -pedantic -O3 -ffast-math -march=native -Wno-unused-function signal.f90
-// ar rcs libsignal.a signal.o
-// gcc -o example06 -std=c99 -Wall -pedantic -O3 -ffast-math -march=native -L. -I. example06.c -lsignal  -llapack -lblas -lm -lfftw3 -lgsl -lgslcblas -lgfortran
-
 // EXAMPLE-06: C INTERFACE
 
 #include <stdio.h>
@@ -9,20 +5,36 @@
 
 #include "signal.h"
 
-// SIGNAL FUNCTIONS WITH C INTERFACE
+// SIGNAL FUNCTIONS WITH EXPLICIT C INTERFACE
 
-// void    convert_real_(int*, double*, double*) ;
-// void    convert_complex_(int*, double*, double*, double*) ;
+// void    generate_signal_(int*, int*, double*, int*, double*, double*, double*, double*) ;
+// void    ffrft_(int*, double*, double*) ;
+// void    fft_external_(int*, int*, double*) ;
 // void    fft_radix_two_(int*, int*, double*) ;
 // void    fft_radix_eight_(int*, int*, double*) ;
-// void    fft_external_(int*, int*, double*) ;
-// void    ffrft_(int*, double*, double*) ;
-// void    window_(int*, int*, double*) ;
+// void    compute_table_(int*) ;
+// void    destroy_table_() ;
+// void    convert_real_(int*, double*, double*) ;
+// void    convert_complex_(int*, double*, double*, double*) ;
+// int     round_up_(int*) ;
+// void    pad_(int*, int*, double*, double*) ;
+// void    remove_mean_(int*, double*, double*) ;
+// void    remove_window_mean_(int*, double*, double*, double*, double*) ;
+// void    apply_window_(int*, double*, double*, double*) ;
+// void    filter_(int*, double*, int*) ;
 // int     peak_(int*, double*, int*) ;
-// double  frequency_(int*, int*, int*, double*, double*, double*) ;
-// void    decomposition_(int*, int*, int*, double*, double*, double*, int*, double*, double*, double*) ;
-// void    frequency_list_(int*, int*, int*, double*, double*, double*, int*, double*) ;
+// void    window_cos_(int*, int*, double*) ;
+// void    window_cos_generic_(int*, double*, double*) ;
+// void    window_kaiser_(int*, double*, double*) ;
+// double  frequency_(int*, int*, int*, int*, double*) ;
+// double  frequency__(int*, int*, int*, int*, double*) ;
+// void    decomposition_(int*, int*, int*, int*, int*, double*, double*, double*, int*, double*, double*, double*) ;
+// void    frequency_list_(int*, int*, int*, int*, int*, double*, double*, double*, int*, double*) ;
+// void    amplitude_(int*, int*, double*, double*, double*, double*, double*, double*, double*) ;
 // void    amplitude_list_(int*, int*, double*, double*, double*, int*, double*, double*, double*) ;
+// void    decomposition__(int*, int*, int*, int*, int*, double*, double*, double*, int*, double*, double*, double*) ;
+// void    frequency_list__(int*, int*, int*, int*, int*, double*, double*, double*, int*, double*) ;
+// void    frequency_correction_(int*, int*, int*, int*, int*, double*, double*, int*, double*, double*, double*) ;
 // void    fit_(int*, double*, int*, double*, double*, double*, double*, double*) ;
 
 int main(){
@@ -73,18 +85,29 @@ int main(){
     // set window
     int order = 4 ;
     double window[length] ;
-    window_(&length, &order, window) ;
+    window_cos_(&length, &order, window) ;
     double total = 0.0 ;
     for (int i = 0; i < length; i += 1) {
         total = total + window[i] ;
     }
 
+    double sequence[2*length] ;
+
+    // pre-process
+    remove_window_mean_(&length, &total, window, sample, sequence) ;
+    *sample = *sequence ;
+
+    // apply window
+    apply_window_(&length, window, sample, sequence) ;
+    *sample = *sequence ;
+
     int peak ;
+    int method = 2 ;
     double frequency ;
 
     // frequency_ (bin)
     peak = 0 ;
-    frequency = frequency_(&flag, &peak, &length, &total, window, sample) ;
+    frequency = frequency_(&flag, &peak, &method, &length, sample) ;
     printf("frequency_\n") ;
     printf("%.15f\n", frequency) ;
     printf("\n") ;
@@ -94,18 +117,25 @@ int main(){
     for (int i = 1; i <= 5 ; i++)
     {
         peak = i ;
-        frequency = frequency_(&flag, &peak, &length, &total, window, sample) ;
+        frequency = frequency_(&flag, &peak, &method, &length, sample) ;
         printf("%.15f\n", frequency) ;
     }
     printf("\n") ;
 
-    int method ;
+    // restore signal
+    if (flag == 0) {
+        convert_real_(&length, sample_r, sample) ;
+    } else {
+        convert_complex_(&length, sample_r, sample_i, sample) ;
+    }
+
+    int mode ;
     int loop = 5 ;
     double fre_amp[loop], cos_amp[loop], sin_amp[loop] ;
 
     // decomposition_ (subtract)
-    method = 0 ;
-    decomposition_(&flag, &method, &length, &total, window, sample, &loop, fre_amp, cos_amp, sin_amp) ;
+    mode = 0 ;
+    decomposition_(&flag, &method, &mode, &length, &length, &total, window, sample, &loop, fre_amp, cos_amp, sin_amp) ;
     printf("decomposition_\n") ;
     for(int i = 0; i < loop; i++){
         printf("%.15f %.15f %.15f\n", fre_amp[i], cos_amp[i], sin_amp[i]) ;
@@ -115,9 +145,17 @@ int main(){
     }
     printf("\n") ;
 
+    // frequency_list_ (subtract)
+    frequency_list_(&flag, &method, &mode, &length, &length, &total, window, sample, &loop, fre_amp) ;
+    printf("frequency_list_\n") ;
+    for(int i = 0; i < loop; i++){
+        printf("%.15f\n", fre_amp[i]) ;
+    }
+    printf("\n") ;
+
     // decomposition_ (peak)
-    method = 1 ;
-    decomposition_(&flag, &method, &length, &total, window, sample, &loop, fre_amp, cos_amp, sin_amp) ;
+    mode = 1 ;
+    decomposition_(&flag, &method, &mode, &length, &length, &total, window, sample, &loop, fre_amp, cos_amp, sin_amp) ;
     printf("decomposition_\n") ;
     for(int i = 0; i < loop; i++){
         printf("%.15f %.15f %.15f\n", fre_amp[i], cos_amp[i], sin_amp[i]) ;
@@ -128,7 +166,7 @@ int main(){
     printf("\n") ;
 
     // frequency_list_ (peak)
-    frequency_list_(&flag, &method, &length, &total, window, sample, &loop, fre_amp) ;
+    frequency_list_(&flag, &method, &mode, &length, &length, &total, window, sample, &loop, fre_amp) ;
     printf("frequency_list_\n") ;
     for(int i = 0; i < loop; i++){
         printf("%.15f\n", fre_amp[i]) ;
@@ -140,17 +178,13 @@ int main(){
     printf("amplitude_list_\n") ;
     for(int i = 0; i < loop; i++){
         printf("%.15f %.15f %.15f\n", fre_amp[i], cos_amp[i], sin_amp[i]) ;
+        cos_amp[i] = 0.0 ;
+        sin_amp[i] = 0.0 ;
     }
     printf("\n") ;
 
     // fit_ (least squares)
     printf("fit_ \n") ;
-    for (int i = 1; i <= loop ; i++)
-    {
-        peak = i ;
-        frequency = frequency_(&flag, &peak, &length, &total, window, sample) ;
-        fre_amp[i-1] = frequency ;
-    }
     double mean ;
     double error ;
     fit_(&length, sample_r, &loop, fre_amp, &mean, cos_amp, sin_amp, &error) ;

@@ -1,8 +1,3 @@
-! ulimit -s unlimited
-! gfortran -c -cpp -std=f2018 -Wall -pedantic -O3 -ffast-math -march=native -Wno-unused-function signal.f90
-! ar rcs libsignal.a signal.o
-! gfortran -o example07 -fopenmp -cpp -std=f2018 -Wall -pedantic -O3 -ffast-math -march=native -L. example07.f90 -lsignal  -llapack -lblas -lm -lfftw3 -lgsl -lgslcblas -lgfortran
-
 ! EXAMPLE-07: FREQUENCY ESTIMATION (FFT DATA MEMORIZATION)
 PROGRAM EXAMPLE
 
@@ -13,6 +8,7 @@ PROGRAM EXAMPLE
   INTEGER(IK), PARAMETER                 :: LENGTH = 2_IK**10_IK  ! INPUT SIGNAL LENGTH
   INTEGER(IK)                            :: FLAG                  ! COMPLEX FLAG (0/1)
   INTEGER(IK)                            :: PEAK                  ! FOURIE SPECTRA PEAK ID
+  INTEGER(IK)                            :: METHOD                ! FREQUENCY ESTIMATION METHOD
   INTEGER(IK)                            :: ORDER                 ! COSINE WINDOW ORDER
   REAL(RK), DIMENSION(LENGTH)            :: WINDOW                ! COSINE WINDOW DATA
   REAL(RK)                               :: TOTAL                 ! SUM OF WINDOW ELEMENTS
@@ -57,9 +53,13 @@ PROGRAM EXAMPLE
 
   ! ESTIMATE FREQUENCY
   PEAK = 0_IK
-  !$OMP PARALLEL DO
+  METHOD = FREQUENCY_PARABOLA
+  !$OMP PARALLEL DO PRIVATE(SIGNAL)
   DO I = 1_IK, LIMIT, 1_IK
-    OUTPUT(I) = FREQUENCY__(FLAG, PEAK, LENGTH, TOTAL, WINDOW, DATA(I, :))
+    CALL REMOVE_WINDOW_MEAN_(LENGTH, TOTAL, WINDOW, DATA(I, :), SIGNAL)
+    SIGNAL(1_IK::2_IK) = SIGNAL(1_IK::2_IK)*WINDOW
+    SIGNAL(2_IK::2_IK) = SIGNAL(2_IK::2_IK)*WINDOW
+    OUTPUT(I) = FREQUENCY__(FLAG, PEAK, METHOD, LENGTH, SIGNAL)
   END DO
   !$OMP END PARALLEL DO
 

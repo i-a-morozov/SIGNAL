@@ -1,7 +1,3 @@
-! gfortran -c -cpp -std=f2018 -Wall -pedantic -O3 -ffast-math -march=native -Wno-unused-function signal.f90
-! ar rcs libsignal.a signal.o
-! gfortran -o example04 -cpp -std=f2018 -Wall -pedantic -O3 -ffast-math -march=native -L. example04.f90 -lsignal -llapack -lblas -lm -lfftw3 -lgsl -lgslcblas -lgfortran
-
 ! EXAMPLE-04: SVD AND LEAST SQUARES
 PROGRAM EXAMPLE
 
