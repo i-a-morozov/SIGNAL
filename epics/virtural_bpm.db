@@ -1,0 +1,10 @@
+record(waveform, "virtual_bpm:x_data") {
+    field(DESC, "BPM")
+    field(NELM, "4096")
+    field(FTVL, "DOUBLE")
+}
+record(waveform, "virtual_bpm:y_data") {
+    field(DESC, "BPM")
+    field(NELM, "4096")
+    field(FTVL, "DOUBLE")
+}
