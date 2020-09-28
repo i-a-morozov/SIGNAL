@@ -63,4 +63,5 @@ clean:
 	rm -f  example06
 	rm -f  example07
 	rm -f  example08
+	rm -f  example09
 	rm -f *.mod *.smod
