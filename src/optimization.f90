@@ -186,7 +186,7 @@ SUBMODULE (SIGNAL) OPTIMIZATION
     END IF
   END FUNCTION GOLDEN_
   ! ############################################################################################################################# !
-  ! ESTIMATE FREQUENCY ESTIMATION (BINARY SEARCH)
+  ! REFINE FREQUENCY ESTIMATION (BINARY SEARCH)
   ! (FUNCTION) BINARY_AMPLITUDE_(<FLAG>, <LENGTH>, <TOTAL>, <WINDOW>, <SEQUENCE>, <GUESS>, <INTERVAL>, <LIMIT>, <TOLERANCE>)
   ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
   ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK), POWER OF TWO, NOT CHECKED
@@ -222,7 +222,7 @@ SUBMODULE (SIGNAL) OPTIMIZATION
     END FUNCTION SEARCH_
   END FUNCTION
   ! ############################################################################################################################# !
-  ! ESTIMATE FREQUENCY ESTIMATION (GOLDEN SEARCH)
+  ! REFINE FREQUENCY ESTIMATION (GOLDEN SEARCH)
   ! (FUNCTION) GOLDEN_AMPLITUDE_(<FLAG>, <LENGTH>, <TOTAL>, <WINDOW>, <SEQUENCE>, <GUESS>, <INTERVAL>, <LIMIT>, <TOLERANCE>)
   ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
   ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK), POWER OF TWO, NOT CHECKED

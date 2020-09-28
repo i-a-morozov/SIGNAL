@@ -713,6 +713,10 @@ MODULE SIGNAL
   INTEGER(IK), PUBLIC, PARAMETER :: FREQUENCY_FFT          = 0_IK                ! FFT
   INTEGER(IK), PUBLIC, PARAMETER :: FREQUENCY_FFRFT        = 1_IK                ! FFRFT
   INTEGER(IK), PUBLIC, PARAMETER :: FREQUENCY_PARABOLA     = 2_IK                ! PARABOLA
+  INTEGER(IK), PUBLIC, PARAMETER :: INITIAL_FFT            = 0_IK                ! INITIAL FREQUENCY (FFT)
+  INTEGER(IK), PUBLIC, PARAMETER :: REFINED_FFRFT          = 0_IK                ! REFINED FREQUENCY (FFRFT)
+  INTEGER(IK), PUBLIC, PARAMETER :: REFINED_PARABOLA       = 1_IK                ! REFINED FREQUENCY (FFRFT + PARABOLA)
+  INTEGER(IK), PUBLIC, PARAMETER :: REFINED_SEARCH         = 2_IK                ! REFINED FREQUENCY (MAXIMUM SEARCH)
   ! ############################################################################################################################# !
   ! FREQUENCY ESTIMATION
   ! (FUNCTION) FREQUENCY_(<FLAG>, <PEAK>, <METHOD>, <LENGTH>, <SEQUENCE>)
@@ -779,6 +783,37 @@ MODULE SIGNAL
     END FUNCTION FREQUENCY_INITIAL_
   END INTERFACE
   PUBLIC :: FREQUENCY_INITIAL_
+  ! ############################################################################################################################# !
+  ! REFINE FREQUENCY ESTIMATION (COMMON INTERFACE FOR FFRFT, PARABOLA AND SEARCH)
+  ! (FUNCTION) GOLDEN_AMPLITUDE_(<FLAG>, <LENGTH>, <TOTAL>, <WINDOW>, <SEQUENCE>, <GUESS>, <INTERVAL>, <LIMIT>, <TOLERANCE>)
+  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
+  ! <METHOD>               -- (IN)     METHOD (SEE GLOBAL REFINED_* CONSTANTS)
+  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK), POWER OF TWO, NOT CHECKED
+  ! <TOTAL>                -- (IN)     SUM(WINDOW) (RK)
+  ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
+  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
+  ! <GUESS>                -- (IN)     INITIAL GUESS VALUE (RK)
+  ! <INTERVAL>             -- (IN)     SEARCH INTERVAL (RK), GUESS IS IN THE MIDLE
+  ! <LIMIT>                -- (IN)     MAXIMUM NUMBER OF ITERATIONS (IK)
+  ! <TOLERANCE>            -- (IN)     MAXIMUM TOLERANCE (RK)
+  ! <BINARY_AMPLITUDE_>    -- (OUT)    REFINED FREQUENCY
+  ! double  frequenc_refined_(int*, int*, int*, double*, double*, double*, double*, double*, int*, double*) ;
+  INTERFACE
+    MODULE REAL(RK) FUNCTION FREQUENCY_REFINED_(FLAG, METHOD, LENGTH, TOTAL, WINDOW, SEQUENCE, GUESS, INTERVAL, LIMIT, TOLERANCE) &
+      BIND(C, NAME = "frequency_refined_")
+      INTEGER(IK), INTENT(IN):: FLAG
+      INTEGER(IK), INTENT(IN):: METHOD
+      INTEGER(IK), INTENT(IN):: LENGTH
+      REAL(RK), INTENT(IN) :: TOTAL
+      REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: WINDOW
+      REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
+      REAL(RK), INTENT(IN) :: GUESS
+      REAL(RK), INTENT(IN) :: INTERVAL
+      INTEGER(IK), INTENT(IN) :: LIMIT
+      REAL(RK), INTENT(IN) :: TOLERANCE
+    END FUNCTION FREQUENCY_REFINED_
+  END INTERFACE
+  PUBLIC :: FREQUENCY_REFINED_
   ! ############################################################################################################################# !
   ! DECOMPOSITION
   ! ############################################################################################################################# !
@@ -1095,7 +1130,7 @@ MODULE SIGNAL
   END INTERFACE
   PUBLIC :: GOLDEN_
   ! ############################################################################################################################# !
-  ! ESTIMATE FREQUENCY ESTIMATION (BINARY SEARCH)
+  ! REFINE FREQUENCY ESTIMATION (BINARY SEARCH)
   ! (FUNCTION) BINARY_AMPLITUDE_(<FLAG>, <LENGTH>, <TOTAL>, <WINDOW>, <SEQUENCE>, <GUESS>, <INTERVAL>, <LIMIT>, <TOLERANCE>)
   ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
   ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK), POWER OF TWO, NOT CHECKED
@@ -1124,7 +1159,7 @@ MODULE SIGNAL
   END INTERFACE
   PUBLIC :: BINARY_AMPLITUDE_
   ! ############################################################################################################################# !
-  ! ESTIMATE FREQUENCY ESTIMATION (GOLDEN SEARCH)
+  ! REFINE FREQUENCY ESTIMATION (GOLDEN SEARCH)
   ! (FUNCTION) GOLDEN_AMPLITUDE_(<FLAG>, <LENGTH>, <TOTAL>, <WINDOW>, <SEQUENCE>, <GUESS>, <INTERVAL>, <LIMIT>, <TOLERANCE>)
   ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
   ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK), POWER OF TWO, NOT CHECKED

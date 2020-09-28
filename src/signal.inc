@@ -3,3 +3,4 @@
 #define __MINLOC__   MINLOC
 #define __MAXLOC__   MAXLOC
 #define __SORT__     SORT_QUICK_
+#define __SEARCH__   GOLDEN_AMPLITUDE_
