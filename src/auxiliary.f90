@@ -159,7 +159,7 @@ SUBMODULE (SIGNAL) AUXILIARY
       ELSE
         SEQUENCE(1_IK::2_IK) = SEQUENCE(1_IK::2_IK)+COS_AMP(I)*FC+SIN_AMP(I)*FS
         SEQUENCE(2_IK::2_IK) = SEQUENCE(2_IK::2_IK)+SIN_AMP(I)*FC-COS_AMP(I)*FS
-      END IF  
+      END IF
     END DO
   END SUBROUTINE GENERATE_SIGNAL_
   ! ############################################################################################################################# !

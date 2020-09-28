@@ -146,7 +146,7 @@ MODULE SIGNAL
       INTEGER(IK), INTENT(IN) :: LST
     END SUBROUTINE SORT_QUICK_
   END INTERFACE
-    ! ############################################################################################################################# !
+  ! ############################################################################################################################# !
   ! GENERATE HARMONIC SIGNAL
   ! (SUBROUTINE) GENERATE_SIGNAL_(<FLAG>, <LENGTH>, <SEQUENCE>, <LOOP>, <FREQUENCY>, <MEAN>, <COS_AMP>, <SIN_AMP>)
   ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX SEQUENCE
@@ -169,6 +169,7 @@ MODULE SIGNAL
       REAL(RK), DIMENSION(LOOP), INTENT(IN) :: SIN_AMP
     END SUBROUTINE GENERATE_SIGNAL_
   END INTERFACE
+  PUBLIC :: GENERATE_SIGNAL_
   ! ############################################################################################################################# !
   ! TRANSFORMATION
   ! ############################################################################################################################# !
@@ -711,7 +712,7 @@ MODULE SIGNAL
   ! ############################################################################################################################# !
   INTEGER(IK), PUBLIC, PARAMETER :: FREQUENCY_FFT          = 0_IK                ! FFT
   INTEGER(IK), PUBLIC, PARAMETER :: FREQUENCY_FFRFT        = 1_IK                ! FFRFT
-  INTEGER(IK), PUBLIC, PARAMETER :: FREQUENCY_PARABOLA      = 2_IK                ! PARABOLA
+  INTEGER(IK), PUBLIC, PARAMETER :: FREQUENCY_PARABOLA     = 2_IK                ! PARABOLA
   ! ############################################################################################################################# !
   ! FREQUENCY ESTIMATION
   ! (FUNCTION) FREQUENCY_(<FLAG>, <PEAK>, <METHOD>, <LENGTH>, <SEQUENCE>)
@@ -945,7 +946,7 @@ MODULE SIGNAL
   PUBLIC :: FREQUENCY_LIST__
   ! ############################################################################################################################# !
   ! FREQUENCY CORRECTION
-  ! (SUBROUTINE) DECOMPOSITION_(<FLAG>, <METHOD>, <MODE>, <LENGTH>, <PAD>, <TOTAL>, <WINDOW>, <LOOP>, <FREQUENCY>, <COS_AMP>, <SIN_AMP>)
+  ! (SUBROUTINE) FREQUENCY_CORRECTION_(<FLAG>, <METHOD>, <MODE>, <LENGTH>, <PAD>, <TOTAL>, <WINDOW>, <LOOP>, <FREQUENCY>, <COS_AMP>, <SIN_AMP>)
   ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
   ! <METHOD>               -- (IN)     FREQUENCY APPROXIMATION METHOD (IK), FREQUENCY_FFT = 0_IK, FREQUENCY_FFRFT = 1_IK, FREQUECY_PARABOLA = 2_IK
   ! <MODE>                 -- (IN)     DECOMPOSTION MODE (IK), <MODE> = DECOMPOSITION_SUBTRACT = 0 OR <MODE> = DECOMPOSITION_PEAK = 1

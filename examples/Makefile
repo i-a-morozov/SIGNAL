@@ -22,6 +22,7 @@ all: example05
 all: example06
 all: example07
 all: example08
+all: example09
 
 example01: example01.f90 ../src/libsignal.a
 	$(fc) -o example01 $(fcf) -L$(src) -I$(src) -I$(mod) example01.f90 $(lib)
@@ -46,6 +47,9 @@ example07: example07.f90 ../src/libsignal.a
 
 example08: example08.f90 ../src/libsignal.a
 	$(fc) -o example08 $(fcf) -L$(src) -I$(src) -I$(mod) example08.f90 $(lib)
+
+example09: example09.f90 ../src/libsignal.a
+	$(fc) -o example09 $(fcf) -L$(src) -I$(src) -I$(mod) example09.f90 $(lib)
 
 ../src/libsignal.a: ../src/*.f90
 	make -C ../src
