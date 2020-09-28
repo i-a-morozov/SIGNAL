@@ -186,4 +186,76 @@ SUBMODULE (SIGNAL) OPTIMIZATION
     END IF
   END FUNCTION GOLDEN_
   ! ############################################################################################################################# !
+  ! ESTIMATE FREQUENCY ESTIMATION (BINARY SEARCH)
+  ! (FUNCTION) BINARY_AMPLITUDE_(<FLAG>, <LENGTH>, <TOTAL>, <WINDOW>, <SEQUENCE>, <GUESS>, <INTERVAL>, <LIMIT>, <TOLERANCE>)
+  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
+  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK), POWER OF TWO, NOT CHECKED
+  ! <TOTAL>                -- (IN)     SUM(WINDOW) (RK)
+  ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
+  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
+  ! <GUESS>                -- (IN)     INITIAL GUESS VALUE (RK)
+  ! <INTERVAL>             -- (IN)     SEARCH INTERVAL (RK), GUESS IS IN THE MIDLE
+  ! <LIMIT>                -- (IN)     MAXIMUM NUMBER OF ITERATIONS (IK)
+  ! <TOLERANCE>            -- (IN)     MAXIMUM TOLERANCE (RK)
+  ! <BINARY_AMPLITUDE_>    -- (OUT)    REFINED FREQUENCY
+  ! double  binary_amplitude_(int*, int*, double*, double*, double*, double*, double*, int*, double*) ;
+  MODULE REAL(RK) FUNCTION BINARY_AMPLITUDE_(FLAG, LENGTH, TOTAL, WINDOW, SEQUENCE, GUESS, INTERVAL, LIMIT, TOLERANCE) &
+    BIND(C, NAME = "binary_amplitude_")
+    INTEGER(IK), INTENT(IN):: FLAG
+    INTEGER(IK), INTENT(IN):: LENGTH
+    REAL(RK), INTENT(IN) :: TOTAL
+    REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: WINDOW
+    REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
+    REAL(RK), INTENT(IN) :: GUESS
+    REAL(RK), INTENT(IN) :: INTERVAL
+    INTEGER(IK), INTENT(IN) :: LIMIT
+    REAL(RK), INTENT(IN) :: TOLERANCE
+    BINARY_AMPLITUDE_ = BINARY_(SEARCH_, GUESS, INTERVAL, LIMIT, TOLERANCE)
+  CONTAINS
+    REAL(RK) FUNCTION SEARCH_(FREQUENCY)
+      REAL(RK), INTENT(IN) :: FREQUENCY
+      REAL(RK) :: COS_AMP
+      REAL(RK) :: SIN_AMP
+      REAL(RK) :: AMPLITUDE
+      CALL AMPLITUDE_(FLAG, LENGTH, TOTAL, WINDOW, SEQUENCE, FREQUENCY, COS_AMP, SIN_AMP, AMPLITUDE)
+      SEARCH_ = AMPLITUDE
+    END FUNCTION SEARCH_
+  END FUNCTION
+  ! ############################################################################################################################# !
+  ! ESTIMATE FREQUENCY ESTIMATION (GOLDEN SEARCH)
+  ! (FUNCTION) GOLDEN_AMPLITUDE_(<FLAG>, <LENGTH>, <TOTAL>, <WINDOW>, <SEQUENCE>, <GUESS>, <INTERVAL>, <LIMIT>, <TOLERANCE>)
+  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
+  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK), POWER OF TWO, NOT CHECKED
+  ! <TOTAL>                -- (IN)     SUM(WINDOW) (RK)
+  ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
+  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
+  ! <GUESS>                -- (IN)     INITIAL GUESS VALUE (RK)
+  ! <INTERVAL>             -- (IN)     SEARCH INTERVAL (RK), GUESS IS IN THE MIDLE
+  ! <LIMIT>                -- (IN)     MAXIMUM NUMBER OF ITERATIONS (IK)
+  ! <TOLERANCE>            -- (IN)     MAXIMUM TOLERANCE (RK)
+  ! <BINARY_AMPLITUDE_>    -- (OUT)    REFINED FREQUENCY
+  ! double  golden_amplitude_(int*, int*, double*, double*, double*, double*, double*, int*, double*) ;
+  MODULE REAL(RK) FUNCTION GOLDEN_AMPLITUDE_(FLAG, LENGTH, TOTAL, WINDOW, SEQUENCE, GUESS, INTERVAL, LIMIT, TOLERANCE) &
+    BIND(C, NAME = "golden_amplitude_")
+    INTEGER(IK), INTENT(IN):: FLAG
+    INTEGER(IK), INTENT(IN):: LENGTH
+    REAL(RK), INTENT(IN) :: TOTAL
+    REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: WINDOW
+    REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
+    REAL(RK), INTENT(IN) :: GUESS
+    REAL(RK), INTENT(IN) :: INTERVAL
+    INTEGER(IK), INTENT(IN) :: LIMIT
+    REAL(RK), INTENT(IN) :: TOLERANCE
+    GOLDEN_AMPLITUDE_ = GOLDEN_(SEARCH_, GUESS, INTERVAL, LIMIT, TOLERANCE)
+  CONTAINS
+    REAL(RK) FUNCTION SEARCH_(FREQUENCY)
+      REAL(RK), INTENT(IN) :: FREQUENCY
+      REAL(RK) :: COS_AMP
+      REAL(RK) :: SIN_AMP
+      REAL(RK) :: AMPLITUDE
+      CALL AMPLITUDE_(FLAG, LENGTH, TOTAL, WINDOW, SEQUENCE, FREQUENCY, COS_AMP, SIN_AMP, AMPLITUDE)
+      SEARCH_ = AMPLITUDE
+    END FUNCTION SEARCH_
+  END FUNCTION
+  ! ############################################################################################################################# !
 END SUBMODULE OPTIMIZATION

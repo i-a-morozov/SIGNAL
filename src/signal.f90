@@ -756,6 +756,30 @@ MODULE SIGNAL
   END INTERFACE
   PUBLIC :: FREQUENCY__
   ! ############################################################################################################################# !
+  ! INITIAL FREQUENCY ESTIMATION
+  ! (FUNCTION) FREQUENCY_INITIAL_(<FLAG>, <PEAK>, <METHOD>, <LENGTH>, <SEQUENCE>)
+  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
+  ! <PEAK>                 -- (IN)     PEAK NUMBER TO USE (IK), <PEAK> = 0 USE MAXIMUM BIN, <PEAK> = +N USE N'TH PEAK
+  ! <METHOD>               -- (IN)     INITIAL FREQUENCY APPROXIMATION METHOD (IK)
+  ! <LENGTH>               -- (IN)     INPUT SEQUENCE LENGTH (IK), POWER OF TWO, NOT CHECKED
+  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (PROCESSED, I.E. WITH WINDOW AND PADDED WITH ZEROS) (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
+  ! <FREQUENCY_>           -- (OUT)    FREQUENCY ESTIMATION (RK)
+  ! double  frequency_initial_(int*, int*, int*, int*, int*, double*, double*, double*) ;
+  INTERFACE
+    MODULE REAL(RK) FUNCTION FREQUENCY_INITIAL_(FLAG, PEAK, METHOD, LENGTH, PAD, TOTAL, WINDOW, SEQUENCE) &
+      BIND(C, NAME = "frequency_initial_")
+      INTEGER(IK), INTENT(IN):: FLAG
+      INTEGER(IK), INTENT(IN) :: PEAK
+      INTEGER(IK), INTENT(IN) :: METHOD
+      INTEGER(IK), INTENT(IN):: LENGTH
+      INTEGER(IK), INTENT(IN):: PAD
+      REAL(RK), INTENT(IN) :: TOTAL
+      REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: WINDOW
+      REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
+    END FUNCTION FREQUENCY_INITIAL_
+  END INTERFACE
+  PUBLIC :: FREQUENCY_INITIAL_
+  ! ############################################################################################################################# !
   ! DECOMPOSITION
   ! ############################################################################################################################# !
   INTEGER(IK), PUBLIC, PARAMETER :: DECOMPOSITION_SUBTRACT = 0_IK                ! DECOMPOSITION BY ITERATIVE SUBTRACTION
@@ -1070,5 +1094,63 @@ MODULE SIGNAL
     END FUNCTION GOLDEN_
   END INTERFACE
   PUBLIC :: GOLDEN_
+  ! ############################################################################################################################# !
+  ! ESTIMATE FREQUENCY ESTIMATION (BINARY SEARCH)
+  ! (FUNCTION) BINARY_AMPLITUDE_(<FLAG>, <LENGTH>, <TOTAL>, <WINDOW>, <SEQUENCE>, <GUESS>, <INTERVAL>, <LIMIT>, <TOLERANCE>)
+  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
+  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK), POWER OF TWO, NOT CHECKED
+  ! <TOTAL>                -- (IN)     SUM(WINDOW) (RK)
+  ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
+  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
+  ! <GUESS>                -- (IN)     INITIAL GUESS VALUE (RK)
+  ! <INTERVAL>             -- (IN)     SEARCH INTERVAL (RK), GUESS IS IN THE MIDLE
+  ! <LIMIT>                -- (IN)     MAXIMUM NUMBER OF ITERATIONS (IK)
+  ! <TOLERANCE>            -- (IN)     MAXIMUM TOLERANCE (RK)
+  ! <BINARY_AMPLITUDE_>    -- (OUT)    REFINED FREQUENCY
+  ! double  binary_amplitude_(int*, int*, double*, double*, double*, double*, double*, int*, double*) ;
+  INTERFACE
+    MODULE REAL(RK) FUNCTION BINARY_AMPLITUDE_(FLAG, LENGTH, TOTAL, WINDOW, SEQUENCE, GUESS, INTERVAL, LIMIT, TOLERANCE) &
+      BIND(C, NAME = "binary_amplitude_")
+      INTEGER(IK), INTENT(IN):: FLAG
+      INTEGER(IK), INTENT(IN):: LENGTH
+      REAL(RK), INTENT(IN) :: TOTAL
+      REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: WINDOW
+      REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
+      REAL(RK), INTENT(IN) :: GUESS
+      REAL(RK), INTENT(IN) :: INTERVAL
+      INTEGER(IK), INTENT(IN) :: LIMIT
+      REAL(RK), INTENT(IN) :: TOLERANCE
+    END FUNCTION
+  END INTERFACE
+  PUBLIC :: BINARY_AMPLITUDE_
+  ! ############################################################################################################################# !
+  ! ESTIMATE FREQUENCY ESTIMATION (GOLDEN SEARCH)
+  ! (FUNCTION) GOLDEN_AMPLITUDE_(<FLAG>, <LENGTH>, <TOTAL>, <WINDOW>, <SEQUENCE>, <GUESS>, <INTERVAL>, <LIMIT>, <TOLERANCE>)
+  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
+  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK), POWER OF TWO, NOT CHECKED
+  ! <TOTAL>                -- (IN)     SUM(WINDOW) (RK)
+  ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
+  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
+  ! <GUESS>                -- (IN)     INITIAL GUESS VALUE (RK)
+  ! <INTERVAL>             -- (IN)     SEARCH INTERVAL (RK), GUESS IS IN THE MIDLE
+  ! <LIMIT>                -- (IN)     MAXIMUM NUMBER OF ITERATIONS (IK)
+  ! <TOLERANCE>            -- (IN)     MAXIMUM TOLERANCE (RK)
+  ! <BINARY_AMPLITUDE_>    -- (OUT)    REFINED FREQUENCY
+  ! double  golden_amplitude_(int*, int*, double*, double*, double*, double*, double*, int*, double*) ;
+  INTERFACE
+    MODULE REAL(RK) FUNCTION GOLDEN_AMPLITUDE_(FLAG, LENGTH, TOTAL, WINDOW, SEQUENCE, GUESS, INTERVAL, LIMIT, TOLERANCE) &
+      BIND(C, NAME = "golden_amplitude_")
+      INTEGER(IK), INTENT(IN):: FLAG
+      INTEGER(IK), INTENT(IN):: LENGTH
+      REAL(RK), INTENT(IN) :: TOTAL
+      REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: WINDOW
+      REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
+      REAL(RK), INTENT(IN) :: GUESS
+      REAL(RK), INTENT(IN) :: INTERVAL
+      INTEGER(IK), INTENT(IN) :: LIMIT
+      REAL(RK), INTENT(IN) :: TOLERANCE
+    END FUNCTION
+  END INTERFACE
+  PUBLIC :: GOLDEN_AMPLITUDE_
   ! ############################################################################################################################# !
 END MODULE SIGNAL
