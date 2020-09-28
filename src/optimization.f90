@@ -233,7 +233,7 @@ SUBMODULE (SIGNAL) OPTIMIZATION
   ! <INTERVAL>             -- (IN)     SEARCH INTERVAL (RK), GUESS IS IN THE MIDLE
   ! <LIMIT>                -- (IN)     MAXIMUM NUMBER OF ITERATIONS (IK)
   ! <TOLERANCE>            -- (IN)     MAXIMUM TOLERANCE (RK)
-  ! <BINARY_AMPLITUDE_>    -- (OUT)    REFINED FREQUENCY
+  ! <GOLDEN_AMPLITUDE_>    -- (OUT)    REFINED FREQUENCY
   ! double  golden_amplitude_(int*, int*, double*, double*, double*, double*, double*, int*, double*) ;
   MODULE REAL(RK) FUNCTION GOLDEN_AMPLITUDE_(FLAG, LENGTH, TOTAL, WINDOW, SEQUENCE, GUESS, INTERVAL, LIMIT, TOLERANCE) &
     BIND(C, NAME = "golden_amplitude_")

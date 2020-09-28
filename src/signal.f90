@@ -785,7 +785,7 @@ MODULE SIGNAL
   PUBLIC :: FREQUENCY_INITIAL_
   ! ############################################################################################################################# !
   ! REFINE FREQUENCY ESTIMATION (COMMON INTERFACE FOR FFRFT, PARABOLA AND SEARCH)
-  ! (FUNCTION) GOLDEN_AMPLITUDE_(<FLAG>, <LENGTH>, <TOTAL>, <WINDOW>, <SEQUENCE>, <GUESS>, <INTERVAL>, <LIMIT>, <TOLERANCE>)
+  ! (FUNCTION) FREQUENCY_REFINED_(<FLAG>, <LENGTH>, <TOTAL>, <WINDOW>, <SEQUENCE>, <GUESS>, <INTERVAL>, <LIMIT>, <TOLERANCE>)
   ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
   ! <METHOD>               -- (IN)     METHOD (SEE GLOBAL REFINED_* CONSTANTS)
   ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK), POWER OF TWO, NOT CHECKED
@@ -796,7 +796,7 @@ MODULE SIGNAL
   ! <INTERVAL>             -- (IN)     SEARCH INTERVAL (RK), GUESS IS IN THE MIDLE
   ! <LIMIT>                -- (IN)     MAXIMUM NUMBER OF ITERATIONS (IK)
   ! <TOLERANCE>            -- (IN)     MAXIMUM TOLERANCE (RK)
-  ! <BINARY_AMPLITUDE_>    -- (OUT)    REFINED FREQUENCY
+  ! <FREQUENCY_REFINED_>   -- (OUT)    REFINED FREQUENCY
   ! double  frequenc_refined_(int*, int*, int*, double*, double*, double*, double*, double*, int*, double*) ;
   INTERFACE
     MODULE REAL(RK) FUNCTION FREQUENCY_REFINED_(FLAG, METHOD, LENGTH, TOTAL, WINDOW, SEQUENCE, GUESS, INTERVAL, LIMIT, TOLERANCE) &
@@ -1170,7 +1170,7 @@ MODULE SIGNAL
   ! <INTERVAL>             -- (IN)     SEARCH INTERVAL (RK), GUESS IS IN THE MIDLE
   ! <LIMIT>                -- (IN)     MAXIMUM NUMBER OF ITERATIONS (IK)
   ! <TOLERANCE>            -- (IN)     MAXIMUM TOLERANCE (RK)
-  ! <BINARY_AMPLITUDE_>    -- (OUT)    REFINED FREQUENCY
+  ! <GOLDEN_AMPLITUDE_>    -- (OUT)    REFINED FREQUENCY
   ! double  golden_amplitude_(int*, int*, double*, double*, double*, double*, double*, int*, double*) ;
   INTERFACE
     MODULE REAL(RK) FUNCTION GOLDEN_AMPLITUDE_(FLAG, LENGTH, TOTAL, WINDOW, SEQUENCE, GUESS, INTERVAL, LIMIT, TOLERANCE) &
