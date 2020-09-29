@@ -30,6 +30,7 @@ void    decomposition__(int*, int*, int*, int*, int*, double*, double*, double*,
 void    frequency_list__(int*, int*, int*, int*, int*, double*, double*, double*, int*, double*) ;
 void    frequency_correction_(int*, int*, int*, int*, int*, double*, double*, int*, double*, double*, double*) ;
 void    fit_(int*, double*, int*, double*, double*, double*, double*, double*) ;
+void    fit_parabola_(int*, double*, double*, double*, double*, double*, double*) ;
 double  binary_amplitude_(int*, int*, double*, double*, double*, double*, double*, int*, double*) ;
 double  golden_amplitude_(int*, int*, double*, double*, double*, double*, double*, int*, double*) ;
 #endif

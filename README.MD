@@ -5,7 +5,6 @@
 | --- | --- |
 | 'SRC_SIGNAL.WL'       | WM code (use Get[] function to load or see WM examples) |
 | 'signal_examples.nb'  | WM examples |
-| 'data'                | directory with WM examples' data |
 | 'src'                 | FORTRAN code |
 | 'examples'            | FORTRAN and C examples |
 | 'epics'               | EPICS examples |

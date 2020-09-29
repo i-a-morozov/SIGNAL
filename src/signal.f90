@@ -713,16 +713,19 @@ MODULE SIGNAL
   INTEGER(IK), PUBLIC, PARAMETER :: FREQUENCY_FFT          = 0_IK                ! FFT
   INTEGER(IK), PUBLIC, PARAMETER :: FREQUENCY_FFRFT        = 1_IK                ! FFRFT
   INTEGER(IK), PUBLIC, PARAMETER :: FREQUENCY_PARABOLA     = 2_IK                ! PARABOLA
+  INTEGER(IK), PUBLIC, PARAMETER :: FREQUENCY_PARABOLA_FIT = 3_IK                ! PARABOLA (FIT)
+  INTEGER(IK), PUBLIC, PARAMETER :: PARABOLA_FIT_LENGTH    = 8_IK                ! PARABOLA (HALF POINTS)
   INTEGER(IK), PUBLIC, PARAMETER :: INITIAL_FFT            = 0_IK                ! INITIAL FREQUENCY (FFT)
   INTEGER(IK), PUBLIC, PARAMETER :: REFINED_FFRFT          = 0_IK                ! REFINED FREQUENCY (FFRFT)
   INTEGER(IK), PUBLIC, PARAMETER :: REFINED_PARABOLA       = 1_IK                ! REFINED FREQUENCY (FFRFT + PARABOLA)
-  INTEGER(IK), PUBLIC, PARAMETER :: REFINED_SEARCH         = 2_IK                ! REFINED FREQUENCY (MAXIMUM SEARCH)
+  INTEGER(IK), PUBLIC, PARAMETER :: REFINED_PARABOLA_FIT   = 2_IK                ! REFINED FREQUENCY (FFRFT + PARABOLA (FIT))
+  INTEGER(IK), PUBLIC, PARAMETER :: REFINED_SEARCH         = 3_IK                ! REFINED FREQUENCY (MAXIMUM SEARCH)
   ! ############################################################################################################################# !
   ! FREQUENCY ESTIMATION
   ! (FUNCTION) FREQUENCY_(<FLAG>, <PEAK>, <METHOD>, <LENGTH>, <SEQUENCE>)
   ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
   ! <PEAK>                 -- (IN)     PEAK NUMBER TO USE (IK), <PEAK> = 0 USE MAXIMUM BIN, <PEAK> = +N USE N'TH PEAK
-  ! <METHOD>               -- (IN)     FREQUENCY APPROXIMATION METHOD (IK), FREQUENCY_FFT = 0_IK, FREQUENCY_FFRFT = 1_IK, FREQUECY_PARABOLA = 2_IK
+  ! <METHOD>               -- (IN)     FREQUENCY APPROXIMATION METHOD (IK), FREQUENCY_FFT = 0_IK, FREQUENCY_FFRFT = 1_IK, FREQUECY_PARABOLA = 2_IK, FREQUECY_PARABOLA_FIT = 3_IK
   ! <LENGTH>               -- (IN)     INPUT SEQUENCE LENGTH (IK), POWER OF TWO, NOT CHECKED
   ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (PROCESSED, I.E. WITH WINDOW AND PADDED WITH ZEROS) (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
   ! <FREQUENCY_>           -- (OUT)    FREQUENCY ESTIMATION (RK)
@@ -743,7 +746,7 @@ MODULE SIGNAL
   ! (FUNCTION) FREQUENCY__(<FLAG>, <PEAK>, <METHOD>, <LENGTH>, <SEQUENCE>)
   ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
   ! <PEAK>                 -- (IN)     PEAK NUMBER TO USE (IK), <PEAK> = 0 USE MAXIMUM BIN, <PEAK> = +N USE N'TH PEAK
-  ! <METHOD>               -- (IN)     FREQUENCY APPROXIMATION METHOD (IK), FREQUENCY_FFT = 0_IK, FREQUENCY_FFRFT = 1_IK, FREQUECY_PARABOLA = 2_IK
+  ! <METHOD>               -- (IN)     FREQUENCY APPROXIMATION METHOD (IK), FREQUENCY_FFT = 0_IK, FREQUENCY_FFRFT = 1_IK, FREQUECY_PARABOLA = 2_IK, FREQUECY_PARABOLA_FIT = 3_IK
   ! <LENGTH>               -- (IN)     INPUT SEQUENCE LENGTH (IK), POWER OF TWO, NOT CHECKED
   ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (PROCESSED, I.E. WITH WINDOW AND PADDED WITH ZEROS) (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
   ! <FREQUENCY_>           -- (OUT)    FREQUENCY ESTIMATION (RK)
@@ -1081,6 +1084,30 @@ MODULE SIGNAL
     END SUBROUTINE FIT_
   END INTERFACE
   PUBLIC :: FIT_
+  ! ############################################################################################################################# !
+  ! FIT (PARABOLA) Y = A*X**2 + B*X + C
+  ! (SUBROUTINE) FIT_PARABOLA_(<LENGTH>, <X>, <Y>, <A>, <B>, <C>, <MAXIMUM>)
+  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK), POWER OF TWO
+  ! <X>                    -- (IN)     X (RK ARRAY OF LENGTH = <LENGTH>)
+  ! <Y>                    -- (IN)     Y (RK ARRAY OF LENGTH = <LENGTH>)
+  ! <A>                    -- (OUT)    A (RK)
+  ! <B>                    -- (OUT)    B (RK)
+  ! <C>                    -- (OUT)    C (RK)
+  ! <MAXIMUM>              -- (OUT)    MAXIMUM (MINIMUM) POSITION (RK)
+  ! void    fit_parabola_(int*, double*, double*, double*, double*, double*, double*) ;
+  INTERFACE
+    MODULE SUBROUTINE FIT_PARABOLA_(LENGTH, X, Y, A, B, C, MAXIMUM) &
+      BIND(C, NAME = "fit_parabola_")
+      INTEGER(IK), INTENT(IN) :: LENGTH
+      REAL(RK), DIMENSION(LENGTH), INTENT(IN) :: X
+      REAL(RK), DIMENSION(LENGTH), INTENT(IN) :: Y
+      REAL(RK), INTENT(OUT) :: A
+      REAL(RK), INTENT(OUT) :: B
+      REAL(RK), INTENT(OUT) :: C
+      REAL(RK), INTENT(OUT) :: MAXIMUM
+    END SUBROUTINE FIT_PARABOLA_
+  END INTERFACE
+  PUBLIC :: FIT_PARABOLA_
   ! ############################################################################################################################# !
   ! BINARY SEARCH MAXIMIZATION
   ! (FUNCTION) BINARY_(<FUN>, <GUESS>, <INTERVAL>, <LIMIT>, <TOLERANCE>)

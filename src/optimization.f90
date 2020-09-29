@@ -80,6 +80,37 @@ SUBMODULE (SIGNAL) OPTIMIZATION
     ERROR = NORM2(SEQUENCE-FIT)
   END SUBROUTINE FIT_
   ! ############################################################################################################################# !
+  ! FIT (PARABOLA) Y = A*X**2 + B*X + C
+  ! (SUBROUTINE) FIT_PARABOLA_(<LENGTH>, <X>, <Y>, <A>, <B>, <C>, <MAXIMUM>)
+  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK), POWER OF TWO
+  ! <X>                    -- (IN)     X (RK ARRAY OF LENGTH = <LENGTH>)
+  ! <Y>                    -- (IN)     Y (RK ARRAY OF LENGTH = <LENGTH>)
+  ! <A>                    -- (OUT)    A (RK)
+  ! <B>                    -- (OUT)    B (RK)
+  ! <C>                    -- (OUT)    C (RK)
+  ! <MAXIMUM>              -- (OUT)    MAXIMUM (MINIMUM) POSITION (RK)
+  ! void    fit_parabola_(int*, double*, double*, double*, double*, double*, double*) ;
+  MODULE SUBROUTINE FIT_PARABOLA_(LENGTH, X, Y, A, B, C, MAXIMUM) &
+    BIND(C, NAME = "fit_parabola_")
+    INTEGER(IK), INTENT(IN) :: LENGTH
+    REAL(RK), DIMENSION(LENGTH), INTENT(IN) :: X
+    REAL(RK), DIMENSION(LENGTH), INTENT(IN) :: Y
+    REAL(RK), INTENT(OUT) :: A
+    REAL(RK), INTENT(OUT) :: B
+    REAL(RK), INTENT(OUT) :: C
+    REAL(RK), INTENT(OUT) :: MAXIMUM
+    REAL(RK), DIMENSION(LENGTH, 3_IK) :: MATRIX
+    REAL(RK), DIMENSION(3_IK) :: SOLUTION
+    MATRIX(:,1_IK) = X**2_IK
+    MATRIX(:,2_IK) = X
+    MATRIX(:,3_IK) = 1.0_RK
+    CALL LEAST_SQUARES_(LENGTH, 3_IK, MATRIX, Y, SOLUTION)
+    A = SOLUTION(1_IK)
+    B = SOLUTION(2_IK)
+    C = SOLUTION(3_IK)
+    MAXIMUM = - B/(2.0_RK*A)
+  END SUBROUTINE FIT_PARABOLA_
+  ! ############################################################################################################################# !
   ! BINARY SEARCH MAXIMIZATION
   ! (FUNCTION) BINARY_(<FUN>, <GUESS>, <INTERVAL>, <LIMIT>, <TOLERANCE>)
   ! <FUN>                  -- (IN)     FUNCTION TO MAXIMIZE (RK) -> (RK)
