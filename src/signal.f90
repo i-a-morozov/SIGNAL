@@ -368,15 +368,15 @@ MODULE SIGNAL
     END SUBROUTINE SVD_LIST_
   END INTERFACE
   PUBLIC :: SVD_LIST_
-  ! ############################################################################################################################# !
+! ############################################################################################################################# !
   ! TRUNCATED SVD (ARPACK)
-  ! SVD_TRUNCATED_(<NR>,<NC>,<NS>,<MATRIX>(<NR>,<NC>),<LIST>(<NS>),<RVEC>(<NC>,<NR>),<LVEC>(<NR>,<NC>))
+  ! SVD_TRUNCATED_(<NR>,<NC>,<NS>,<MATRIX>(<NR>,<NC>),<LIST>(<NS>),<RVEC>(<NC>,<NS>),<LVEC>(<NR>,<NS>))
   ! <NR>                   -- (IN)     NUMBER OF ROWS (IK)
   ! <NC>                   -- (IN)     NUMBER OF COLS (IK)
   ! <MATRIX>               -- (IN)     INPUT MATRIX(<NR>, <NC>) (RK)
   ! <LIST>                 -- (OUT)    LIST OF SINGULAR VALUES (<NS>) (RK)
-  ! <RVEC>                 -- (OUT)    L-SINGULAR VECTORS (<NR>, <NS>) (RK)
-  ! <LVEC>                 -- (OUT)    R-SINGULAR VECTORS (<NC>, <NS>) (RK)
+  ! <RVEC>                 -- (OUT)    L-SINGULAR VECTORS (<NC>, <NS>) (RK)
+  ! <LVEC>                 -- (OUT)    R-SINGULAR VECTORS (<NR>, <NS>) (RK)
   INTERFACE
     MODULE SUBROUTINE SVD_TRUNCATED_(NR, NC, NS, MATRIX, LIST, RVEC, LVEC)
       INTEGER(IK), INTENT(IN) :: NR
