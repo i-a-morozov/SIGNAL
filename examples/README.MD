@@ -8,4 +8,4 @@
 | example06.c           | harmonic signal decomposition (C binding) |
 | example07.f90         | frequency estimation (OpenMP, data memorization) |
 | example08.f90         | frequency estimation (noise) |
-| example00.f90         | frequency correction |
+| example09.f90         | frequency correction |
