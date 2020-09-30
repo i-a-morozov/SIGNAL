@@ -151,11 +151,11 @@ MODULE SIGNAL
   ! (SUBROUTINE) GENERATE_SIGNAL_(<FLAG>, <LENGTH>, <SEQUENCE>, <LOOP>, <FREQUENCY>, <MEAN>, <COS_AMP>, <SIN_AMP>)
   ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX SEQUENCE
   ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK), POWER OF TWO
-  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = <LENGTH>)
+  ! <SEQUENCE>             -- (OUT)    INPUT SEQUENCE (RK ARRAY OF LENGTH = <LENGTH>)
   ! <LOOP>                 -- (IN)     NUMBER OF HARMONICS (IK)
   ! <FREQUENCY>            -- (IN)     FREQUENCY ARRAY (RK ARRAY OF LENGTH = <LOOP>)
-  ! <COS_AMP>              -- (OUT)    COS AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
-  ! <SIN_AMP>              -- (OUT)    SIN AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
+  ! <COS_AMP>              -- (IN)     COS AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
+  ! <SIN_AMP>              -- (IN)     SIN AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
   ! void    generate_signal_(int*, int*, double*, int*, double*, double*, double*, double*) ;
   INTERFACE
     MODULE SUBROUTINE GENERATE_SIGNAL_(FLAG, LENGTH, SEQUENCE, LOOP, FREQUENCY, COS_AMP, SIN_AMP) &

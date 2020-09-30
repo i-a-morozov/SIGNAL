@@ -30,9 +30,9 @@ SUBMODULE (SIGNAL) OPTIMIZATION
       IF (SVD_LIST(I) >= SVD_LEVEL) COPY(I, I) = 1.0_RK/SVD_LIST(I)
     END DO
     V1 = VECTOR
-    CALL DGEMV('T',NR,NR,1.0_RK,U_MATRIX,NR,V1,1,0.0_RK,V2,1)
-    CALL DGEMV('T',NR,NC,1.0_RK,COPY,NR,V2,1,0.0_RK,V3,1)
-    CALL DGEMV('N',NC,NC,1.0_RK,V_MATRIX,NC,V3,1,0.0_RK,V4,1)
+    CALL DGEMV('T',NR,NR,1.0_RK,U_MATRIX,NR,V1,1,0.0_RK,V2,1_IK)
+    CALL DGEMV('T',NR,NC,1.0_RK,COPY,NR,V2,1,0.0_RK,V3,1_IK)
+    CALL DGEMV('N',NC,NC,1.0_RK,V_MATRIX,NC,V3,1,0.0_RK,V4,1_IK)
     SOLUTION = REAL(V4, RK)
   END SUBROUTINE LEAST_SQUARES_
   ! ############################################################################################################################# !
