@@ -1,5 +1,5 @@
 # SIGNAL, 2018-2020, I.A.MOROZOV@INP.NSK.SU
-# FREQUENCY IDENTIFICATION, QUASIPERIODIC DECOMPOSITION AND CHAOS INDICATORS
+Frequency identification, quasiperiodic decomposition and chaos indicators
 
 | File | Description |
 | --- | --- |
