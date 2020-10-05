@@ -2362,8 +2362,9 @@ S$COMPILED$FREQUENCY = Compile[
     (FST-2.0+2.0*(FREQUENCY-1.0)/LENGTH)/LENGTH
   ],
   CompilationTarget -> "C",
-  CompilationOptions -> {"InlineExternalDefinitions" -> True},
-  RuntimeOptions -> "Speed",
-  RuntimeAttributes -> {Listable},
-  Parallelization -> True
+  CompilationOptions -> {
+    "InlineExternalDefinitions" -> True,
+    "InlineCompiledFunctions" -> True
+  },
+  RuntimeOptions -> "Speed"
 ] ;
