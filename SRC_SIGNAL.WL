@@ -1670,6 +1670,7 @@ S$COLOR$PLOT[                       (* -- COLOR PLOT *)
   PLOT = ArrayPlot[
     LOCAL,
     Rule[DataRange,List[HRANGE,VRANGE]],
+    FilterRules[List[OPTIONS],Options[ArrayPlot]],
     Rule[PlotLegends,False],
     Rule[ColorFunction,COLOR],
     Rule[ColorFunctionScaling,False]
@@ -1704,7 +1705,8 @@ S$COLOR$LEGEND[                     (* -- COLOR LEGEND *)
   COLOR_,                           (* -- BACKGROUND COLOR *)
   SCHEME_,                          (* -- SCHEME *)
   PADDIND_,                         (* -- PADDING *)
-  RATIO_:15                         (* -- SIZE RATIO *)
+  RATIO_,                           (* -- SIZE RATIO *)
+  OPTIONS:OptionsPattern[]          (* -- OPTION(S) *)
 ] := Block[
   {FUNCTION,LEGEND,SIZE},
   FUNCTION = Function[If[SameQ[Slot[1],N[LEVEL]],COLOR,ColorData[SCHEME][Rescale[Slot[1],INTERVAL]]]] ;
@@ -1725,6 +1727,7 @@ S$COLOR$LEGEND[                     (* -- COLOR LEGEND *)
   Show[
     Graphics[
       List[White,Opacity[0],Apply[Rectangle,Transpose[N[List[List[0.0,1.0],INTERVAL]]]]],
+      FilterRules[List[OPTIONS],Options[Graphics]],
       Rule[AspectRatio,RATIO],
       Rule[FrameTicks,List[List[All,All],List[None,None]]],
       Rule[Frame,True],
