@@ -41,6 +41,8 @@ int main(){
     int flag = 0 ;
     double signal[2*length] ;
     convert_real_(&length, read, signal) ;
+    double range_min = 0.00 ;
+    double range_max = 0.49 ;
 
     // set window
     int order = 2 ;
@@ -51,23 +53,13 @@ int main(){
         total = total + window[i] ;
     }
 
-    double sequence[2*length] ;
-
-    // pre-process
-    remove_window_mean_(&length, &total, window, signal, sequence) ;
-    *signal = *sequence ;
-
-    // apply window
-    apply_window_(&length, window, signal, sequence) ;
-    *signal = *sequence ;
-
     int peak ;
     int method = 2 ;
     double frequency ;
 
     // frequency_ (bin)
     peak = 0 ;
-    frequency = frequency_(&flag, &peak, &method, &length, signal) ;
+    frequency = frequency_(&flag, &range_min, &range_max, &peak, &method, &length, &length, &total, window, signal) ;
     printf("frequency_\n") ;
     printf("%.15f\n", frequency) ;
     printf("\n") ;
@@ -77,13 +69,10 @@ int main(){
     for (int i = 1; i <= 3 ; i++)
     {
         peak = i ;
-        frequency = frequency_(&flag, &peak, &method, &length, signal) ;
+        frequency = frequency_(&flag, &range_min, &range_max, &peak, &method, &length, &length, &total, window, signal) ;
         printf("%.15f\n", frequency) ;
     }
     printf("\n") ;
-
-    // restore signal
-    convert_real_(&length, read, signal) ;
 
     int mode ;
     int loop = 3 ;
@@ -91,7 +80,7 @@ int main(){
 
     // decomposition_ (subtract)
     mode = 0 ;
-    decomposition_(&flag, &method, &mode, &length, &length, &total, window, signal, &loop, fre_amp, cos_amp, sin_amp) ;
+    decomposition_(&flag, &range_min, &range_max, &method, &mode, &length, &length, &total, window, signal, &loop, fre_amp, cos_amp, sin_amp) ;
     printf("decomposition_\n") ;
     for(int i = 0; i < loop; i++){
         printf("%.15f %.15f %.15f\n", fre_amp[i], cos_amp[i], sin_amp[i]) ;
@@ -102,7 +91,7 @@ int main(){
     printf("\n") ;
 
     // frequency_list_ (subtract)
-    frequency_list_(&flag, &method, &mode, &length, &length, &total, window, signal, &loop, fre_amp) ;
+    frequency_list_(&flag, &range_min, &range_max, &method, &mode, &length, &length, &total, window, signal, &loop, fre_amp) ;
     printf("frequency_list_\n") ;
     for(int i = 0; i < loop; i++){
         printf("%.15f\n", fre_amp[i]) ;
@@ -111,7 +100,7 @@ int main(){
 
     // decomposition_ (peak)
     mode = 1 ;
-    decomposition_(&flag, &method, &mode, &length, &length, &total, window, signal, &loop, fre_amp, cos_amp, sin_amp) ;
+    decomposition_(&flag, &range_min, &range_max, &method, &mode, &length, &length, &total, window, signal, &loop, fre_amp, cos_amp, sin_amp) ;
     printf("decomposition_\n") ;
     for(int i = 0; i < loop; i++){
         printf("%.15f %.15f %.15f\n", fre_amp[i], cos_amp[i], sin_amp[i]) ;
@@ -122,7 +111,7 @@ int main(){
     printf("\n") ;
 
     // frequency_list_ (peak)
-    frequency_list_(&flag, &method, &mode, &length, &length, &total, window, signal, &loop, fre_amp) ;
+    frequency_list_(&flag, &range_min, &range_max, &method, &mode, &length, &length, &total, window, signal, &loop, fre_amp) ;
     printf("frequency_list_\n") ;
     for(int i = 0; i < loop; i++){
         printf("%.15f\n", fre_amp[i]) ;

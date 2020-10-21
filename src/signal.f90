@@ -303,13 +303,15 @@ MODULE SIGNAL
   END INTERFACE
   ! ############################################################################################################################# !
   ! COMPUTE DATA TABLE
-  ! (SUBROUTINE) COMPUTE_TABLE_(<LENGTH>)
+  ! (SUBROUTINE) COMPUTE_TABLE_(<LENGTH>, <PAD>)
   ! <LENGTH>               -- (IN)     LENGTH (IK)
-  ! void    compute_table_(int*) ;
+  ! <PAD>                  -- (IN)     PADDED LENGTH (IK)
+  ! void    compute_table_(int*, int*) ;
   INTERFACE
-    MODULE SUBROUTINE COMPUTE_TABLE_(LENGTH) &
+    MODULE SUBROUTINE COMPUTE_TABLE_(LENGTH, PAD) &
       BIND(C, NAME = "compute_table_")
       INTEGER(IK), INTENT(IN) :: LENGTH
+      INTEGER(IK), INTENT(IN) :: PAD
     END SUBROUTINE COMPUTE_TABLE_
   END INTERFACE
   PUBLIC :: COMPUTE_TABLE_
@@ -710,182 +712,213 @@ MODULE SIGNAL
   ! ############################################################################################################################# !
   ! FREQUENCY
   ! ############################################################################################################################# !
+  INTEGER(IK), PUBLIC, PARAMETER :: FLAG_REAL              = 0_IK                ! SIGNAL FLAG (REAL)
+  INTEGER(IK), PUBLIC, PARAMETER :: FLAG_COMPLEX           = 1_IK                ! SIGNAL FLAG (COMPLEX)
   INTEGER(IK), PUBLIC, PARAMETER :: FREQUENCY_FFT          = 0_IK                ! FFT
   INTEGER(IK), PUBLIC, PARAMETER :: FREQUENCY_FFRFT        = 1_IK                ! FFRFT
   INTEGER(IK), PUBLIC, PARAMETER :: FREQUENCY_PARABOLA     = 2_IK                ! PARABOLA
-  INTEGER(IK), PUBLIC, PARAMETER :: FREQUENCY_PARABOLA_FIT = 3_IK                ! PARABOLA (FIT)
-  INTEGER(IK), PUBLIC, PARAMETER :: PARABOLA_FIT_LENGTH    = 4_IK                ! PARABOLA (HALF POINTS)
-  INTEGER(IK), PUBLIC, PARAMETER :: INITIAL_FFT            = 0_IK                ! INITIAL FREQUENCY (FFT)
-  INTEGER(IK), PUBLIC, PARAMETER :: REFINED_FFRFT          = 0_IK                ! REFINED FREQUENCY (FFRFT)
-  INTEGER(IK), PUBLIC, PARAMETER :: REFINED_PARABOLA       = 1_IK                ! REFINED FREQUENCY (FFRFT + PARABOLA)
-  INTEGER(IK), PUBLIC, PARAMETER :: REFINED_PARABOLA_FIT   = 2_IK                ! REFINED FREQUENCY (FFRFT + PARABOLA (FIT))
-  INTEGER(IK), PUBLIC, PARAMETER :: REFINED_SEARCH         = 3_IK                ! REFINED FREQUENCY (MAXIMUM SEARCH)
-  ! ############################################################################################################################# !
-  ! FREQUENCY ESTIMATION
-  ! (FUNCTION) FREQUENCY_(<FLAG>, <PEAK>, <METHOD>, <LENGTH>, <SEQUENCE>)
-  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
-  ! <PEAK>                 -- (IN)     PEAK NUMBER TO USE (IK), <PEAK> = 0 USE MAXIMUM BIN, <PEAK> = +N USE N'TH PEAK
-  ! <METHOD>               -- (IN)     FREQUENCY APPROXIMATION METHOD (IK), FREQUENCY_FFT = 0_IK, FREQUENCY_FFRFT = 1_IK, FREQUECY_PARABOLA = 2_IK, FREQUECY_PARABOLA_FIT = 3_IK
-  ! <LENGTH>               -- (IN)     INPUT SEQUENCE LENGTH (IK), POWER OF TWO, NOT CHECKED
-  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (PROCESSED, I.E. WITH WINDOW AND PADDED WITH ZEROS) (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <FREQUENCY_>           -- (OUT)    FREQUENCY ESTIMATION (RK)
-  ! double  frequency_(int*, int*, int*, int*, double*) ;
-  INTERFACE
-    MODULE REAL(RK) FUNCTION FREQUENCY_(FLAG, PEAK, METHOD, LENGTH, SEQUENCE) &
-      BIND(C, NAME = "frequency_")
-      INTEGER(IK), INTENT(IN):: FLAG
-      INTEGER(IK), INTENT(IN) :: PEAK
-      INTEGER(IK), INTENT(IN) :: METHOD
-      INTEGER(IK), INTENT(IN):: LENGTH
-      REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
-    END FUNCTION FREQUENCY_
-  END INTERFACE
-  PUBLIC :: FREQUENCY_
-  ! ############################################################################################################################# !
-  ! FREQUENCY ESTIMATION (FFT AND FFRFT DATA MEMORIZATION)
-  ! (FUNCTION) FREQUENCY__(<FLAG>, <PEAK>, <METHOD>, <LENGTH>, <SEQUENCE>)
-  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
-  ! <PEAK>                 -- (IN)     PEAK NUMBER TO USE (IK), <PEAK> = 0 USE MAXIMUM BIN, <PEAK> = +N USE N'TH PEAK
-  ! <METHOD>               -- (IN)     FREQUENCY APPROXIMATION METHOD (IK), FREQUENCY_FFT = 0_IK, FREQUENCY_FFRFT = 1_IK, FREQUECY_PARABOLA = 2_IK, FREQUECY_PARABOLA_FIT = 3_IK
-  ! <LENGTH>               -- (IN)     INPUT SEQUENCE LENGTH (IK), POWER OF TWO, NOT CHECKED
-  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (PROCESSED, I.E. WITH WINDOW AND PADDED WITH ZEROS) (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <FREQUENCY_>           -- (OUT)    FREQUENCY ESTIMATION (RK)
-  ! double  frequency_(int*, int*, int*, int*, double*) ;
-  INTERFACE
-    MODULE REAL(RK) FUNCTION FREQUENCY__(FLAG, PEAK, METHOD, LENGTH, SEQUENCE) &
-      BIND(C, NAME = "frequency__")
-      INTEGER(IK), INTENT(IN):: FLAG
-      INTEGER(IK), INTENT(IN) :: PEAK
-      INTEGER(IK), INTENT(IN) :: METHOD
-      INTEGER(IK), INTENT(IN):: LENGTH
-      REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
-    END FUNCTION FREQUENCY__
-  END INTERFACE
-  PUBLIC :: FREQUENCY__
+  INTEGER(IK), PUBLIC, PARAMETER :: FREQUENCY_PARABOLA_FIT = 3_IK                ! PARABOLA FIT
+  INTEGER(IK), PUBLIC, PARAMETER :: FREQUENCY_SEARCH       = 4_IK                ! MAXIMUM SEARCH
+  INTEGER(IK), PUBLIC, PARAMETER :: PARABOLA_FIT_LENGTH    = 4_IK                ! NUMBER OF PARABOLA FIT POINTS
+  INTEGER(IK), PUBLIC, PARAMETER :: SEARCH_LIMIT           = 128_IK              ! SEARCH LIMIT
+  REAL(RK)   , PUBLIC, PARAMETER :: SEARCH_TOLERANCE       = 1.0E-16_RK          ! SEARCH TOLERANCE
   ! ############################################################################################################################# !
   ! INITIAL FREQUENCY ESTIMATION
-  ! (FUNCTION) FREQUENCY_INITIAL_(<FLAG>, <PEAK>, <METHOD>, <LENGTH>, <SEQUENCE>)
-  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
-  ! <PEAK>                 -- (IN)     PEAK NUMBER TO USE (IK), <PEAK> = 0 USE MAXIMUM BIN, <PEAK> = +N USE N'TH PEAK
-  ! <METHOD>               -- (IN)     INITIAL FREQUENCY APPROXIMATION METHOD (IK)
-  ! <LENGTH>               -- (IN)     INPUT SEQUENCE LENGTH (IK), POWER OF TWO, NOT CHECKED
-  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (PROCESSED, I.E. WITH WINDOW AND PADDED WITH ZEROS) (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <FREQUENCY_>           -- (OUT)    FREQUENCY ESTIMATION (RK)
-  ! double  frequency_initial_(int*, int*, int*, int*, int*, double*, double*, double*) ;
+  ! (FUNCTION) FREQUENCY_INITIAL_(<RANGE_MIN>, <RANGE_MAX>, <PEAK>, <LENGTH>, <PAD>, <SEQUENCE>)
+  ! <RANGE_MIN>            -- (IN)     (MIN) FREQUENCY RANGE (RK)
+  ! <RANGE_MAX>            -- (IN)     (MAX) FREQUENCY RANGE (RK)
+  ! <PEAK>                 -- (IN)     PEAK NUMBER TO USE (IK), <PEAK> = 0 USE MAXIMUM BIN, <PEAK> = N > 0 USE N'TH PEAK WITHIN GIVEN FREQUENCY RANGE
+  ! <LENGTH>               -- (IN)     INPUT SEQUENCE LENGTH (IK)
+  ! <PAD>                  -- (IN)     PADDED SEQUENCE LENGTH (IK), IF PAD > LENGTH, INPUT SEQUENCE IS PADDED WITH ZEROS
+  ! <SEQUENCE>             -- (IN)     INPUT (PROCESSED) SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
+  ! <FREQUENCY_>           -- (OUT)    INITIAL FREQUENCY ESTIMATION (RK)
+  ! double  frequency_initial_(double*, double*, int*, int*, int*, double*) ;
   INTERFACE
-    MODULE REAL(RK) FUNCTION FREQUENCY_INITIAL_(FLAG, PEAK, METHOD, LENGTH, PAD, TOTAL, WINDOW, SEQUENCE) &
+    MODULE REAL(RK) FUNCTION FREQUENCY_INITIAL_(RANGE_MIN, RANGE_MAX, PEAK, LENGTH, PAD, SEQUENCE) &
       BIND(C, NAME = "frequency_initial_")
-      INTEGER(IK), INTENT(IN):: FLAG
+      REAL(RK), INTENT(IN) :: RANGE_MIN
+      REAL(RK), INTENT(IN) :: RANGE_MAX
       INTEGER(IK), INTENT(IN) :: PEAK
-      INTEGER(IK), INTENT(IN) :: METHOD
       INTEGER(IK), INTENT(IN):: LENGTH
       INTEGER(IK), INTENT(IN):: PAD
-      REAL(RK), INTENT(IN) :: TOTAL
-      REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: WINDOW
       REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
     END FUNCTION FREQUENCY_INITIAL_
   END INTERFACE
   PUBLIC :: FREQUENCY_INITIAL_
   ! ############################################################################################################################# !
-  ! REFINE FREQUENCY ESTIMATION (COMMON INTERFACE FOR FFRFT, PARABOLA AND SEARCH)
-  ! (FUNCTION) FREQUENCY_REFINED_(<FLAG>, <LENGTH>, <TOTAL>, <WINDOW>, <SEQUENCE>, <GUESS>, <INTERVAL>, <LIMIT>, <TOLERANCE>)
+  ! INITIAL FREQUENCY ESTIMATION (MEMORIZATION)
+  ! (FUNCTION) FREQUENCY_INITIAL__(<RANGE_MIN>, <RANGE_MAX>, <PEAK>, <LENGTH>, <PAD>, <SEQUENCE>)
+  ! <RANGE_MIN>            -- (IN)     (MIN) FREQUENCY RANGE (RK)
+  ! <RANGE_MAX>            -- (IN)     (MAX) FREQUENCY RANGE (RK)
+  ! <PEAK>                 -- (IN)     PEAK NUMBER TO USE (IK), <PEAK> = 0 USE MAXIMUM BIN, <PEAK> = N > 0 USE N'TH PEAK WITHIN GIVEN FREQUENCY RANGE
+  ! <LENGTH>               -- (IN)     INPUT SEQUENCE LENGTH (IK)
+  ! <PAD>                  -- (IN)     PADDED SEQUENCE LENGTH (IK), IF PAD > LENGTH, INPUT SEQUENCE IS PADDED WITH ZEROS
+  ! <SEQUENCE>             -- (IN)     INPUT (PROCESSED) SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
+  ! <FREQUENCY_>           -- (OUT)    INITIAL FREQUENCY ESTIMATION (RK)
+  ! double  frequency_initial__(double*, double*, int*, int*, int*, double*) ;
+  INTERFACE
+    MODULE REAL(RK) FUNCTION FREQUENCY_INITIAL__(RANGE_MIN, RANGE_MAX, PEAK, LENGTH, PAD, SEQUENCE) &
+      BIND(C, NAME = "frequency_initial__")
+      REAL(RK), INTENT(IN) :: RANGE_MIN
+      REAL(RK), INTENT(IN) :: RANGE_MAX
+      INTEGER(IK), INTENT(IN) :: PEAK
+      INTEGER(IK), INTENT(IN):: LENGTH
+      INTEGER(IK), INTENT(IN):: PAD
+      REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
+    END FUNCTION FREQUENCY_INITIAL__
+  END INTERFACE
+  PUBLIC :: FREQUENCY_INITIAL__
+  ! ############################################################################################################################# !
+  ! REFINE FREQUENCY ESTIMATION (FFRFT)
+  ! (FUNCTION) FREQUENCY_REFINE_(<METHOD>, <LENGTH>, <SEQUENCE>, <INITIAL>)
+  ! <METHOD>               -- (IN)     METHOD
+  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
+  ! <SEQUENCE>             -- (IN)     INPUT (PROCESSED) SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
+  ! <INITIAL>              -- (IN)     INITIAL FREQUENCY GUESS (RK)
+  ! <FREQUENCY_REFINE_>    -- (OUT)    REFINED FREQUENCY ESTIMATION (RK)
+  ! double  frequency_refine_(int*, int*, double*, double*) ;
+  INTERFACE
+    MODULE REAL(RK) FUNCTION FREQUENCY_REFINE_(METHOD, LENGTH, SEQUENCE, INITIAL) &
+      BIND(C, NAME = "frequency_refine_")
+      INTEGER(IK), INTENT(IN):: METHOD
+      INTEGER(IK), INTENT(IN):: LENGTH
+      REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
+      REAL(RK), INTENT(IN) :: INITIAL
+    END FUNCTION FREQUENCY_REFINE_
+  END INTERFACE
+  PUBLIC :: FREQUENCY_REFINE_
+  ! ############################################################################################################################# !
+  ! REFINE FREQUENCY ESTIMATION (FFRFT) (MEMORIZATION)
+  ! (FUNCTION) FREQUENCY_REFINE_(<METHOD>, <LENGTH>, <SEQUENCE>, <INITIAL>)
+  ! <METHOD>               -- (IN)     METHOD
+  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
+  ! <SEQUENCE>             -- (IN)     INPUT (PROCESSED) SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
+  ! <INITIAL>              -- (IN)     INITIAL FREQUENCY GUESS (RK)
+  ! <FREQUENCY_REFINE_>    -- (OUT)    REFINED FREQUENCY ESTIMATION (RK)
+  ! double  frequency_refine__(int*, int*, double*, double*) ;
+  INTERFACE
+    MODULE REAL(RK) FUNCTION FREQUENCY_REFINE__(METHOD, LENGTH, SEQUENCE, INITIAL) &
+      BIND(C, NAME = "frequency_refine__")
+      INTEGER(IK), INTENT(IN):: METHOD
+      INTEGER(IK), INTENT(IN):: LENGTH
+      REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
+      REAL(RK), INTENT(IN) :: INITIAL
+    END FUNCTION FREQUENCY_REFINE__
+  END INTERFACE
+  PUBLIC :: FREQUENCY_REFINE__
+  ! ############################################################################################################################# !
+  ! REFINE FREQUENCY ESTIMATION (BINARY SEARCH)
+  ! (FUNCTION) BINARY_AMPLITUDE_(<FLAG>, <LENGTH>, <TOTAL>, <WINDOW>, <SEQUENCE>, <INITIAL>)
   ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
-  ! <METHOD>               -- (IN)     METHOD (SEE GLOBAL REFINED_* CONSTANTS)
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK), POWER OF TWO, NOT CHECKED
+  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
   ! <TOTAL>                -- (IN)     SUM(WINDOW) (RK)
   ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <GUESS>                -- (IN)     INITIAL GUESS VALUE (RK)
-  ! <INTERVAL>             -- (IN)     SEARCH INTERVAL (RK), GUESS IS IN THE MIDLE
-  ! <LIMIT>                -- (IN)     MAXIMUM NUMBER OF ITERATIONS (IK)
-  ! <TOLERANCE>            -- (IN)     MAXIMUM TOLERANCE (RK)
-  ! <FREQUENCY_REFINED_>   -- (OUT)    REFINED FREQUENCY
-  ! double  frequenc_refined_(int*, int*, int*, double*, double*, double*, double*, double*, int*, double*) ;
+  ! <SEQUENCE>             -- (IN)     INPUT (UNPROCESSED) SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
+  ! <INITIAL>              -- (IN)     INITIAL FREQUENCY GUESS (RK)
+  ! <BINARY_AMPLITUDE_>    -- (OUT)    REFINED FREQUENCY (RK)
+  ! double  binary_amplitude_(int*, int*, double*, double*, double*, double*) ;
   INTERFACE
-    MODULE REAL(RK) FUNCTION FREQUENCY_REFINED_(FLAG, METHOD, LENGTH, TOTAL, WINDOW, SEQUENCE, GUESS, INTERVAL, LIMIT, TOLERANCE) &
-      BIND(C, NAME = "frequency_refined_")
+    MODULE REAL(RK) FUNCTION BINARY_AMPLITUDE_(FLAG, LENGTH, TOTAL, WINDOW, SEQUENCE, INITIAL) &
+      BIND(C, NAME = "binary_amplitude_")
       INTEGER(IK), INTENT(IN):: FLAG
-      INTEGER(IK), INTENT(IN):: METHOD
       INTEGER(IK), INTENT(IN):: LENGTH
       REAL(RK), INTENT(IN) :: TOTAL
       REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: WINDOW
       REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
-      REAL(RK), INTENT(IN) :: GUESS
-      REAL(RK), INTENT(IN) :: INTERVAL
-      INTEGER(IK), INTENT(IN) :: LIMIT
-      REAL(RK), INTENT(IN) :: TOLERANCE
-    END FUNCTION FREQUENCY_REFINED_
+      REAL(RK), INTENT(IN) :: INITIAL
+    END FUNCTION
   END INTERFACE
-  PUBLIC :: FREQUENCY_REFINED_
+  PUBLIC :: BINARY_AMPLITUDE_
+  ! ############################################################################################################################# !
+  ! REFINE FREQUENCY ESTIMATION (GOLDEN SEARCH)
+  ! (FUNCTION) GOLDEN_AMPLITUDE_(<FLAG>, <LENGTH>, <TOTAL>, <WINDOW>, <SEQUENCE>, <INITIAL>)
+  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
+  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
+  ! <TOTAL>                -- (IN)     SUM(WINDOW) (RK)
+  ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
+  ! <SEQUENCE>             -- (IN)     INPUT (UNPROCESSED) SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
+  ! <INITIAL>              -- (IN)     INITIAL FREQUENCY GUESS (RK)
+  ! <GOLDEN_AMPLITUDE_>    -- (OUT)    REFINED FREQUENCY (RK)
+  ! double  golden_amplitude_(int*, int*, double*, double*, double*, double*) ;
+  INTERFACE
+    MODULE REAL(RK) FUNCTION GOLDEN_AMPLITUDE_(FLAG, LENGTH, TOTAL, WINDOW, SEQUENCE, INITIAL) &
+      BIND(C, NAME = "golden_amplitude_")
+      INTEGER(IK), INTENT(IN):: FLAG
+      INTEGER(IK), INTENT(IN):: LENGTH
+      REAL(RK), INTENT(IN) :: TOTAL
+      REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: WINDOW
+      REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
+      REAL(RK), INTENT(IN) :: INITIAL
+    END FUNCTION
+  END INTERFACE
+  PUBLIC :: GOLDEN_AMPLITUDE_
+  ! ############################################################################################################################# !
+  ! FREQUENCY ESTIMATION (GERERIC)
+  ! (FUNCTION) FREQUENCY_(<FLAG>, <RANGE_MIN>, <RANGE_MAX>, <PEAK>, <METHOD>, <LENGTH>, <PAD>, <TOTAL>, <WINDOW>, <SEQUENCE>)
+  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
+  ! <RANGE_MIN>            -- (IN)     (MIN) FREQUENCY RANGE (RK)
+  ! <RANGE_MAX>            -- (IN)     (MAX) FREQUENCY RANGE (RK)
+  ! <PEAK>                 -- (IN)     PEAK NUMBER TO USE (IK), <PEAK> = 0 USE MAXIMUM BIN, <PEAK> = N > 0 USE N'TH PEAK WITHIN GIVEN FREQUENCY RANGE
+  ! <METHOD>               -- (IN)     FREQUENCY ESTIMATION METHOD (IK)
+  ! <LENGTH>               -- (IN)     INPUT SEQUENCE LENGTH (IK)
+  ! <PAD>                  -- (IN)     PADDED SEQUENCE LENGTH (IK), IF PAD > LENGTH, INPUT SEQUENCE IS PADDED WITH ZEROS
+  ! <TOTAL>                -- (IN)     SUM(WINDOW) (RK)
+  ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
+  ! <SEQUENCE>             -- (IN)     INPUT (UNPROCESSED) SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
+  ! <FREQUENCY_>           -- (OUT)    FREQUENCY ESTIMATION (RK)
+  ! double  frequency_(int*, double*, double*, int*, int*, int*, int*, double*, double*, double*) ;
+  INTERFACE
+    MODULE REAL(RK) FUNCTION FREQUENCY_(FLAG, RANGE_MIN, RANGE_MAX, PEAK, METHOD, LENGTH, PAD, TOTAL, WINDOW, SEQUENCE) &
+      BIND(C, NAME = "frequency_")
+      INTEGER(IK), INTENT(IN):: FLAG
+      REAL(RK), INTENT(IN) :: RANGE_MIN
+      REAL(RK), INTENT(IN) :: RANGE_MAX
+      INTEGER(IK), INTENT(IN) :: PEAK
+      INTEGER(IK), INTENT(IN) :: METHOD
+      INTEGER(IK), INTENT(IN):: LENGTH
+      INTEGER(IK), INTENT(IN):: PAD
+      REAL(RK), INTENT(IN) :: TOTAL
+      REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: WINDOW
+      REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
+    END FUNCTION FREQUENCY_
+  END INTERFACE
+  PUBLIC :: FREQUENCY_
+  ! ############################################################################################################################# !
+  ! FREQUENCY ESTIMATION (GERERIC) (MEMORIZATION)
+  ! (FUNCTION) FREQUENCY__(<FLAG>, <RANGE_MIN>, <RANGE_MAX>, <PEAK>, <METHOD>, <LENGTH>, <PAD>, <TOTAL>, <WINDOW>, <SEQUENCE>)
+  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
+  ! <RANGE_MIN>            -- (IN)     (MIN) FREQUENCY RANGE (RK)
+  ! <RANGE_MAX>            -- (IN)     (MAX) FREQUENCY RANGE (RK)
+  ! <PEAK>                 -- (IN)     PEAK NUMBER TO USE (IK), <PEAK> = 0 USE MAXIMUM BIN, <PEAK> = N > 0 USE N'TH PEAK WITHIN GIVEN FREQUENCY RANGE
+  ! <METHOD>               -- (IN)     FREQUENCY ESTIMATION METHOD (IK)
+  ! <LENGTH>               -- (IN)     INPUT SEQUENCE LENGTH (IK)
+  ! <PAD>                  -- (IN)     PADDED SEQUENCE LENGTH (IK), IF PAD > LENGTH, INPUT SEQUENCE IS PADDED WITH ZEROS
+  ! <TOTAL>                -- (IN)     SUM(WINDOW) (RK)
+  ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
+  ! <SEQUENCE>             -- (IN)     INPUT (UNPROCESSED) SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
+  ! <FREQUENCY_>           -- (OUT)    FREQUENCY ESTIMATION (RK)
+  ! double  frequency__(int*, double*, double*, int*, int*, int*, int*, double*, double*, double*) ;
+  INTERFACE
+    MODULE REAL(RK) FUNCTION FREQUENCY__(FLAG, RANGE_MIN, RANGE_MAX, PEAK, METHOD, LENGTH, PAD, TOTAL, WINDOW, SEQUENCE) &
+      BIND(C, NAME = "frequency__")
+      INTEGER(IK), INTENT(IN):: FLAG
+      REAL(RK), INTENT(IN) :: RANGE_MIN
+      REAL(RK), INTENT(IN) :: RANGE_MAX
+      INTEGER(IK), INTENT(IN) :: PEAK
+      INTEGER(IK), INTENT(IN) :: METHOD
+      INTEGER(IK), INTENT(IN):: LENGTH
+      INTEGER(IK), INTENT(IN):: PAD
+      REAL(RK), INTENT(IN) :: TOTAL
+      REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: WINDOW
+      REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
+    END FUNCTION FREQUENCY__
+  END INTERFACE
+  PUBLIC :: FREQUENCY__
   ! ############################################################################################################################# !
   ! DECOMPOSITION
   ! ############################################################################################################################# !
   INTEGER(IK), PUBLIC, PARAMETER :: DECOMPOSITION_SUBTRACT = 0_IK                ! DECOMPOSITION BY ITERATIVE SUBTRACTION
   INTEGER(IK), PUBLIC, PARAMETER :: DECOMPOSITION_PEAK     = 1_IK                ! DECOMPOSITION BY PEAKS
-  ! ############################################################################################################################# !
-  ! SIGNAL DECOMPOSITION
-  ! (SUBROUTINE) DECOMPOSITION_(<FLAG>, <METHOD>, <MODE>, <LENGTH>, <PAD>, <TOTAL>, <WINDOW>, <SEQUENCE>, <LOOP>, <FREQUENCY>, <COS_AMP>, <SIN_AMP>)
-  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
-  ! <METHOD>               -- (IN)     FREQUENCY APPROXIMATION METHOD (IK), FREQUENCY_FFT = 0_IK, FREQUENCY_FFRFT = 1_IK, FREQUECY_PARABOLA = 2_IK
-  ! <MODE>                 -- (IN)     DECOMPOSTION MODE (IK), <MODE> = DECOMPOSITION_SUBTRACT = 0 OR <MODE> = DECOMPOSITION_PEAK = 1
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK), POWER OF TWO, NOT CHECKED
-  ! <PAD>                  -- (IN)     PADDED SEQUENCE LENGTH (IK), IF PAD > LENGTH, INPUT SEQUENCE IS PADDED, POWER OF TWO, NOT CHECKED
-  ! <TOTAL>                -- (IN)     SUM(WINDOW) (RK)
-  ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <LOOP>                 -- (IN)     NUMBER OF ITERATIONS/PEAKS (IK)
-  ! <FREQUENCY>            -- (OUT)    FREQUENCY ARRAY (RK ARRAY OF LENGTH = <LOOP>)
-  ! <COS_AMP>              -- (OUT)    COS AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
-  ! <SIN_AMP>              -- (OUT)    SIN AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
-  ! void    decomposition_(int*, int*, int*, int*, int*, double*, double*, double*, int*, double*, double*, double*) ;
-  INTERFACE
-    MODULE SUBROUTINE DECOMPOSITION_(FLAG, METHOD, MODE, LENGTH, PAD, TOTAL, WINDOW, SEQUENCE, LOOP, FREQUENCY, COS_AMP, SIN_AMP) &
-      BIND(C, NAME = "decomposition_")
-      INTEGER(IK), INTENT(IN):: FLAG
-      INTEGER(IK), INTENT(IN):: METHOD
-      INTEGER(IK), INTENT(IN):: MODE
-      INTEGER(IK), INTENT(IN):: LENGTH
-      INTEGER(IK), INTENT(IN):: PAD
-      REAL(RK), INTENT(IN) :: TOTAL
-      REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: WINDOW
-      REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
-      INTEGER(IK), INTENT(IN) :: LOOP
-      REAL(RK), DIMENSION(LOOP), INTENT(OUT) :: FREQUENCY
-      REAL(RK), DIMENSION(LOOP), INTENT(OUT) :: COS_AMP
-      REAL(RK), DIMENSION(LOOP), INTENT(OUT) :: SIN_AMP
-      END SUBROUTINE DECOMPOSITION_
-  END INTERFACE
-  PUBLIC :: DECOMPOSITION_
-  ! ############################################################################################################################# !
-  ! FREQUENCY LIST (PERFORM DECOMPOSITION AND RETURN LIST OF FREQUENCIES)
-  ! (SUBROUTINE) FREQUENCY_LIST_(<FLAG>, <METHOD>, <MODE>, <LENGTH>, <PAD>, <TOTAL>, <WINDOW>, <SEQUENCE>, <LOOP>, <FREQUENCY>, <COS_AMP>, <SIN_AMP>)
-  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
-  ! <METHOD>               -- (IN)     FREQUENCY APPROXIMATION METHOD (IK), FREQUENCY_FFT = 0_IK, FREQUENCY_FFRFT = 1_IK, FREQUECY_PARABOLA = 2_IK
-  ! <MODE>                 -- (IN)     DECOMPOSTION MODE (IK), <MODE> = DECOMPOSITION_SUBTRACT = 0 OR <MODE> = DECOMPOSITION_PEAK = 1
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK), POWER OF TWO, NOT CHECKED
-  ! <PAD>                  -- (IN)     PADDED SEQUENCE LENGTH (IK), IF PAD > LENGTH, INPUT SEQUENCE IS PADDED, POWER OF TWO, NOT CHECKED
-  ! <TOTAL>                -- (IN)     SUM(WINDOW) (RK)
-  ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <LOOP>                 -- (IN)     NUMBER OF ITERATIONS/PEAKS (IK)
-  ! <FREQUENCY>            -- (OUT)    FREQUENCY ARRAY (RK ARRAY OF LENGTH = <LOOP>)
-  ! void    frequency_list_(int*, int*, int*, int*, int*, double*, double*, double*, int*, double*) ;
-  INTERFACE
-    MODULE SUBROUTINE FREQUENCY_LIST_(FLAG, METHOD, MODE, LENGTH, PAD, TOTAL, WINDOW, SEQUENCE, LOOP, FREQUENCY) &
-      BIND(C, NAME = "frequency_list_")
-      INTEGER(IK), INTENT(IN):: FLAG
-      INTEGER(IK), INTENT(IN):: METHOD
-      INTEGER(IK), INTENT(IN):: MODE
-      INTEGER(IK), INTENT(IN):: LENGTH
-      INTEGER(IK), INTENT(IN):: PAD
-      REAL(RK), INTENT(IN) :: TOTAL
-      REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: WINDOW
-      REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
-      INTEGER(IK), INTENT(IN) :: LOOP
-      REAL(RK), DIMENSION(LOOP), INTENT(OUT) :: FREQUENCY
-    END SUBROUTINE FREQUENCY_LIST_
-  END INTERFACE
-  PUBLIC :: FREQUENCY_LIST_
   ! ############################################################################################################################# !
   ! ESTIMATE AMPLITUDE FOR GIVEN FREQUENCY (DTFT SPECTRA COMPUTATION)
   ! (SUBROUTINE) AMPLITUDE_(<FLAG>, <LENGTH>, <TOTAL>, <WINDOW>, <SEQUENCE>, <FREQUENCY>, <COS_AMP>, <SIN_AMP>, <AMP>)
@@ -915,6 +948,154 @@ MODULE SIGNAL
   END INTERFACE
   PUBLIC :: AMPLITUDE_
   ! ############################################################################################################################# !
+  ! SIGNAL DECOMPOSITION
+  ! (SUBROUTINE) DECOMPOSITION_(<FLAG>, <RANGE_MIN>, <RANGE_MAX>, <METHOD>, <MODE>, <LENGTH>, <PAD>, <TOTAL>, <WINDOW>, <SEQUENCE>, <LOOP>, <FREQUENCY>, <COS_AMP>, <SIN_AMP>)
+  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
+  ! <RANGE_MIN>            -- (IN)     (MIN) FREQUENCY RANGE (RK)
+  ! <RANGE_MAX>            -- (IN)     (MAX) FREQUENCY RANGE (RK)
+  ! <METHOD>               -- (IN)     FREQUENCY APPROXIMATION METHOD (IK), FREQUENCY_FFT = 0_IK, FREQUENCY_FFRFT = 1_IK, FREQUECY_PARABOLA = 2_IK
+  ! <MODE>                 -- (IN)     DECOMPOSTION MODE (IK), <MODE> = DECOMPOSITION_SUBTRACT = 0 OR <MODE> = DECOMPOSITION_PEAK = 1
+  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK), POWER OF TWO, NOT CHECKED
+  ! <PAD>                  -- (IN)     PADDED SEQUENCE LENGTH (IK), IF PAD > LENGTH, INPUT SEQUENCE IS PADDED, POWER OF TWO, NOT CHECKED
+  ! <TOTAL>                -- (IN)     SUM(WINDOW) (RK)
+  ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
+  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
+  ! <LOOP>                 -- (IN)     NUMBER OF ITERATIONS/PEAKS (IK)
+  ! <FREQUENCY>            -- (OUT)    FREQUENCY ARRAY (RK ARRAY OF LENGTH = <LOOP>)
+  ! <COS_AMP>              -- (OUT)    COS AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
+  ! <SIN_AMP>              -- (OUT)    SIN AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
+  ! void    decomposition_(int*, double*, double*, int*, int*, int*, int*, double*, double*, double*, int*, double*, double*, double*) ;
+  INTERFACE
+    MODULE SUBROUTINE DECOMPOSITION_(FLAG, RANGE_MIN, RANGE_MAX, &
+      METHOD, MODE, LENGTH, PAD, TOTAL, WINDOW, SEQUENCE, LOOP, FREQUENCY, COS_AMP, SIN_AMP) &
+      BIND(C, NAME = "decomposition_")
+      INTEGER(IK), INTENT(IN):: FLAG
+      REAL(RK), INTENT(IN) :: RANGE_MIN
+      REAL(RK), INTENT(IN) :: RANGE_MAX
+      INTEGER(IK), INTENT(IN):: METHOD
+      INTEGER(IK), INTENT(IN):: MODE
+      INTEGER(IK), INTENT(IN):: LENGTH
+      INTEGER(IK), INTENT(IN):: PAD
+      REAL(RK), INTENT(IN) :: TOTAL
+      REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: WINDOW
+      REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
+      INTEGER(IK), INTENT(IN) :: LOOP
+      REAL(RK), DIMENSION(LOOP), INTENT(OUT) :: FREQUENCY
+      REAL(RK), DIMENSION(LOOP), INTENT(OUT) :: COS_AMP
+      REAL(RK), DIMENSION(LOOP), INTENT(OUT) :: SIN_AMP
+    END SUBROUTINE DECOMPOSITION_
+  END INTERFACE
+  PUBLIC :: DECOMPOSITION_
+  ! ############################################################################################################################# !
+  ! SIGNAL DECOMPOSITION (MEMORIZATION)
+  ! (SUBROUTINE) DECOMPOSITION__(<FLAG>, <RANGE_MIN>, <RANGE_MAX>, <METHOD>, <MODE>, <LENGTH>, <PAD>, <TOTAL>, <WINDOW>, <SEQUENCE>, <LOOP>, <FREQUENCY>, <COS_AMP>, <SIN_AMP>)
+  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
+  ! <RANGE_MIN>            -- (IN)     (MIN) FREQUENCY RANGE (RK)
+  ! <RANGE_MAX>            -- (IN)     (MAX) FREQUENCY RANGE (RK)
+  ! <METHOD>               -- (IN)     FREQUENCY APPROXIMATION METHOD (IK), FREQUENCY_FFT = 0_IK, FREQUENCY_FFRFT = 1_IK, FREQUECY_PARABOLA = 2_IK
+  ! <MODE>                 -- (IN)     DECOMPOSTION MODE (IK), <MODE> = DECOMPOSITION_SUBTRACT = 0 OR <MODE> = DECOMPOSITION_PEAK = 1
+  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK), POWER OF TWO, NOT CHECKED
+  ! <PAD>                  -- (IN)     PADDED SEQUENCE LENGTH (IK), IF PAD > LENGTH, INPUT SEQUENCE IS PADDED, POWER OF TWO, NOT CHECKED
+  ! <TOTAL>                -- (IN)     SUM(WINDOW) (RK)
+  ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
+  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
+  ! <LOOP>                 -- (IN)     NUMBER OF ITERATIONS/PEAKS (IK)
+  ! <FREQUENCY>            -- (OUT)    FREQUENCY ARRAY (RK ARRAY OF LENGTH = <LOOP>)
+  ! <COS_AMP>              -- (OUT)    COS AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
+  ! <SIN_AMP>              -- (OUT)    SIN AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
+  ! void    decomposition__(int*, double*, double*, int*, int*, int*, int*, double*, double*, double*, int*, double*, double*, double*) ;
+  INTERFACE
+    MODULE SUBROUTINE DECOMPOSITION__(FLAG, RANGE_MIN, RANGE_MAX, &
+      METHOD, MODE, LENGTH, PAD, TOTAL, WINDOW, SEQUENCE, LOOP, FREQUENCY, COS_AMP, SIN_AMP) &
+      BIND(C, NAME = "decomposition__")
+      INTEGER(IK), INTENT(IN):: FLAG
+      REAL(RK), INTENT(IN) :: RANGE_MIN
+      REAL(RK), INTENT(IN) :: RANGE_MAX
+      INTEGER(IK), INTENT(IN):: METHOD
+      INTEGER(IK), INTENT(IN):: MODE
+      INTEGER(IK), INTENT(IN):: LENGTH
+      INTEGER(IK), INTENT(IN):: PAD
+      REAL(RK), INTENT(IN) :: TOTAL
+      REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: WINDOW
+      REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
+      INTEGER(IK), INTENT(IN) :: LOOP
+      REAL(RK), DIMENSION(LOOP), INTENT(OUT) :: FREQUENCY
+      REAL(RK), DIMENSION(LOOP), INTENT(OUT) :: COS_AMP
+      REAL(RK), DIMENSION(LOOP), INTENT(OUT) :: SIN_AMP
+    END SUBROUTINE DECOMPOSITION__
+  END INTERFACE
+  PUBLIC :: DECOMPOSITION__
+  ! ############################################################################################################################# !
+  ! FREQUENCY LIST (PERFORM DECOMPOSITION AND RETURN LIST OF FREQUENCIES)
+  ! (SUBROUTINE) FREQUENCY_LIST_(<FLAG>, <RANGE_MIN>, <RANGE_MAX>, <METHOD>, <MODE>, <LENGTH>, <PAD>, <TOTAL>, <WINDOW>, <SEQUENCE>, <LOOP>, <FREQUENCY>, <COS_AMP>, <SIN_AMP>)
+  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
+  ! <RANGE_MIN>            -- (IN)     (MIN) FREQUENCY RANGE (RK)
+  ! <RANGE_MAX>            -- (IN)     (MAX) FREQUENCY RANGE (RK)
+  ! <METHOD>               -- (IN)     FREQUENCY APPROXIMATION METHOD (IK), FREQUENCY_FFT = 0_IK, FREQUENCY_FFRFT = 1_IK, FREQUECY_PARABOLA = 2_IK
+  ! <MODE>                 -- (IN)     DECOMPOSTION MODE (IK), <MODE> = DECOMPOSITION_SUBTRACT = 0 OR <MODE> = DECOMPOSITION_PEAK = 1
+  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK), POWER OF TWO, NOT CHECKED
+  ! <PAD>                  -- (IN)     PADDED SEQUENCE LENGTH (IK), IF PAD > LENGTH, INPUT SEQUENCE IS PADDED, POWER OF TWO, NOT CHECKED
+  ! <TOTAL>                -- (IN)     SUM(WINDOW) (RK)
+  ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
+  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
+  ! <LOOP>                 -- (IN)     NUMBER OF ITERATIONS/PEAKS (IK)
+  ! <FREQUENCY>            -- (OUT)    FREQUENCY ARRAY (RK ARRAY OF LENGTH = <LOOP>)
+  ! void    frequency_list_(int*, double*, double*, int*, int*, int*, int*, double*, double*, double*, int*, double*) ;
+  INTERFACE
+    MODULE SUBROUTINE FREQUENCY_LIST_(FLAG, RANGE_MIN, RANGE_MAX, &
+      METHOD, MODE, LENGTH, PAD, TOTAL, WINDOW, SEQUENCE, LOOP, FREQUENCY) &
+      BIND(C, NAME = "frequency_list_")
+      INTEGER(IK), INTENT(IN):: FLAG
+      REAL(RK), INTENT(IN) :: RANGE_MIN
+      REAL(RK), INTENT(IN) :: RANGE_MAX
+      INTEGER(IK), INTENT(IN):: METHOD
+      INTEGER(IK), INTENT(IN):: MODE
+      INTEGER(IK), INTENT(IN):: LENGTH
+      INTEGER(IK), INTENT(IN):: PAD
+      REAL(RK), INTENT(IN) :: TOTAL
+      REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: WINDOW
+      REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
+      INTEGER(IK), INTENT(IN) :: LOOP
+      REAL(RK), DIMENSION(LOOP), INTENT(OUT) :: FREQUENCY
+    END SUBROUTINE FREQUENCY_LIST_
+  END INTERFACE
+  PUBLIC :: FREQUENCY_LIST_
+  ! ############################################################################################################################# !
+  ! FREQUENCY LIST (PERFORM DECOMPOSITION AND RETURN LIST OF FREQUENCIES) (MEMORIZATION)
+  ! (SUBROUTINE) FREQUENCY_LIST__(<FLAG>, <RANGE_MIN>, <RANGE_MAX>, <METHOD>, <MODE>, <LENGTH>, <PAD>, <TOTAL>, <WINDOW>, <SEQUENCE>, <LOOP>, <FREQUENCY>, <COS_AMP>, <SIN_AMP>)
+  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
+  ! <RANGE_MIN>            -- (IN)     (MIN) FREQUENCY RANGE (RK)
+  ! <RANGE_MAX>            -- (IN)     (MAX) FREQUENCY RANGE (RK)
+  ! <METHOD>               -- (IN)     FREQUENCY APPROXIMATION METHOD (IK), FREQUENCY_FFT = 0_IK, FREQUENCY_FFRFT = 1_IK, FREQUECY_PARABOLA = 2_IK
+  ! <MODE>                 -- (IN)     DECOMPOSTION MODE (IK), <MODE> = DECOMPOSITION_SUBTRACT = 0 OR <MODE> = DECOMPOSITION_PEAK = 1
+  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK), POWER OF TWO, NOT CHECKED
+  ! <PAD>                  -- (IN)     PADDED SEQUENCE LENGTH (IK), IF PAD > LENGTH, INPUT SEQUENCE IS PADDED, POWER OF TWO, NOT CHECKED
+  ! <TOTAL>                -- (IN)     SUM(WINDOW) (RK)
+  ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
+  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
+  ! <LOOP>                 -- (IN)     NUMBER OF ITERATIONS/PEAKS (IK)
+  ! <FREQUENCY>            -- (OUT)    FREQUENCY ARRAY (RK ARRAY OF LENGTH = <LOOP>)
+  ! void    frequency_list__(int*, double*, double*, int*, int*, int*, int*, double*, double*, double*, int*, double*) ;
+  INTERFACE
+    MODULE SUBROUTINE FREQUENCY_LIST__(FLAG, RANGE_MIN, RANGE_MAX, &
+      METHOD, MODE, LENGTH, PAD, TOTAL, WINDOW, SEQUENCE, LOOP, FREQUENCY) &
+      BIND(C, NAME = "frequency_list__")
+      INTEGER(IK), INTENT(IN):: FLAG
+      REAL(RK), INTENT(IN) :: RANGE_MIN
+      REAL(RK), INTENT(IN) :: RANGE_MAX
+      INTEGER(IK), INTENT(IN):: METHOD
+      INTEGER(IK), INTENT(IN):: MODE
+      INTEGER(IK), INTENT(IN):: LENGTH
+      INTEGER(IK), INTENT(IN):: PAD
+      REAL(RK), INTENT(IN) :: TOTAL
+      REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: WINDOW
+      REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
+      INTEGER(IK), INTENT(IN) :: LOOP
+      REAL(RK), DIMENSION(LOOP), INTENT(OUT) :: FREQUENCY
+    END SUBROUTINE FREQUENCY_LIST__
+  END INTERFACE
+  PUBLIC :: FREQUENCY_LIST__
+  ! ############################################################################################################################# !
   ! AMPLITUDE LIST (COMPUTE AMPLITUDES FOR LIST OF GIVEN FREQUENCIES)
   ! (SUBROUTINE) AMPLITUDE_LIST_(<FLAG>, <LENGTH>, <TOTAL>, <WINDOW>, <SEQUENCE>, <LOOP>, <FREQUENCY>, <COS_AMP>, <SIN_AMP>)
   ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
@@ -943,73 +1124,11 @@ MODULE SIGNAL
   END INTERFACE
   PUBLIC :: AMPLITUDE_LIST_
   ! ############################################################################################################################# !
-  ! SIGNAL DECOMPOSITION (FFT AND FFRFT DATA MEMOZIZATION)
-  ! (SUBROUTINE) DECOMPOSITION__(<FLAG>, <METHOD>, <MODE>, <LENGTH>, <PAD>, <TOTAL>, <WINDOW>, <SEQUENCE>, <LOOP>, <FREQUENCY>, <COS_AMP>, <SIN_AMP>)
-  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
-  ! <METHOD>               -- (IN)     FREQUENCY APPROXIMATION METHOD (IK), FREQUENCY_FFT = 0_IK, FREQUENCY_FFRFT = 1_IK, FREQUECY_PARABOLA = 2_IK
-  ! <MODE>                 -- (IN)     DECOMPOSTION MODE (IK), <MODE> = DECOMPOSITION_SUBTRACT = 0 OR <MODE> = DECOMPOSITION_PEAK = 1
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK), POWER OF TWO, NOT CHECKED
-  ! <PAD>                  -- (IN)     PADDED SEQUENCE LENGTH (IK), IF PAD > LENGTH, INPUT SEQUENCE IS PADDED, POWER OF TWO, NOT CHECKED
-  ! <TOTAL>                -- (IN)     SUM(WINDOW) (RK)
-  ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <LOOP>                 -- (IN)     NUMBER OF ITERATIONS/PEAKS (IK)
-  ! <FREQUENCY>            -- (OUT)    FREQUENCY ARRAY (RK ARRAY OF LENGTH = <LOOP>)
-  ! <COS_AMP>              -- (OUT)    COS AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
-  ! <SIN_AMP>              -- (OUT)    SIN AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
-  ! void    decomposition__(int*, int*, int*, int*, int*, double*, double*, double*, int*, double*, double*, double*) ;
-  INTERFACE
-    MODULE SUBROUTINE DECOMPOSITION__(FLAG, METHOD, MODE, LENGTH, PAD, TOTAL, WINDOW, SEQUENCE, LOOP, FREQUENCY, COS_AMP, SIN_AMP) &
-      BIND(C, NAME = "decomposition__")
-      INTEGER(IK), INTENT(IN):: FLAG
-      INTEGER(IK), INTENT(IN):: METHOD
-      INTEGER(IK), INTENT(IN):: MODE
-      INTEGER(IK), INTENT(IN):: LENGTH
-      INTEGER(IK), INTENT(IN):: PAD
-      REAL(RK), INTENT(IN) :: TOTAL
-      REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: WINDOW
-      REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
-      INTEGER(IK), INTENT(IN) :: LOOP
-      REAL(RK), DIMENSION(LOOP), INTENT(OUT) :: FREQUENCY
-      REAL(RK), DIMENSION(LOOP), INTENT(OUT) :: COS_AMP
-      REAL(RK), DIMENSION(LOOP), INTENT(OUT) :: SIN_AMP
-    END SUBROUTINE DECOMPOSITION__
-  END INTERFACE
-  PUBLIC :: DECOMPOSITION__
-  ! ############################################################################################################################# !
-  ! FREQUENCY LIST (FFT AND FFRFT DATA MEMORIZATION) (PERFORM DECOMPOSITION AND RETURN LIST OF FREQUENCIES)
-  ! (SUBROUTINE) FREQUENCY_LIST__(<FLAG>, <METHOD>, <MODE>, <LENGTH>, <PAD>, <TOTAL>, <WINDOW>, <SEQUENCE>, <LOOP>, <FREQUENCY>, <COS_AMP>, <SIN_AMP>)
-  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
-  ! <METHOD>               -- (IN)     FREQUENCY APPROXIMATION METHOD (IK), FREQUENCY_FFT = 0_IK, FREQUENCY_FFRFT = 1_IK, FREQUECY_PARABOLA = 2_IK
-  ! <MODE>                 -- (IN)     DECOMPOSTION MODE (IK), <MODE> = DECOMPOSITION_SUBTRACT = 0 OR <MODE> = DECOMPOSITION_PEAK = 1
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK), POWER OF TWO, NOT CHECKED
-  ! <PAD>                  -- (IN)     PADDED SEQUENCE LENGTH (IK), IF PAD > LENGTH, INPUT SEQUENCE IS PADDED, POWER OF TWO, NOT CHECKED
-  ! <TOTAL>                -- (IN)     SUM(WINDOW) (RK)
-  ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <LOOP>                 -- (IN)     NUMBER OF ITERATIONS/PEAKS (IK)
-  ! <FREQUENCY>            -- (OUT)    FREQUENCY ARRAY (RK ARRAY OF LENGTH = <LOOP>)
-  ! void    frequency_list__(int*, int*, int*, int*, int*, double*, double*, double*, int*, double*) ;
-  INTERFACE
-    MODULE SUBROUTINE FREQUENCY_LIST__(FLAG, METHOD, MODE, LENGTH, PAD, TOTAL, WINDOW, SEQUENCE, LOOP, FREQUENCY) &
-      BIND(C, NAME = "frequency_list__")
-      INTEGER(IK), INTENT(IN):: FLAG
-      INTEGER(IK), INTENT(IN):: METHOD
-      INTEGER(IK), INTENT(IN):: MODE
-      INTEGER(IK), INTENT(IN):: LENGTH
-      INTEGER(IK), INTENT(IN):: PAD
-      REAL(RK), INTENT(IN) :: TOTAL
-      REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: WINDOW
-      REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
-      INTEGER(IK), INTENT(IN) :: LOOP
-      REAL(RK), DIMENSION(LOOP), INTENT(OUT) :: FREQUENCY
-    END SUBROUTINE FREQUENCY_LIST__
-  END INTERFACE
-  PUBLIC :: FREQUENCY_LIST__
-  ! ############################################################################################################################# !
   ! FREQUENCY CORRECTION
-  ! (SUBROUTINE) FREQUENCY_CORRECTION_(<FLAG>, <METHOD>, <MODE>, <LENGTH>, <PAD>, <TOTAL>, <WINDOW>, <LOOP>, <FREQUENCY>, <COS_AMP>, <SIN_AMP>)
+  ! (SUBROUTINE) FREQUENCY_CORRECTION_(<FLAG>, <RANGE_MIN>, <RANGE_MAX>, <METHOD>, <MODE>, <LENGTH>, <PAD>, <TOTAL>, <WINDOW>, <LOOP>, <FREQUENCY>, <COS_AMP>, <SIN_AMP>)
   ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
+  ! <RANGE_MIN>            -- (IN)     (MIN) FREQUENCY RANGE (RK)
+  ! <RANGE_MAX>            -- (IN)     (MAX) FREQUENCY RANGE (RK)
   ! <METHOD>               -- (IN)     FREQUENCY APPROXIMATION METHOD (IK), FREQUENCY_FFT = 0_IK, FREQUENCY_FFRFT = 1_IK, FREQUECY_PARABOLA = 2_IK
   ! <MODE>                 -- (IN)     DECOMPOSTION MODE (IK), <MODE> = DECOMPOSITION_SUBTRACT = 0 OR <MODE> = DECOMPOSITION_PEAK = 1
   ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK), POWER OF TWO, NOT CHECKED
@@ -1021,10 +1140,14 @@ MODULE SIGNAL
   ! <COS_AMP>              -- (IN)     COS AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
   ! <SIN_AMP>              -- (IN)     SIN AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
   ! <FREQUENCY>            -- (OUT)    CORRECTED FREQUENCY ARRAY (RK ARRAY OF LENGTH = <LOOP>)
-  ! void    frequency_correction_(int*, int*, int*, int*, int*, double*, double*, int*, double*, double*, double*) ;
+  ! void    frequency_correction_(int*, double*, double*, int*, int*, int*, int*, double*, double*, int*, double*, double*, double*) ;
   INTERFACE
-    MODULE SUBROUTINE FREQUENCY_CORRECTION_(FLAG, METHOD, MODE, LENGTH, TOTAL, WINDOW, LOOP, FREQUENCY, COS_AMP, SIN_AMP)
+    MODULE SUBROUTINE FREQUENCY_CORRECTION_(FLAG, RANGE_MIN, RANGE_MAX, &
+      METHOD, MODE, LENGTH, TOTAL, WINDOW, LOOP, FREQUENCY, COS_AMP, SIN_AMP) &
+      BIND(C, NAME = "frequency_correction_")
       INTEGER(IK), INTENT(IN):: FLAG
+      REAL(RK), INTENT(IN) :: RANGE_MIN
+      REAL(RK), INTENT(IN) :: RANGE_MAX
       INTEGER(IK), INTENT(IN):: METHOD
       INTEGER(IK), INTENT(IN):: MODE
       INTEGER(IK), INTENT(IN):: LENGTH
@@ -1037,6 +1160,43 @@ MODULE SIGNAL
     END SUBROUTINE FREQUENCY_CORRECTION_
   END INTERFACE
   PUBLIC :: FREQUENCY_CORRECTION_
+  ! ############################################################################################################################# !
+  ! FREQUENCY CORRECTION (MEMORIZATION)
+  ! (SUBROUTINE) FREQUENCY_CORRECTION__(<FLAG>, <RANGE_MIN>, <RANGE_MAX>, <METHOD>, <MODE>, <LENGTH>, <PAD>, <TOTAL>, <WINDOW>, <LOOP>, <FREQUENCY>, <COS_AMP>, <SIN_AMP>)
+  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
+  ! <RANGE_MIN>            -- (IN)     (MIN) FREQUENCY RANGE (RK)
+  ! <RANGE_MAX>            -- (IN)     (MAX) FREQUENCY RANGE (RK)
+  ! <METHOD>               -- (IN)     FREQUENCY APPROXIMATION METHOD (IK), FREQUENCY_FFT = 0_IK, FREQUENCY_FFRFT = 1_IK, FREQUECY_PARABOLA = 2_IK
+  ! <MODE>                 -- (IN)     DECOMPOSTION MODE (IK), <MODE> = DECOMPOSITION_SUBTRACT = 0 OR <MODE> = DECOMPOSITION_PEAK = 1
+  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK), POWER OF TWO, NOT CHECKED
+  ! <PAD>                  -- (IN)     PADDED SEQUENCE LENGTH (IK), IF PAD > LENGTH, INPUT SEQUENCE IS PADDED, POWER OF TWO, NOT CHECKED
+  ! <TOTAL>                -- (IN)     SUM(WINDOW) (RK)
+  ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
+  ! <LOOP>                 -- (IN)     NUMBER OF ITERATIONS/PEAKS (IK)
+  ! <FREQUENCY>            -- (IN)     FREQUENCY ARRAY (RK ARRAY OF LENGTH = <LOOP>)
+  ! <COS_AMP>              -- (IN)     COS AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
+  ! <SIN_AMP>              -- (IN)     SIN AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
+  ! <FREQUENCY>            -- (OUT)    CORRECTED FREQUENCY ARRAY (RK ARRAY OF LENGTH = <LOOP>)
+  ! void    frequency_correction__(int*, double*, double*, int*, int*, int*, int*, double*, double*, int*, double*, double*, double*) ;
+  INTERFACE
+    MODULE SUBROUTINE FREQUENCY_CORRECTION__(FLAG, RANGE_MIN, RANGE_MAX, &
+      METHOD, MODE, LENGTH, TOTAL, WINDOW, LOOP, FREQUENCY, COS_AMP, SIN_AMP) &
+      BIND(C, NAME = "frequency_correction__")
+      INTEGER(IK), INTENT(IN):: FLAG
+      REAL(RK), INTENT(IN) :: RANGE_MIN
+      REAL(RK), INTENT(IN) :: RANGE_MAX
+      INTEGER(IK), INTENT(IN):: METHOD
+      INTEGER(IK), INTENT(IN):: MODE
+      INTEGER(IK), INTENT(IN):: LENGTH
+      REAL(RK), INTENT(IN) :: TOTAL
+      REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: WINDOW
+      INTEGER(IK), INTENT(IN) :: LOOP
+      REAL(RK), DIMENSION(LOOP), INTENT(INOUT) :: FREQUENCY
+      REAL(RK), DIMENSION(LOOP), INTENT(INOUT) :: COS_AMP
+      REAL(RK), DIMENSION(LOOP), INTENT(INOUT) :: SIN_AMP
+    END SUBROUTINE FREQUENCY_CORRECTION__
+  END INTERFACE
+  PUBLIC :: FREQUENCY_CORRECTION__
   ! ############################################################################################################################# !
   ! OPTIMIZATION
   ! ############################################################################################################################# !
@@ -1156,63 +1316,5 @@ MODULE SIGNAL
     END FUNCTION GOLDEN_
   END INTERFACE
   PUBLIC :: GOLDEN_
-  ! ############################################################################################################################# !
-  ! REFINE FREQUENCY ESTIMATION (BINARY SEARCH)
-  ! (FUNCTION) BINARY_AMPLITUDE_(<FLAG>, <LENGTH>, <TOTAL>, <WINDOW>, <SEQUENCE>, <GUESS>, <INTERVAL>, <LIMIT>, <TOLERANCE>)
-  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK), POWER OF TWO, NOT CHECKED
-  ! <TOTAL>                -- (IN)     SUM(WINDOW) (RK)
-  ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <GUESS>                -- (IN)     INITIAL GUESS VALUE (RK)
-  ! <INTERVAL>             -- (IN)     SEARCH INTERVAL (RK), GUESS IS IN THE MIDLE
-  ! <LIMIT>                -- (IN)     MAXIMUM NUMBER OF ITERATIONS (IK)
-  ! <TOLERANCE>            -- (IN)     MAXIMUM TOLERANCE (RK)
-  ! <BINARY_AMPLITUDE_>    -- (OUT)    REFINED FREQUENCY
-  ! double  binary_amplitude_(int*, int*, double*, double*, double*, double*, double*, int*, double*) ;
-  INTERFACE
-    MODULE REAL(RK) FUNCTION BINARY_AMPLITUDE_(FLAG, LENGTH, TOTAL, WINDOW, SEQUENCE, GUESS, INTERVAL, LIMIT, TOLERANCE) &
-      BIND(C, NAME = "binary_amplitude_")
-      INTEGER(IK), INTENT(IN):: FLAG
-      INTEGER(IK), INTENT(IN):: LENGTH
-      REAL(RK), INTENT(IN) :: TOTAL
-      REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: WINDOW
-      REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
-      REAL(RK), INTENT(IN) :: GUESS
-      REAL(RK), INTENT(IN) :: INTERVAL
-      INTEGER(IK), INTENT(IN) :: LIMIT
-      REAL(RK), INTENT(IN) :: TOLERANCE
-    END FUNCTION
-  END INTERFACE
-  PUBLIC :: BINARY_AMPLITUDE_
-  ! ############################################################################################################################# !
-  ! REFINE FREQUENCY ESTIMATION (GOLDEN SEARCH)
-  ! (FUNCTION) GOLDEN_AMPLITUDE_(<FLAG>, <LENGTH>, <TOTAL>, <WINDOW>, <SEQUENCE>, <GUESS>, <INTERVAL>, <LIMIT>, <TOLERANCE>)
-  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK), POWER OF TWO, NOT CHECKED
-  ! <TOTAL>                -- (IN)     SUM(WINDOW) (RK)
-  ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <GUESS>                -- (IN)     INITIAL GUESS VALUE (RK)
-  ! <INTERVAL>             -- (IN)     SEARCH INTERVAL (RK), GUESS IS IN THE MIDLE
-  ! <LIMIT>                -- (IN)     MAXIMUM NUMBER OF ITERATIONS (IK)
-  ! <TOLERANCE>            -- (IN)     MAXIMUM TOLERANCE (RK)
-  ! <GOLDEN_AMPLITUDE_>    -- (OUT)    REFINED FREQUENCY
-  ! double  golden_amplitude_(int*, int*, double*, double*, double*, double*, double*, int*, double*) ;
-  INTERFACE
-    MODULE REAL(RK) FUNCTION GOLDEN_AMPLITUDE_(FLAG, LENGTH, TOTAL, WINDOW, SEQUENCE, GUESS, INTERVAL, LIMIT, TOLERANCE) &
-      BIND(C, NAME = "golden_amplitude_")
-      INTEGER(IK), INTENT(IN):: FLAG
-      INTEGER(IK), INTENT(IN):: LENGTH
-      REAL(RK), INTENT(IN) :: TOTAL
-      REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: WINDOW
-      REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
-      REAL(RK), INTENT(IN) :: GUESS
-      REAL(RK), INTENT(IN) :: INTERVAL
-      INTEGER(IK), INTENT(IN) :: LIMIT
-      REAL(RK), INTENT(IN) :: TOLERANCE
-    END FUNCTION
-  END INTERFACE
-  PUBLIC :: GOLDEN_AMPLITUDE_
   ! ############################################################################################################################# !
 END MODULE SIGNAL
