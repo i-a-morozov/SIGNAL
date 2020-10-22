@@ -5,13 +5,13 @@ SUBMODULE (SIGNAL) TRANSFORMATION
   IMPLICIT NONE
   CONTAINS
   ! ############################################################################################################################# !
-  ! (LINEAR) FRACTIONAL COMPLEX DISCRETE FOURIER TRANSFORM (POWER OF TWO INPUT LENGTH INPUT)
+  ! (LINEAR) FRACTIONAL COMPLEX DISCRETE FOURIER TRANSFORM
   ! (SUBROUTINE) FFRFT_(<LENGTH>, <ARGUMENT>, <SEQUENCE>)
   ! <LENGTH>               -- (IN)     LENGTH (IK)
   ! <ARGUMENT>             -- (IN)     PARAMETER (RK)
   ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <SEQUENCE>             -- (OUT)    CDFT (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., FR_I, FI_I, ...]
-  ! void    ffrft_(int*, double*, double*) ;
+  ! <SEQUENCE>             -- (OUT)    FCDFT (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., FR_I, FI_I, ...]
+  ! void    ffrft_(int* length, double* argument, double* sequence) ;
   MODULE SUBROUTINE FFRFT_(LENGTH, ARGUMENT, SEQUENCE) &
     BIND(C, NAME = "ffrft_")
     INTEGER(IK), INTENT(IN) :: LENGTH
@@ -27,8 +27,8 @@ SUBMODULE (SIGNAL) TRANSFORMATION
     COS_MUL = COS(MUL)
     SIN_MUL = SIN(MUL)
     ONE = 0.0_RK
-    ONE(1_IK:2_IK*LENGTH:2_IK) = SEQUENCE(1_IK:2_IK*LENGTH:2_IK)*COS_MUL-SEQUENCE(2_IK:2_IK*LENGTH:2_IK)*SIN_MUL
-    ONE(2_IK:2_IK*LENGTH:2_IK) = SEQUENCE(1_IK:2_IK*LENGTH:2_IK)*SIN_MUL+SEQUENCE(2_IK:2_IK*LENGTH:2_IK)*COS_MUL
+    ONE(1_IK:2_IK*LENGTH:2_IK) = SEQUENCE(1_IK::2_IK)*COS_MUL-SEQUENCE(2_IK::2_IK)*SIN_MUL
+    ONE(2_IK:2_IK*LENGTH:2_IK) = SEQUENCE(1_IK::2_IK)*SIN_MUL+SEQUENCE(2_IK::2_IK)*COS_MUL
     TWO = 0.0_RK
     TWO(1_IK:2_IK*LENGTH:2_IK) = +COS_MUL
     TWO(2_IK:2_IK*LENGTH:2_IK) = -SIN_MUL
@@ -38,20 +38,17 @@ SUBMODULE (SIGNAL) TRANSFORMATION
     CALL __FFT__(2_IK*LENGTH, FFT_FORWARD, ONE)
     CALL __FFT__(2_IK*LENGTH, FFT_FORWARD, TWO)
     TRE = ONE
-    ONE(1_IK:4_IK*LENGTH:2_IK) = TRE(1_IK:4_IK*LENGTH:2_IK)*TWO(1_IK:4_IK*LENGTH:2_IK)-&
-      TRE(2_IK:4_IK*LENGTH:2_IK)*TWO(2_IK:4_IK*LENGTH:2_IK)
-    ONE(2_IK:4_IK*LENGTH:2_IK) = TRE(1_IK:4_IK*LENGTH:2_IK)*TWO(2_IK:4_IK*LENGTH:2_IK)+&
-      TRE(2_IK:4_IK*LENGTH:2_IK)*TWO(1_IK:4_IK*LENGTH:2_IK)
+    ONE(1_IK::2_IK) = TRE(1_IK::2_IK)*TWO(1_IK::2_IK)-TRE(2_IK::2_IK)*TWO(2_IK::2_IK)
+    ONE(2_IK::2_IK) = TRE(1_IK::2_IK)*TWO(2_IK::2_IK)+TRE(2_IK::2_IK)*TWO(1_IK::2_IK)
     CALL __FFT__(2_IK*LENGTH, FFT_INVERSE, ONE)
     COPY = 1.0_RK/REAL(2_IK*LENGTH, RK)*ONE(1_IK:2_IK*LENGTH:1_IK)
-    SEQUENCE(1_IK:2_IK*LENGTH:2_IK) = COPY(1_IK:2_IK*LENGTH:2_IK)*COS_MUL-COPY(2_IK:2_IK*LENGTH:2_IK)*SIN_MUL
-    SEQUENCE(2_IK:2_IK*LENGTH:2_IK) = COPY(1_IK:2_IK*LENGTH:2_IK)*SIN_MUL+COPY(2_IK:2_IK*LENGTH:2_IK)*COS_MUL
+    SEQUENCE(1_IK::2_IK) = COPY(1_IK::2_IK)*COS_MUL-COPY(2_IK::2_IK)*SIN_MUL
+    SEQUENCE(2_IK::2_IK) = COPY(1_IK::2_IK)*SIN_MUL+COPY(2_IK::2_IK)*COS_MUL
   END SUBROUTINE FFRFT_
   ! ############################################################################################################################# !
-  ! (LINEAR) FRACTIONAL COMPLEX DISCRETE FOURIER TRANSFORM (POWER OF TWO INPUT LENGTH INPUT)
-  ! (SUBROUTINE) FFRFT__(<LENGTH>, <ARGUMENT>, <SEQUENCE>, <IP>, <WORK>, <COS_FST>, <SIN_FST>, <COS_LST>, <SIN_LST>)
+  ! (LINEAR) FRACTIONAL COMPLEX DISCRETE FOURIER TRANSFORM (MEMORIZATION)
+  ! (SUBROUTINE) FFRFT__(<LENGTH>, <SEQUENCE>, <IP>, <WORK>, <COS_FST>, <SIN_FST>, <COS_LST>, <SIN_LST>)
   ! <LENGTH>               -- (IN)     LENGTH (IK)
-  ! <ARGUMENT>             -- (IN)     PARAMETER (RK)
   ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
   ! <IP>                   -- (IN)     FFRFT BIT DATA
   ! <WORK>                 -- (IN)     FFRFT TRIG DATA
@@ -59,7 +56,7 @@ SUBMODULE (SIGNAL) TRANSFORMATION
   ! <SIN_FST>              -- (IN)     FIRST SIN ARRAY
   ! <COS_LST>              -- (IN)     LAST COS ARRAY
   ! <SIN_LAT>              -- (IN)     LAST SIN ARRAY
-  ! <SEQUENCE>             -- (OUT)    CDFT (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., FR_I, FI_I, ...]
+  ! <SEQUENCE>             -- (OUT)    FCDFT (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., FR_I, FI_I, ...]
   MODULE SUBROUTINE FFRFT__(LENGTH, SEQUENCE, IP, WORK, COS_FST, SIN_FST, COS_LST, SIN_LST)
     INTEGER(IK), INTENT(IN) :: LENGTH
     REAL(RK), DIMENSION(2_IK*LENGTH), INTENT(INOUT) :: SEQUENCE
@@ -72,8 +69,8 @@ SUBMODULE (SIGNAL) TRANSFORMATION
     REAL(RK), DIMENSION(4_IK*LENGTH) :: ONE, TWO, TRE
     REAL(RK), DIMENSION(2_IK*LENGTH) :: COPY
     ONE = 0.0_RK
-    ONE(1_IK:2_IK*LENGTH:2_IK) = SEQUENCE(1_IK:2_IK*LENGTH:2_IK)*COS_FST-SEQUENCE(2_IK:2_IK*LENGTH:2_IK)*SIN_FST
-    ONE(2_IK:2_IK*LENGTH:2_IK) = SEQUENCE(1_IK:2_IK*LENGTH:2_IK)*SIN_FST+SEQUENCE(2_IK:2_IK*LENGTH:2_IK)*COS_FST
+    ONE(1_IK:2_IK*LENGTH:2_IK) = SEQUENCE(1_IK::2_IK)*COS_FST-SEQUENCE(2_IK::2_IK)*SIN_FST
+    ONE(2_IK:2_IK*LENGTH:2_IK) = SEQUENCE(1_IK::2_IK)*SIN_FST+SEQUENCE(2_IK::2_IK)*COS_FST
     TWO = 0.0_RK
     TWO(1_IK:2_IK*LENGTH:2_IK) = +COS_FST
     TWO(2_IK:2_IK*LENGTH:2_IK) = -SIN_FST
@@ -82,23 +79,21 @@ SUBMODULE (SIGNAL) TRANSFORMATION
     CALL FFT_RADIX_EIGHT__(2_IK*LENGTH, FFT_FORWARD, ONE, IP, WORK)
     CALL FFT_RADIX_EIGHT__(2_IK*LENGTH, FFT_FORWARD, TWO, IP, WORK)
     TRE = ONE
-    ONE(1_IK:4_IK*LENGTH:2_IK) = TRE(1_IK:4_IK*LENGTH:2_IK)*TWO(1_IK:4_IK*LENGTH:2_IK)-&
-      TRE(2_IK:4_IK*LENGTH:2_IK)*TWO(2_IK:4_IK*LENGTH:2_IK)
-    ONE(2_IK:4_IK*LENGTH:2_IK) = TRE(1_IK:4_IK*LENGTH:2_IK)*TWO(2_IK:4_IK*LENGTH:2_IK)+&
-      TRE(2_IK:4_IK*LENGTH:2_IK)*TWO(1_IK:4_IK*LENGTH:2_IK)
+    ONE(1_IK::2_IK) = TRE(1_IK::2_IK)*TWO(1_IK::2_IK)-TRE(2_IK::2_IK)*TWO(2_IK::2_IK)
+    ONE(2_IK::2_IK) = TRE(1_IK::2_IK)*TWO(2_IK::2_IK)+TRE(2_IK::2_IK)*TWO(1_IK::2_IK)
     CALL FFT_RADIX_EIGHT__(2_IK*LENGTH, FFT_INVERSE, ONE, IP, WORK)
     COPY = 1.0_RK/REAL(2_IK*LENGTH, RK)*ONE(1_IK:2_IK*LENGTH:1_IK)
-    SEQUENCE(1_IK:2_IK*LENGTH:2_IK) = COPY(1_IK:2_IK*LENGTH:2_IK)*COS_FST-COPY(2_IK:2_IK*LENGTH:2_IK)*SIN_FST
-    SEQUENCE(2_IK:2_IK*LENGTH:2_IK) = COPY(1_IK:2_IK*LENGTH:2_IK)*SIN_FST+COPY(2_IK:2_IK*LENGTH:2_IK)*COS_FST
+    SEQUENCE(1_IK::2_IK) = COPY(1_IK::2_IK)*COS_FST-COPY(2_IK::2_IK)*SIN_FST
+    SEQUENCE(2_IK::2_IK) = COPY(1_IK::2_IK)*SIN_FST+COPY(2_IK::2_IK)*COS_FST
   END SUBROUTINE FFRFT__
   ! ############################################################################################################################# !
-  ! (FFTW) COMPLEX DISCRETE FOURIER TRANSFORM (POWER OF TWO INPUT LENGTH INPUT)
+  ! (FFTW) COMPLEX DISCRETE FOURIER TRANSFORM
   ! (SUBROUTINE) FFT_EXTERNAL_(<LENGTH>, <DIRECTION>, <SEQUENCE>)
   ! <LENGTH>               -- (IN)     LENGTH (IK)
   ! <DIRECTION>            -- (IN)     DIRECTION (IK), FFT_FORWARD = +1_IK OR FFT_INVERSE = -1_IK
   ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
   ! <SEQUENCE>             -- (OUT)    CDFT (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., FR_I, FI_I, ...]
-  ! void    fft_external_(int*, int*, double*) ;
+  ! void    fft_external_(int* length, int* direction, double* sequence) ;
   MODULE SUBROUTINE FFT_EXTERNAL_(LENGTH, DIRECTION, SEQUENCE) &
     BIND(C, NAME = "fft_external_")
     INTEGER(IK), INTENT(IN) :: LENGTH
@@ -106,22 +101,22 @@ SUBMODULE (SIGNAL) TRANSFORMATION
     REAL(RK), DIMENSION(2_IK*LENGTH), INTENT(INOUT) :: SEQUENCE
     COMPLEX(RK), DIMENSION(LENGTH) :: IN, OUT
     INTEGER(IK) :: PLAN
-    IN%RE = SEQUENCE(1_IK:LENGTH:2_IK)
-    IN%IM = SEQUENCE(2_IK:LENGTH:2_IK)
+    IN%RE = SEQUENCE(1_IK::2_IK)
+    IN%IM = SEQUENCE(2_IK::2_IK)
     CALL DFFTW_PLAN_DFT_1D(PLAN, LENGTH, IN, OUT, DIRECTION, 64_IK)
     CALL DFFTW_EXECUTE_DFT(PLAN, IN, OUT)
     CALL DFFTW_DESTROY_PLAN(PLAN)
-    SEQUENCE(1_IK:LENGTH:2_IK) = OUT%RE
-    SEQUENCE(2_IK:LENGTH:2_IK) = OUT%IM
+    SEQUENCE(1_IK::2_IK) = OUT%RE
+    SEQUENCE(2_IK::2_IK) = OUT%IM
   END SUBROUTINE FFT_EXTERNAL_
   ! ############################################################################################################################# !
-  ! (NRF77) COMPLEX DISCRETE FOURIER TRANSFORM (POWER OF TWO INPUT LENGTH INPUT)
+  ! (NRF77) COMPLEX DISCRETE FOURIER TRANSFORM
   ! (SUBROUTINE) FFT_RADIX_TWO_(<LENGTH>, <DIRECTION>, <SEQUENCE>)
   ! <LENGTH>               -- (IN)     LENGTH (IK)
   ! <DIRECTION>            -- (IN)     DIRECTION (IK), FFT_FORWARD = +1_IK OR FFT_INVERSE = -1_IK
   ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
   ! <SEQUENCE>             -- (OUT)    CDFT (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., FR_I, FI_I, ...]
-  ! void    fft_radix_two_(int*, int*, double*) ;
+  ! void    fft_radix_two_(int* length, int* direction, double* sequence) ;
   MODULE SUBROUTINE FFT_RADIX_TWO_(LENGTH, DIRECTION, SEQUENCE) &
     BIND(C, NAME = "fft_radix_two_")
     INTEGER(IK), INTENT(IN) :: LENGTH
@@ -188,13 +183,13 @@ SUBMODULE (SIGNAL) TRANSFORMATION
     END DO
   END SUBROUTINE FFT_RADIX_TWO_
   ! ############################################################################################################################# !
-  ! COMPLEX DISCRETE FOURIER TRANSFORM (POWER OF TWO INPUT LENGTH INPUT)
+  ! (TAKUYA OOURA) COMPLEX DISCRETE FOURIER TRANSFORM
   ! (SUBROUTINE) FFT_RADIX_EIGHT_(<LENGTH>, <DIRECTION>, <SEQUENCE>)
   ! <LENGTH>               -- (IN)     LENGTH (IK)
   ! <DIRECTION>            -- (IN)     DIRECTION (IK), FFT_FORWARD = +1_IK OR FFT_INVERSE = -1_IK
   ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
   ! <SEQUENCE>             -- (OUT)    CDFT (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., FR_I, FI_I, ...]
-  ! void    fft_radix_eight_(int*, int*, double*) ;
+  ! void    fft_radix_eight_(int* length, int* direction, double* sequence) ;
   MODULE SUBROUTINE FFT_RADIX_EIGHT_(LENGTH, DIRECTION, SEQUENCE) &
     BIND(C, NAME = "fft_radix_eight_")
     INTEGER(IK), INTENT(IN) :: LENGTH
@@ -207,7 +202,7 @@ SUBMODULE (SIGNAL) TRANSFORMATION
     CALL CDFT_(2_IK*LENGTH, DIRECTION, SEQUENCE, IP, WORK)
   END SUBROUTINE FFT_RADIX_EIGHT_
   ! ############################################################################################################################# !
-  ! (TAKUYA OOURA) COMPLEX DISCRETE FOURIER TRANSFORM (POWER OF TWO INPUT LENGTH INPUT)
+  ! (TAKUYA OOURA) COMPLEX DISCRETE FOURIER TRANSFORM
   ! (SUBROUTINE) FFT_RADIX_EIGHT__(<LENGTH>, <DIRECTION>, <SEQUENCE>, <IP>, <WORK>)
   ! <LENGTH>               -- (IN)     LENGTH (IK)
   ! <DIRECTION>            -- (IN)     DIRECTION (IK), FFT_FORWARD = +1_IK OR FFT_INVERSE = -1_IK
@@ -228,11 +223,11 @@ SUBMODULE (SIGNAL) TRANSFORMATION
     CALL CDFT__(2_IK*LENGTH, DIRECTION, SEQUENCE, IP_COPY, WORK_COPY)
   END SUBROUTINE FFT_RADIX_EIGHT__
   ! ############################################################################################################################# !
-  ! COMPUTE DATA TABLE
+  ! COMPUTE DATA TABLE (MEMORIZATION)
   ! (SUBROUTINE) COMPUTE_TABLE_(<LENGTH>, <PAD>)
   ! <LENGTH>               -- (IN)     LENGTH (IK)
   ! <PAD>                  -- (IN)     PADDED LENGTH (IK)
-  ! void    compute_table_(int*, int*) ;
+  ! void    compute_table_(int* length, int* pad) ;
   MODULE SUBROUTINE COMPUTE_TABLE_(LENGTH, PAD) &
     BIND(C, NAME = "compute_table_")
     INTEGER(IK), INTENT(IN) :: LENGTH
@@ -252,7 +247,7 @@ SUBMODULE (SIGNAL) TRANSFORMATION
   ! ############################################################################################################################# !
   ! DESTROY DATA TABLE
   ! (SUBROUTINE) DESTROY_TABLE_()
-  ! void    destroy_table_(int*) ;
+  ! void    destroy_table_() ;
   MODULE SUBROUTINE DESTROY_TABLE_() &
     BIND(C, NAME = "destroy_table_")
     DEALLOCATE(BANK%BIT_FFT)
@@ -320,10 +315,10 @@ SUBMODULE (SIGNAL) TRANSFORMATION
     REAL(RK), INTENT(INOUT) :: SEQUENCE(0_IK : *)
     INTEGER(IK), INTENT(INOUT) :: IP(0_IK : *)
     REAL(RK), INTENT(INOUT) :: WORK(0_IK : *)
-    IF (DIRECTION >= 0_IK) THEN
+    IF (DIRECTION == FFT_FORWARD) THEN
       CALL BIT_REVERSE_(LENGTH, IP(2_IK), SEQUENCE)
       CALL CFT_FORWARD_(LENGTH, SEQUENCE, WORK)
-    ELSE
+    ELSE IF(DIRECTION == FFT_INVERSE) THEN
       CALL BIT_REVERSE_CONJUGATE_(LENGTH, IP(2_IK), SEQUENCE)
       CALL CFT_INVERSE_(LENGTH, SEQUENCE, WORK)
     END IF

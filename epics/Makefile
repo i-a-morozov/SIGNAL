@@ -14,8 +14,8 @@ LIBDIR += $(EPICS_BASE)/lib/$(EPICS_HOST_ARCH)
 LIBDIR += ../src
 
 LIB    += ca Com
-LIB    += m
 LIB    += signal arpack lapack blas fftw3 gsl gslcblas gfortran
+LIB    += m
 
 CFLAG  += -O3
 CFLAG  += -std=c99 -Wall -pedantic

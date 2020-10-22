@@ -30,9 +30,9 @@ SUBMODULE (SIGNAL) OPTIMIZATION
       IF (SVD_LIST(I) >= SVD_LEVEL) COPY(I, I) = 1.0_RK/SVD_LIST(I)
     END DO
     V1 = VECTOR
-    CALL DGEMV('T',NR,NR,1.0_RK,U_MATRIX,NR,V1,1,0.0_RK,V2,1_IK)
-    CALL DGEMV('T',NR,NC,1.0_RK,COPY,NR,V2,1,0.0_RK,V3,1_IK)
-    CALL DGEMV('N',NC,NC,1.0_RK,V_MATRIX,NC,V3,1,0.0_RK,V4,1_IK)
+    CALL DGEMV('T',NR,NR,1.0_RK,U_MATRIX,NR,V1,1_IK,0.0_RK,V2,1_IK)
+    CALL DGEMV('T',NR,NC,1.0_RK,COPY,NR,V2,1_IK,0.0_RK,V3,1_IK)
+    CALL DGEMV('N',NC,NC,1.0_RK,V_MATRIX,NC,V3,1_IK,0.0_RK,V4,1_IK)
     SOLUTION = REAL(V4, RK)
   END SUBROUTINE LEAST_SQUARES_
   ! ############################################################################################################################# !
@@ -46,8 +46,7 @@ SUBMODULE (SIGNAL) OPTIMIZATION
   ! <COS_AMP>              -- (OUT)    COS AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
   ! <SIN_AMP>              -- (OUT)    SIN AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
   ! <ERROR>                -- (OUT)    ERROR
-  ! <PV>                   -- (OUT)    P-VALUE (RK)
-  ! void    fit_(int*, double*, int*, double*, double*, double*, double*, double*) ;
+  ! void    fit_(int* length, double* sequence, int* loop, double* frequency, double* mean, double* cos_amp, double* sin_amp, double* error) ;
   MODULE SUBROUTINE FIT_(LENGTH, SEQUENCE, LOOP, FREQUENCY, MEAN, COS_AMP, SIN_AMP, ERROR) &
     BIND(C, NAME = "fit_")
     INTEGER(IK), INTENT(IN) :: LENGTH
@@ -89,7 +88,7 @@ SUBMODULE (SIGNAL) OPTIMIZATION
   ! <B>                    -- (OUT)    B (RK)
   ! <C>                    -- (OUT)    C (RK)
   ! <MAXIMUM>              -- (OUT)    MAXIMUM (MINIMUM) POSITION (RK)
-  ! void    fit_parabola_(int*, double*, double*, double*, double*, double*, double*) ;
+  ! void    fit_parabola_(int* length, double* x, double* y, double* a, double* b, double* c, double* maximum) ;
   MODULE SUBROUTINE FIT_PARABOLA_(LENGTH, X, Y, A, B, C, MAXIMUM) &
     BIND(C, NAME = "fit_parabola_")
     INTEGER(IK), INTENT(IN) :: LENGTH
@@ -216,4 +215,5 @@ SUBMODULE (SIGNAL) OPTIMIZATION
       GOLDEN_ = XR
     END IF
   END FUNCTION GOLDEN_
+  ! ############################################################################################################################# !
 END SUBMODULE OPTIMIZATION
