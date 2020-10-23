@@ -14,7 +14,7 @@ SUBMODULE (SIGNAL) FREQUENCY
   ! <PAD>                  -- (IN)     PADDED SEQUENCE LENGTH (IK), IF PAD > LENGTH, INPUT SEQUENCE IS PADDED WITH ZEROS
   ! <SEQUENCE>             -- (IN)     INPUT (PROCESSED) SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
   ! <FREQUENCY_>           -- (OUT)    INITIAL FREQUENCY ESTIMATION (RK)
-  ! double  frequency_initial_(double*, double*, int*, int*, int*, double*) ;
+  ! double  frequency_initial_(double* range_min, double* range_max, int* peak, int* length, int* pad, double* sequence) ;
   MODULE REAL(RK) FUNCTION FREQUENCY_INITIAL_(RANGE_MIN, RANGE_MAX, PEAK, LENGTH, PAD, SEQUENCE) &
     BIND(C, NAME = "frequency_initial_")
     REAL(RK), INTENT(IN) :: RANGE_MIN
@@ -30,9 +30,9 @@ SUBMODULE (SIGNAL) FREQUENCY
     REAL(RK), DIMENSION(PAD) :: AMPLITUDE
     CALL PAD_(LENGTH, PAD, SEQUENCE, FOURIER)
     CALL __FFT__(PAD, FFT_FORWARD, FOURIER)
-    AMPLITUDE = LOG10(1.E-16_RK+SQRT(FOURIER(1_IK::2_IK)**2_IK+FOURIER(2_IK::2_IK)**2_IK))
+    AMPLITUDE = LOG10(EPSILON+SQRT(FOURIER(1_IK::2_IK)**2_IK+FOURIER(2_IK::2_IK)**2_IK))
     BIN_MIN = INT(RANGE_MIN*REAL(PAD, RK), IK) + 1_IK
-    BIN_MAX = INT(RANGE_MAX*REAL(PAD, RK), IK) + 1_IK
+    BIN_MAX = INT(RANGE_MAX*REAL(PAD, RK), IK) + 0_IK
     IF (PEAK == 0_IK) THEN
       BIN = BIN_MIN-1_IK+INT(__MAXLOC__(AMPLITUDE(BIN_MIN:BIN_MAX:1_IK), 1_IK), IK)
     ELSE
@@ -50,7 +50,7 @@ SUBMODULE (SIGNAL) FREQUENCY
   ! <PAD>                  -- (IN)     PADDED SEQUENCE LENGTH (IK), IF PAD > LENGTH, INPUT SEQUENCE IS PADDED WITH ZEROS
   ! <SEQUENCE>             -- (IN)     INPUT (PROCESSED) SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
   ! <FREQUENCY_>           -- (OUT)    INITIAL FREQUENCY ESTIMATION (RK)
-  ! double  frequency_initial__(double*, double*, int*, int*, int*, double*) ;
+  ! double  frequency_initial__(double* range_min, double* range_max, int* peak, int* length, int* pad, double* sequence) ;
   MODULE REAL(RK) FUNCTION FREQUENCY_INITIAL__(RANGE_MIN, RANGE_MAX, PEAK, LENGTH, PAD, SEQUENCE) &
     BIND(C, NAME = "frequency_initial__")
     REAL(RK), INTENT(IN) :: RANGE_MIN
@@ -66,9 +66,9 @@ SUBMODULE (SIGNAL) FREQUENCY
     REAL(RK), DIMENSION(PAD) :: AMPLITUDE
     CALL PAD_(LENGTH, PAD, SEQUENCE, FOURIER)
     CALL FFT_RADIX_EIGHT__(PAD, FFT_FORWARD, FOURIER, BANK%BIT_FFT, BANK%TRIG_FFT)
-    AMPLITUDE = LOG10(1.E-16_RK+SQRT(FOURIER(1_IK::2_IK)**2_IK+FOURIER(2_IK::2_IK)**2_IK))
+    AMPLITUDE = LOG10(EPSILON+SQRT(FOURIER(1_IK::2_IK)**2_IK+FOURIER(2_IK::2_IK)**2_IK))
     BIN_MIN = INT(RANGE_MIN*REAL(PAD, RK), IK) + 1_IK
-    BIN_MAX = INT(RANGE_MAX*REAL(PAD, RK), IK) + 1_IK
+    BIN_MAX = INT(RANGE_MAX*REAL(PAD, RK), IK) + 0_IK
     IF (PEAK == 0_IK) THEN
       BIN = BIN_MIN-1_IK+INT(__MAXLOC__(AMPLITUDE(BIN_MIN:BIN_MAX:1_IK), 1_IK), IK)
     ELSE
@@ -84,7 +84,7 @@ SUBMODULE (SIGNAL) FREQUENCY
   ! <SEQUENCE>             -- (IN)     INPUT (PROCESSED) SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
   ! <INITIAL>              -- (IN)     INITIAL FREQUENCY GUESS (RK)
   ! <FREQUENCY_REFINE_>    -- (OUT)    REFINED FREQUENCY ESTIMATION (RK)
-  ! double  frequency_refine_(int*, int*, double*, double*) ;
+  ! double  frequency_refine_(int* method, int* length, double* sequence, double* initial) ;
   MODULE REAL(RK) FUNCTION FREQUENCY_REFINE_(METHOD, LENGTH, SEQUENCE, INITIAL) &
     BIND(C, NAME = "frequency_refine_")
     INTEGER(IK), INTENT(IN):: METHOD
@@ -105,7 +105,7 @@ SUBMODULE (SIGNAL) FREQUENCY
     FOURIER(1_IK::2_IK) = SEQUENCE(1_IK::2_IK)*COS_MUL-SEQUENCE(2_IK::2_IK)*SIN_MUL
     FOURIER(2_IK::2_IK) = SEQUENCE(1_IK::2_IK)*SIN_MUL+SEQUENCE(2_IK::2_IK)*COS_MUL
     CALL FFRFT_(LENGTH, 2.0_RK/REAL(LENGTH, RK), FOURIER)
-    MUL = LOG10(SQRT(FOURIER(1_IK::2_IK)**2_IK+FOURIER(2_IK::2_IK)**2_IK)+1.E-16_RK)
+    MUL = LOG10(SQRT(FOURIER(1_IK::2_IK)**2_IK+FOURIER(2_IK::2_IK)**2_IK)+EPSILON)
     CND = INT(__MAXLOC__(MUL, 1_IK), IK)
     IF (METHOD == FREQUENCY_FFRFT) THEN
       FREQUENCY_REFINE_ = (REAL(FST, RK)-2.0_RK+2.0_RK*(REAL(CND, RK)-1.0_RK)/REAL(LENGTH, RK))/REAL(LENGTH, RK)
@@ -132,13 +132,13 @@ SUBMODULE (SIGNAL) FREQUENCY
   END FUNCTION FREQUENCY_REFINE_
   ! ############################################################################################################################# !
   ! REFINE FREQUENCY ESTIMATION (FFRFT) (MEMORIZATION)
-  ! (FUNCTION) FREQUENCY_REFINE_(<METHOD>, <LENGTH>, <SEQUENCE>, <INITIAL>)
+  ! (FUNCTION) FREQUENCY_REFINE__(<METHOD>, <LENGTH>, <SEQUENCE>, <INITIAL>)
   ! <METHOD>               -- (IN)     METHOD
   ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
   ! <SEQUENCE>             -- (IN)     INPUT (PROCESSED) SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
   ! <INITIAL>              -- (IN)     INITIAL FREQUENCY GUESS (RK)
   ! <FREQUENCY_REFINE_>    -- (OUT)    REFINED FREQUENCY ESTIMATION (RK)
-  ! double  frequency_refine__(int*, int*, double*, double*) ;
+  ! double  frequency_refine__(int* method, int* length, double* sequence, double* initial) ;
   MODULE REAL(RK) FUNCTION FREQUENCY_REFINE__(METHOD, LENGTH, SEQUENCE, INITIAL) &
     BIND(C, NAME = "frequency_refine__")
     INTEGER(IK), INTENT(IN):: METHOD
@@ -159,7 +159,7 @@ SUBMODULE (SIGNAL) FREQUENCY
     FOURIER(1_IK::2_IK) = SEQUENCE(1_IK::2_IK)*COS_MUL-SEQUENCE(2_IK::2_IK)*SIN_MUL
     FOURIER(2_IK::2_IK) = SEQUENCE(1_IK::2_IK)*SIN_MUL+SEQUENCE(2_IK::2_IK)*COS_MUL
     CALL FFRFT__(LENGTH, FOURIER, BANK%BIT_FFRFT, BANK%TRIG_FFRFT, BANK%COS_FST, BANK%SIN_FST, BANK%COS_LST, BANK%SIN_LST)
-    MUL = LOG10(SQRT(FOURIER(1_IK::2_IK)**2_IK+FOURIER(2_IK::2_IK)**2_IK)+1.E-16_RK)
+    MUL = LOG10(SQRT(FOURIER(1_IK::2_IK)**2_IK+FOURIER(2_IK::2_IK)**2_IK)+EPSILON)
     CND = INT(__MAXLOC__(MUL, 1_IK), IK)
     IF (METHOD == FREQUENCY_FFRFT) THEN
       FREQUENCY_REFINE__ = (REAL(FST, RK)-2.0_RK+2.0_RK*(REAL(CND, RK)-1.0_RK)/REAL(LENGTH, RK))/REAL(LENGTH, RK)
@@ -194,7 +194,7 @@ SUBMODULE (SIGNAL) FREQUENCY
   ! <SEQUENCE>             -- (IN)     INPUT (UNPROCESSED) SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
   ! <INITIAL>              -- (IN)     INITIAL FREQUENCY GUESS (RK)
   ! <BINARY_AMPLITUDE_>    -- (OUT)    REFINED FREQUENCY (RK)
-  ! double  binary_amplitude_(int*, int*, double*, double*, double*, double*) ;
+  ! double  binary_amplitude_(int* flag, int* length, double* total, double* window, double* sequence, double* initial) ;
   MODULE REAL(RK) FUNCTION BINARY_AMPLITUDE_(FLAG, LENGTH, TOTAL, WINDOW, SEQUENCE, INITIAL) &
     BIND(C, NAME = "binary_amplitude_")
     INTEGER(IK), INTENT(IN):: FLAG
@@ -224,7 +224,7 @@ SUBMODULE (SIGNAL) FREQUENCY
   ! <SEQUENCE>             -- (IN)     INPUT (UNPROCESSED) SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
   ! <INITIAL>              -- (IN)     INITIAL FREQUENCY GUESS (RK)
   ! <GOLDEN_AMPLITUDE_>    -- (OUT)    REFINED FREQUENCY (RK)
-  ! double  golden_amplitude_(int*, int*, double*, double*, double*, double*) ;
+  ! double  golden_amplitude_(int* flag, int* length, double* total, double* window, double* sequence, double* initial) ;
   MODULE REAL(RK) FUNCTION GOLDEN_AMPLITUDE_(FLAG, LENGTH, TOTAL, WINDOW, SEQUENCE, INITIAL) &
     BIND(C, NAME = "golden_amplitude_")
     INTEGER(IK), INTENT(IN):: FLAG
@@ -258,7 +258,7 @@ SUBMODULE (SIGNAL) FREQUENCY
   ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
   ! <SEQUENCE>             -- (IN)     INPUT (UNPROCESSED) SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
   ! <FREQUENCY_>           -- (OUT)    FREQUENCY ESTIMATION (RK)
-  ! double  frequency_(int*, double*, double*, int*, int*, int*, int*, double*, double*, double*) ;
+  ! double  frequency_(int* flag, double* range_min, double* range_max, int* peak, int* method, int* length, int* pad, double* total, double* window, double* sequence) ;
   MODULE REAL(RK) FUNCTION FREQUENCY_(FLAG, RANGE_MIN, RANGE_MAX, PEAK, METHOD, LENGTH, PAD, TOTAL, WINDOW, SEQUENCE) &
     BIND(C, NAME = "frequency_")
     INTEGER(IK), INTENT(IN):: FLAG
@@ -300,7 +300,7 @@ SUBMODULE (SIGNAL) FREQUENCY
   ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
   ! <SEQUENCE>             -- (IN)     INPUT (UNPROCESSED) SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
   ! <FREQUENCY_>           -- (OUT)    FREQUENCY ESTIMATION (RK)
-  ! double  frequency__(int*, double*, double*, int*, int*, int*, int*, double*, double*, double*) ;
+  ! double  frequency__(int* flag, double* range_min, double* range_max, int* peak, int* method, int* length, int* pad, double* total, double* window, double* sequence) ;
   MODULE REAL(RK) FUNCTION FREQUENCY__(FLAG, RANGE_MIN, RANGE_MAX, PEAK, METHOD, LENGTH, PAD, TOTAL, WINDOW, SEQUENCE) &
     BIND(C, NAME = "frequency__")
     INTEGER(IK), INTENT(IN):: FLAG

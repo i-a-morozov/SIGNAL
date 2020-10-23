@@ -10,7 +10,7 @@ SUBMODULE (SIGNAL) WINDOW
   ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
   ! <ORDER>                -- (IN)     WINDOW ORDER (IK)
   ! <WINDOW>               -- (OUT)    WINDOW (RK ARRAY OF LENGTH = <LENGTH>)
-  ! void    window_cos_(int*, int*, double*) ;
+  ! void    window_cos_(int* length, int* order, double* window) ;
   MODULE SUBROUTINE WINDOW_COS_(LENGTH, ORDER, WINDOW) &
     BIND(C, NAME = "window_cos_")
     INTEGER(IK), INTENT(IN) :: LENGTH
@@ -27,7 +27,7 @@ SUBMODULE (SIGNAL) WINDOW
   ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
   ! <ORDER>                -- (IN)     WINDOW ORDER (RK)
   ! <WINDOW>               -- (OUT)    WINDOW (RK ARRAY OF LENGTH = <LENGTH>)
-  ! void    window_cos_generic_(int*, double*, double*) ;
+  ! void    window_cos_generic_(int* length, double* order, double* window) ;
   MODULE SUBROUTINE WINDOW_COS_GENERIC_(LENGTH, ORDER, WINDOW) &
     BIND(C, NAME = "window_cos_generic_")
     INTEGER(IK), INTENT(IN) :: LENGTH
@@ -44,7 +44,7 @@ SUBMODULE (SIGNAL) WINDOW
   ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
   ! <PARAMETER>            -- (IN)     WINDOW ORDER (RK)
   ! <WINDOW>               -- (OUT)    WINDOW (RK ARRAY OF LENGTH = <LENGTH>)
-  ! void    window_kaiser_(int*, double*, double*) ;
+  ! void    window_kaiser_(int* length, double* order, double* window) ;
   MODULE SUBROUTINE WINDOW_KAISER_(LENGTH, ORDER, WINDOW) &
     BIND(C, NAME = "window_kaiser_")
     INTEGER(IK), INTENT(IN) :: LENGTH

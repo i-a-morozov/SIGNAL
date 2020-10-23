@@ -8,7 +8,7 @@ SUBMODULE (SIGNAL) AUXILIARY
   ! FACTORIAL
   ! (FUNCTION) FACTORIAL_(<NUMBER>)
   ! <NUMBER>               -- (IN)     NUMBER (IK)
-  ! <FACTORIAL_>           -- (OUT)    FACTORIAL OF <N> (RK REAL)
+  ! <FACTORIAL_>           -- (OUT)    FACTORIAL OF <N> (RK)
   MODULE REAL(RK) FUNCTION FACTORIAL_(NUMBER)
     INTEGER(IK), INTENT(IN) :: NUMBER
     INTEGER(IK) :: I
@@ -23,7 +23,7 @@ SUBMODULE (SIGNAL) AUXILIARY
   ! <A>                    -- (IN)     A (RK)
   ! <X>                    -- (IN)     X (RK)
   ! <Y>                    -- (IN)     Y (RK)
-  ! <FACTORIAL_>           -- (OUT)    GAMMA REGULARIZED
+  ! <GAMMA_REGULARIZED_>   -- (OUT)    GAMMA REGULARIZED OF <A>, <X> AND <Y> (RK)
   MODULE REAL(RK) FUNCTION GAMMA_REGULARIZED_(A, X, Y)
     REAL(RK), INTENT(IN) :: A
     REAL(RK), INTENT(IN) :: X
@@ -128,15 +128,15 @@ SUBMODULE (SIGNAL) AUXILIARY
   END SUBROUTINE SORT_QUICK_
   ! ############################################################################################################################# !
   ! GENERATE HARMONIC SIGNAL
-  ! (SUBROUTINE) GENERATE_SIGNAL_(<FLAG>, <LENGTH>, <SEQUENCE>, <LOOP>, <FREQUENCY>, <MEAN>, <COS_AMP>, <SIN_AMP>)
+  ! (SUBROUTINE) GENERATE_SIGNAL_(<FLAG>, <LENGTH>, <SEQUENCE>, <LOOP>, <FREQUENCY>, <COS_AMP>, <SIN_AMP>)
   ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX SEQUENCE
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK), POWER OF TWO
+  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
   ! <SEQUENCE>             -- (OUT)    INPUT SEQUENCE (RK ARRAY OF LENGTH = <LENGTH>)
   ! <LOOP>                 -- (IN)     NUMBER OF HARMONICS (IK)
   ! <FREQUENCY>            -- (IN)     FREQUENCY ARRAY (RK ARRAY OF LENGTH = <LOOP>)
   ! <COS_AMP>              -- (IN)     COS AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
   ! <SIN_AMP>              -- (IN)     SIN AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
-  ! void    generate_signal_(int*, int*, double*, int*, double*, double*, double*, double*) ;
+  ! void    generate_signal_(int* flag, int* length, double* sequence, int* loop, double* frequency, double* cos_amp, double* sin_amp) ;
   MODULE SUBROUTINE GENERATE_SIGNAL_(FLAG, LENGTH, SEQUENCE, LOOP, FREQUENCY, COS_AMP, SIN_AMP) &
     BIND(C, NAME = "generate_signal_")
     INTEGER(IK), INTENT(IN) :: FLAG

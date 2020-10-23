@@ -19,7 +19,7 @@ SUBMODULE (SIGNAL) SVD
     REAL(RK), DIMENSION(MIN(NR, NC)), INTENT(OUT) :: SVD_LIST
     REAL(RK), DIMENSION(NR, NR), INTENT(OUT) :: U_MATRIX
     REAL(RK), DIMENSION(NC, NC), INTENT(OUT) :: V_MATRIX
-    REAL(RK), DIMENSION(2*MAX(1, 3*MIN(INT(NR), INT(NC))+MAX(INT(NR), INT(NC)), 5*MIN(INT(NR), INT(NC)))) :: WORK
+    REAL(RK), DIMENSION(2_IK*MAX(1_IK, 3_IK*MIN(INT(NR), INT(NC))+MAX(INT(NR), INT(NC)), 5_IK*MIN(INT(NR), INT(NC)))) :: WORK
     INTEGER :: WORK_SIZE
     INTEGER :: INFO
     WORK_SIZE = SIZE(WORK)
@@ -53,6 +53,7 @@ SUBMODULE (SIGNAL) SVD
   ! SVD_TRUNCATED_(<NR>,<NC>,<NS>,<MATRIX>(<NR>,<NC>),<LIST>(<NS>),<RVEC>(<NC>,<NS>),<LVEC>(<NR>,<NS>))
   ! <NR>                   -- (IN)     NUMBER OF ROWS (IK)
   ! <NC>                   -- (IN)     NUMBER OF COLS (IK)
+  ! <NS>                   -- (IN)     NUMBER OF SINGULAR VALUES TO KEEP
   ! <MATRIX>               -- (IN)     INPUT MATRIX(<NR>, <NC>) (RK)
   ! <LIST>                 -- (OUT)    LIST OF SINGULAR VALUES (<NS>) (RK)
   ! <RVEC>                 -- (OUT)    L-SINGULAR VECTORS (<NC>, <NS>) (RK)
