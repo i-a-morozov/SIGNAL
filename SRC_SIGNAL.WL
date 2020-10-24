@@ -2369,5 +2369,7 @@ S$COMPILED$FREQUENCY = Compile[
     "InlineExternalDefinitions" -> True,
     "InlineCompiledFunctions" -> True
   },
-  RuntimeOptions -> "Speed"
+  RuntimeOptions -> "Speed",
+  Parallelization -> True,
+	RuntimeAttributes -> {Listable}
 ] ;
