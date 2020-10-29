@@ -80,6 +80,7 @@ MODULE SIGNAL
   ! ############################################################################################################################# !
   ! GENERIC GAMMA
   INTERFACE GAMMA_
+    PROCEDURE FACTORIAL_
     PROCEDURE GAMMA_INCOMPLETE_
     PROCEDURE GAMMA_REGULARIZED_
   END INTERFACE GAMMA_
@@ -147,7 +148,7 @@ MODULE SIGNAL
       INTEGER(IK), INTENT(IN) :: LST
     END SUBROUTINE SORT_QUICK_
   END INTERFACE
-! ############################################################################################################################# !
+  ! ############################################################################################################################# !
   ! GENERATE HARMONIC SIGNAL
   ! (SUBROUTINE) GENERATE_SIGNAL_(<FLAG>, <LENGTH>, <SEQUENCE>, <LOOP>, <FREQUENCY>, <COS_AMP>, <SIN_AMP>)
   ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX SEQUENCE
@@ -189,7 +190,7 @@ MODULE SIGNAL
     REAL(RK), DIMENSION(:), ALLOCATABLE :: SIN_LST
   END TYPE
   ! ############################################################################################################################# !
-  ! FFT/FFRFT DATAMEMORIZATION CONTAINER
+  ! FFT/FFRFT DATA MEMORIZATION CONTAINER
   TYPE(TABLE), PROTECTED :: BANK
   ! ############################################################################################################################# !
   ! (LINEAR) FRACTIONAL COMPLEX DISCRETE FOURIER TRANSFORM
@@ -225,13 +226,14 @@ MODULE SIGNAL
     INTEGER(IK), INTENT(IN) :: LENGTH
     REAL(RK), DIMENSION(2_IK*LENGTH), INTENT(INOUT) :: SEQUENCE
     INTEGER(IK), DIMENSION(0_IK : 1_IK+INT(SQRT(REAL(LENGTH, RK)), IK)), INTENT(IN) :: IP
-    REAL(RK), DIMENSION(0_IK : LENGTH - 1_IK), INTENT(IN) :: WORK
+    REAL(RK), DIMENSION(0_IK : LENGTH-1_IK), INTENT(IN) :: WORK
     REAL(RK), DIMENSION(LENGTH), INTENT(IN)   :: COS_FST
     REAL(RK), DIMENSION(LENGTH), INTENT(IN)   :: SIN_FST
     REAL(RK), DIMENSION(LENGTH), INTENT(IN)   :: COS_LST
     REAL(RK), DIMENSION(LENGTH), INTENT(IN)   :: SIN_LST
     END SUBROUTINE FFRFT__
   END INTERFACE
+  PUBLIC :: FFRFT__
   ! ############################################################################################################################# !
   ! (FFTW) COMPLEX DISCRETE FOURIER TRANSFORM
   ! (SUBROUTINE) FFT_EXTERNAL_(<LENGTH>, <DIRECTION>, <SEQUENCE>)
@@ -301,6 +303,7 @@ MODULE SIGNAL
       REAL(RK), DIMENSION(0_IK : LENGTH/2_IK - 1_IK), INTENT(IN) :: WORK
     END SUBROUTINE FFT_RADIX_EIGHT__
   END INTERFACE
+  PUBLIC :: FFT_RADIX_EIGHT__
   ! ############################################################################################################################# !
   ! COMPUTE DATA TABLE (MEMORIZATION)
   ! (SUBROUTINE) COMPUTE_TABLE_(<LENGTH>, <PAD>)
@@ -328,7 +331,7 @@ MODULE SIGNAL
   ! ############################################################################################################################# !
   ! SVD
   ! ############################################################################################################################# !
-  REAL(RK),    PUBLIC, PARAMETER :: SVD_LEVEL              = 1.0E-9_RK           ! SINGULAR VALUE THRESHOLD LEVEL (ABSOLUTE VALUE)
+  REAL(RK),    PUBLIC, PARAMETER :: SVD_LEVEL              = 1.0E-12_RK          ! SINGULAR VALUE THRESHOLD LEVEL (ABSOLUTE VALUE)
   INTEGER(IK), PUBLIC, PARAMETER :: SVD_ROW                = 2_IK**12_IK         ! MAX NUMBER OF ROWS
   INTEGER(IK), PUBLIC, PARAMETER :: SVD_COL                = 2_IK**12_IK         ! MAX NUMBER OF ROWS
   INTEGER(IK), PUBLIC, PARAMETER :: SVD_BASIS              = 128_IK              ! MAX NUMBER OF BASIS VECTORS IN THE IMPLICITLY RESTARTED ARNOLDI PROCESS, OPTIMAL VALUE (?)
@@ -372,7 +375,7 @@ MODULE SIGNAL
   PUBLIC :: SVD_LIST_
   ! ############################################################################################################################# !
   ! TRUNCATED SVD (ARPACK)
-  ! SVD_TRUNCATED_(<NR>,<NC>,<NS>,<MATRIX>(<NR>,<NC>),<LIST>(<NS>),<RVEC>(<NC>,<NS>),<LVEC>(<NR>,<NS>))
+  ! SVD_TRUNCATED_(<NR>, <NC>, <NS>, <MATRIX>(<NR>, <NC>), <LIST>(<NS>), <RVEC>(<NC>, <NS>), <LVEC>(<NR>, <NS>))
   ! <NR>                   -- (IN)     NUMBER OF ROWS (IK)
   ! <NC>                   -- (IN)     NUMBER OF COLS (IK)
   ! <NS>                   -- (IN)     NUMBER OF SINGULAR VALUES TO KEEP
@@ -569,7 +572,7 @@ MODULE SIGNAL
     END SUBROUTINE SEQUENCE_SUM_
   END INTERFACE
   PUBLIC :: SEQUENCE_SUM_
-! ############################################################################################################################# !
+  ! ############################################################################################################################# !
   ! FILTER
   ! (SUBROUTINE) FILTER(<LENGTH>, <SEQUENCE>, <LIMIT>)
   ! <LENGTH>               -- (IN)     LENGTH (IK)

@@ -50,7 +50,7 @@ SUBMODULE (SIGNAL) SVD
   END SUBROUTINE SVD_LIST_
   ! ############################################################################################################################# !
   ! TRUNCATED SVD (ARPACK)
-  ! SVD_TRUNCATED_(<NR>,<NC>,<NS>,<MATRIX>(<NR>,<NC>),<LIST>(<NS>),<RVEC>(<NC>,<NS>),<LVEC>(<NR>,<NS>))
+  ! SVD_TRUNCATED_(<NR>, <NC>, <NS>, <MATRIX>(<NR>, <NC>), <LIST>(<NS>), <RVEC>(<NC>, <NS>), <LVEC>(<NR>, <NS>))
   ! <NR>                   -- (IN)     NUMBER OF ROWS (IK)
   ! <NC>                   -- (IN)     NUMBER OF COLS (IK)
   ! <NS>                   -- (IN)     NUMBER OF SINGULAR VALUES TO KEEP
