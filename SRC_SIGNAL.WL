@@ -582,6 +582,8 @@ S$SEARCH$GOLDEN[                    (* -- GOLDEN SEARCH MAXIMIZATION *)
 ClearAll[S$FREQUENCY] ;
 S$FREQUENCY::usage = "
 S$FREQUENCY[SIGNAL] -- estimate frequency for given input signal <SIGNAL> (list)
+S$FREQUENCY[SIGNAL,{MIN,MAX}] -- estimate frequency for given input signal <SIGNAL> (list) and frequency range {<MIN>,<MAX>}
+S$FREQUENCY[SIGNAL,SEARCH,LIMIT,TOLERANCE] -- estimate frequency for given input signal <SIGNAL> (list), search function <SEARCH>, maximum number of iterations <LIMIT> (integer) and tolerance <TOLERANCE> (real)
 " ;
 Options[S$FREQUENCY] = List[
   Rule["PROCESS",True],             (* -- SIGNAL PROCESSING FLAG (LOGICAL) *)
@@ -628,6 +630,112 @@ S$FREQUENCY[                        (* -- ESTIMATE FREQUENCY (LIST) *)
       Extract[Position[FOURIER,Max[FOURIER]],List[1,1]],
       Last[S$FIND$PEAKS[OptionValue["PEAK"],FOURIER]]
     ] ;
+    (* METHOD (FFT) *)
+    If[
+      SameQ[OptionValue["METHOD"],"FFT"],
+      FREQUENCY = N[Times[S$SAMPLING$RATE,Divide[Subtract[BIN,1],LENGTH]]] ;
+      Throw[FREQUENCY]
+    ] ;
+    (* SHIFTED FREQUENCY *)
+    SHIFT = N[Times[S$SAMPLING$RATE,Divide[Subtract[BIN,Plus[1,1]],LENGTH]]] ;
+    (* MODULATE SIGNAL *)
+    SAMPLE = Times[SAMPLE,Exp[Times[Plus[1,1],Pi,I,SHIFT,N[Divide[Range[0,Subtract[LENGTH,1]],S$SAMPLING$RATE]]]]] ;
+    (* REFINED SPECTRA *)
+    FOURIER = S$SPECTRA[SAMPLE,Rule["COMPLEX",True],Rule["FOURIER",List[0,Divide[Plus[1,1],LENGTH]]]] ;
+    (* REFINED SPECTRA MAXIMUM *)
+    MAX = Extract[Position[FOURIER,Max[FOURIER]],List[1,1]] ;
+    (* METHOD (REFINE) *)
+    If[
+      SameQ[OptionValue["METHOD"],"REFINE"],
+      FREQUENCY = N[Times[S$SAMPLING$RATE,Power[LENGTH,Subtract[0,1]],Plus[Times[Plus[1,1],Subtract[0,1]],BIN,Times[Plus[1,1],Power[LENGTH,Subtract[0,1]],Plus[Subtract[0,1],MAX]]]]] ;
+      Throw[FREQUENCY]
+    ] ;
+    (* METHOD (PARABOLA) *)
+    If[
+      SameQ[OptionValue["METHOD"],"PARABOLA"],
+      If[
+        Or[SameQ[MAX,1],SameQ[MAX,Length[FOURIER]]],
+        FREQUENCY = N[Times[S$SAMPLING$RATE,Power[LENGTH,Subtract[0,1]],Plus[Times[Plus[1,1],Subtract[0,1]],BIN,Times[Plus[1,1],Power[LENGTH,Subtract[0,1]],Plus[Subtract[0,1],MAX]]]]] ;
+        Throw[FREQUENCY]
+      ] ;
+      MAX = MAX-1/2+(FOURIER[[MAX-1]]-FOURIER[[MAX]])/(FOURIER[[MAX-1]]-2*FOURIER[[MAX]]+FOURIER[[MAX+1]]) ;
+      FREQUENCY = N[Times[S$SAMPLING$RATE,Power[LENGTH,Subtract[0,1]],Plus[Times[Plus[1,1],Subtract[0,1]],BIN,Times[Plus[1,1],Power[LENGTH,Subtract[0,1]],Plus[Subtract[0,1],MAX]]]]] ;
+      Throw[FREQUENCY]
+    ] ;
+    (* INTERPOLATION/FIT POINTS *)
+    LIST = S$PEAK$POINTS ;
+    LIST = Flatten[List[Reverse[Subtract[MAX,Range[LIST]]],MAX,Plus[MAX,Range[LIST]]]] ;
+    LIST = DeleteCases[LIST,PatternTest[Blank[],NonPositive]] ;
+    LIST = TakeWhile[LIST,Function[Less[Slot[1],LENGTH]]] ;
+    (* DATA TO USE IN INTERPOLATION/FITTING *)
+    DATA = Transpose[List[N[LIST],Part[FOURIER,LIST]]] ;
+    (* METHOD (INTERPOLATION) *)
+    If[
+      SameQ[OptionValue["METHOD"],"INTERPOLATION"],
+      DATA = Interpolation[DATA,Rule[InterpolationOrder,S$PEAK$ORDER],Rule[Method,"Spline"]] ;
+      MAX = Extract[Quiet[FindRoot[D[DATA[ROOT],ROOT],List[ROOT,MAX],Rule[Method,"Newton"],Rule[MaxIterations,Infinity],Rule[AccuracyGoal,$MachinePrecision],Rule[PrecisionGoal,$MachinePrecision]]],List[1,Plus[1,1]]] ;
+      FREQUENCY = N[Times[S$SAMPLING$RATE,Power[LENGTH,Subtract[0,1]],Plus[Times[Plus[1,1],Subtract[0,1]],BIN,Times[Plus[1,1],Power[LENGTH,Subtract[0,1]],Plus[Subtract[0,1],MAX]]]]] ;
+      Throw[FREQUENCY]
+    ] ;
+    (* METHOD (FIT) *)
+    If[
+      SameQ[OptionValue["METHOD"],"FIT"],
+      MODEL = Dot[
+        Array[COEFFICIENT,S$PEAK$ORDER],
+        Power[VARIABLE,Range[S$PEAK$ORDER]]
+      ] ;
+      MODEL = Quiet[NonlinearModelFit[DATA,MODEL,Array[COEFFICIENT,S$PEAK$ORDER],VARIABLE,Rule[MaxIterations,Infinity],Rule[AccuracyGoal,$MachinePrecision],Rule[PrecisionGoal,$MachinePrecision]]] ;
+      MODEL = MODEL["Function"] ;
+      MAX = Extract[Quiet[FindRoot[D[MODEL[ROOT],ROOT],List[ROOT,MAX],Rule[Method,"Newton"],Rule[MaxIterations,Infinity],Rule[AccuracyGoal,$MachinePrecision],Rule[PrecisionGoal,$MachinePrecision]]],List[1,Plus[1,1]]] ;
+      FREQUENCY = N[Times[S$SAMPLING$RATE,Power[LENGTH,Subtract[0,1]],Plus[Times[Plus[1,1],Subtract[0,1]],BIN,Times[Plus[1,1],Power[LENGTH,Subtract[0,1]],Plus[Subtract[0,1],MAX]]]]] ;
+      Throw[FREQUENCY]
+    ] ;
+  ]
+] ;
+S$FREQUENCY[                        (* -- ESTIMATE FREQUENCY (LIST) *)
+  SIGNAL_List,                      (* -- INPUT SIGNAL (LIST) *)
+  List[FMIN_,FMAX_],                (* -- FREQUENCY RANGE *)
+  OPTIONS:OptionsPattern[]          (* -- OPTION(S) *)
+] := Catch[
+  Block[
+    {LENGTH,SAMPLE,PROCESS,PADDING,FOURIER,BMIN,BMAX,BIN,SHIFT,MAX,LIST,DATA,ROOT,MODEL,COEFFICIENT,VARIABLE,FREQUENCY},
+    (* SET INITIAL SAMPLE LENGTH *)
+    LENGTH = S$WINDOW$LENGTH ;
+    (* SET SAMPLE *)
+    SAMPLE = Take[SIGNAL,LENGTH] ;
+    (* APPLY PROCESS FUNCTION *)
+    PROCESS = OptionValue["PROCESS"] ;
+    If[
+      PROCESS,
+      SAMPLE = S$PROCESS[SAMPLE] ;
+    ] ;
+    (* COMPILED VERSION FLAG *)
+    If[
+      S$COMPILE$FLAG,
+      SAMPLE = Developer`ToPackedArray[N[Flatten[Transpose[List[Re[SAMPLE],Im[SAMPLE]]]]]] ;
+      Throw[S$COMPILED$FREQUENCY[Boole[S$COMPLEX$FLAG],S$WINDOW$LENGTH,Total[S$WINDOW$DATA],S$WINDOW$DATA,SAMPLE]] ;
+    ] ;
+    (* APPLY WINDOW *)
+    SAMPLE = Times[S$WINDOW$DATA,SAMPLE] ;
+    (* ZERO PADDING *)
+    PADDING = OptionValue["PADDING"] ;
+    If[
+      UnsameQ[PADDING,0],
+      SAMPLE = S$PAD$ZEROS[PADDING,PADDING,SAMPLE] ;
+      LENGTH = Length[SAMPLE] ;
+    ] ;
+    (* COMPUTE FOURIER AMPLITUDE SPECTRA *)
+    FOURIER = S$SPECTRA[SAMPLE,Rule["COMPLEX",S$COMPLEX$FLAG],Rule["FOURIER",List[-1,1]]] ;
+    BMIN = Floor[FMIN*LENGTH] + 1 ;
+    BMAX = Floor[FMAX*LENGTH] + 0 ;
+    FOURIER = Take[FOURIER,List[BMIN,BMAX]] ;
+    (* MAXIMUM OR SELECTED PEAK POSITION *)
+    BIN = If[
+      SameQ[OptionValue["PEAK"],0],
+      Extract[Position[FOURIER,Max[FOURIER]],List[1,1]],
+      Last[S$FIND$PEAKS[OptionValue["PEAK"],FOURIER]]
+    ] ;
+    BIN = BMIN-1+BIN ;
     (* METHOD (FFT) *)
     If[
       SameQ[OptionValue["METHOD"],"FFT"],
@@ -2371,5 +2479,5 @@ S$COMPILED$FREQUENCY = Compile[
   },
   RuntimeOptions -> "Speed",
   Parallelization -> True,
-	RuntimeAttributes -> {Listable}
+  RuntimeAttributes -> {Listable}
 ] ;
