@@ -1183,7 +1183,8 @@ S$ORTHOGONAL$MATCHING$PURSUIT::usage = "S$ORTHOGONAL$MATCHING$PURSUIT[MAT,VEC,ER
 S$ORTHOGONAL$MATCHING$PURSUIT[      (* -- ORTHOGONAL MATCHING PURSUIT *)
   MATRIX_,                          (* -- MATRIX *)
   VECTOR_,                          (* -- VECTOR *)
-  ERROR_                            (* -- ERROR *)
+  ERROR_,                           (* -- ERROR *)
+  MAX_:1024                         (* -- MAXIMUM NUMBER OF ITERATIONS *)
 ] := Block[
   {LIST,RESULT},
   LIST[] = List[] ;
@@ -1195,8 +1196,28 @@ S$ORTHOGONAL$MATCHING$PURSUIT[      (* -- ORTHOGONAL MATCHING PURSUIT *)
       Subtract[VECTOR,Dot[Dot[LOCAL,PseudoInverse[LOCAL]],VECTOR]]
     ]
   ] ;
-  Sow[NestWhile[Composition[RESULT,LIST,Function[Abs[Dot[Transpose[MATRIX],Slot[1]]]]],VECTOR,Function[Greater[Norm[Flatten[Slot[1]]],ERROR]]]] ;
+  NestWhile[Composition[RESULT,LIST,Function[Abs[Dot[Transpose[MATRIX],Slot[1]]]]],VECTOR,Function[Greater[Norm[Flatten[Slot[1]]],ERROR]],1,MAX] ;
   N[Chop[Normal[SparseArray[Thread[Function[Rule[LIST[],Dot[PseudoInverse[Part[MATRIX,Span[1,All],LIST[]]],VECTOR]]][LIST[]]],Last[Dimensions[MATRIX]]]],ERROR]]
+] ;
+(* ################################################################################################################################################################ *)
+(* LINEAR PROGRAMMING (L1-MINIMIZATION) *)
+(* ################################################################################################################################################################ *)
+ClearAll[S$LINEAR$PROGRAMMING] ;
+S$LINEAR$PROGRAMMING::usage = "S$LINEAR$PROGRAMMING[MAT,VEC] -- solve l1 minimization problem for given real matrix <MAT> and real vector <VEC> " ;
+S$LINEAR$PROGRAMMING[               (* -- L1 MINIMIZATION WITH LINEAR PROGRAMMING *)
+  MATRIX_,                          (* -- MATRIX (REAL) *)
+  VECTOR_                           (* -- VECTOR (REAL) *)
+] := Block[
+  {M, N, TRANSPOSE, SPARSE, A, B, C, BOUND, SOLUTION},
+  {M, N} = Dimensions[MATRIX] ;
+  TRANSPOSE = Transpose[MATRIX] ;
+  SPARSE = SparseArray[{{X_, X_} -> 1}, {M, M}] ;
+  A = Join[Transpose[Join[SPARSE, -TRANSPOSE]], Transpose[Join[SPARSE, TRANSPOSE]]] ;
+  B = Join[-VECTOR, VECTOR] ;
+  C = Join[Table[1, {M}], Table[0, {N}]] ;
+  BOUND = Table[-Infinity, {M + N}] ;
+  SOLUTION = LinearProgramming[C, A, B, BOUND] ;
+  Drop[SOLUTION, M]
 ] ;
 (* ################################################################################################################################################################ *)
 (*  QUASIPERIODIC DECOMPOSITION (HARMONICS/COMPRESSED) *)
@@ -2118,6 +2139,101 @@ S$FLI$LAS = Composition[Last,S$FLI$ALL] ;
 ClearAll[S$FLI] ;
 S$FLI::usage = "S$FLI[VEC] -- compute FLI indicator using several (orthonormal) deviation vectors <VEC> given for all iterations, <VEC> = {<VEC>_1, <VEC>_2, ...}, <VEC>_I = {<VEC>_I_1, <VEC>_I_2, ...} (returns only last value) " ;
 S$FLI = S$FLI$LAS ;
+(* ################################################################################################################################################################ *)
+(* OPTICS *)
+(* ################################################################################################################################################################ *)
+ClearAll[S$WOLSKI] ;
+S$WOLSKI::usage = "
+S$WOLSKI[MATRIX] -- compute coupled optics in Wolski representation for given single-turn (2N)D real symplectic matrix <MATRIX>
+" ;
+Options[S$WOLSKI] = List[
+  Rule["TOLERANCE",10.0^-15],       (* -- CHOP TOLERANCE (REAL) *)
+  Rule["IDENTIFY",True],            (* -- FLAG TO IDENTIFY PLANES (LOGICAL) *)
+  Rule["METHOD","TWISS"],           (* -- PLANES IDENTIFICATION METHOD ("TWISS", "GUESS" OR "TRACK") *)
+  Rule["GUESS",Null]                (* -- LIST GUESS TUNES FOR PLANES (LIST OF REALS) *)
+] ;
+S$WOLSKI[
+  MATRIX_?MatrixQ,                  (* -- SINGLE-TURN (2N)D REAL SYMPLECTIC MATRIX *)
+  OPTIONS:OptionsPattern[]          (* -- OPTION(S) *)
+] := Catch[
+  Block[
+    {TOLERANCE, DIMENSION, SYMPLECTIC, COMPLEX, PROJECTION, ROTATION, VALUE, VECTOR, TUNE, FACTOR, EIGEN, NORMAL, WOLSKI, ORDERING, GAUGE, START, ORBIT},
+    TOLERANCE = OptionValue["TOLERANCE"] ;
+    DIMENSION = 1/2*Length[MATRIX] ;
+    SYMPLECTIC = ArrayFlatten[Outer[Times,IdentityMatrix[DIMENSION], {{0, 1}, {-1, 0}}]] ;
+    COMPLEX = 1/Sqrt[2]*ArrayFlatten[Outer[Times, IdentityMatrix[DIMENSION], {{1, +I}, {1, -I}}]] ;
+    PROJECTION = Table[SparseArray[{2*{X, X} + 1, 2*{X, X} + 2} -> {1, 1}, 2*DIMENSION], {X, 0, DIMENSION - 1}] ;
+    ROTATION = Table[SparseArray[{2*{X, X} + 1, 2*{X, X} + 2, {Y_, Y_}} -> {-1, -1, 1}, 2*DIMENSION], {X, 0, DIMENSION - 1}] ;
+    {VALUE, VECTOR} = Chop[Eigensystem[MATRIX], TOLERANCE] ;
+    {VALUE, VECTOR} = Transpose[SortBy[Transpose[{VALUE, VECTOR}], Composition[Abs, Log, First]]] ;
+    VALUE = Partition[VALUE, 2] ;
+    VECTOR = Partition[VECTOR, 2] ;
+    TUNE = Map[Function[Abs[Im[Log[Mean[{First[Slot[1]], Conjugate[Last[Slot[1]]]}]]]]], VALUE] ;
+    FACTOR = Map[Function[Sqrt[Abs[Chop[-I*Dot[First[Slot[1]], SYMPLECTIC, Last[Slot[1]]], TOLERANCE]]]], VECTOR] ;
+    EIGEN = Transpose[Flatten[VECTOR/FACTOR, 1]] ;
+    NORMAL = Chop[Dot[EIGEN, COMPLEX], TOLERANCE] ;
+    WOLSKI = Map[Function[Dot[NORMAL, Slot[1], Transpose[NORMAL]]], PROJECTION] ;
+    If[
+      Not[OptionValue["IDENTIFY"]],
+      Throw[Association[Rule["TUNE", TUNE], Rule["WOLSKI", WOLSKI], Rule["NORMAL", NORMAL], Rule["EIGEN", EIGEN]]] ;
+    ] ;
+    If[
+      SameQ[OptionValue["METHOD"], "TWISS"],
+      ORDERING  = Flatten[Map[Function[Position[Slot[1], Max[Slot[1]]]], Table[WOLSKI[[X, 2*Y - 1, 2*Y - 1]], {X, 1, DIMENSION}, {Y, 1, DIMENSION}]]] ;
+    ] ;
+    If[
+      SameQ[OptionValue["METHOD"], "GUESS"],
+      ORDERING = OptionValue["GUESS"] ;
+      ORDERING = Flatten[Map[Function[Position[Abs[ORDERING - Slot[1]], Min[Abs[ORDERING - Slot[1]]]]], TUNE]]
+    ] ;
+    If[
+      SameQ[OptionValue["METHOD"], "TRACK"],
+      ORDERING = ConstantArray[0, DIMENSION] ;
+      Do[
+        {
+          START = ConstantArray[0, 2*DIMENSION] ;
+          START[[2*X-1]] = 1 ;
+          ORBIT = NestList[Function[Dot[MATRIX, Slot[1]]], START, S$WINDOW$LENGTH] ;
+          ORBIT = Part[ORBIT, All, 2*X-1] ;
+          ORDERING[[X]] = 2*Pi*S$FREQUENCY[ORBIT] ;
+        },
+        {X, 1, DIMENSION}
+      ] ;
+      ORDERING = Flatten[Map[Function[Position[Abs[ORDERING - Slot[1]], Min[Abs[ORDERING - Slot[1]]]]], TUNE]]
+    ] ;
+    If[
+      UnsameQ[ORDERING, Range[DIMENSION]],
+      VALUE = VALUE[[ORDERING]] ;
+      TUNE = Map[Function[Abs[Im[Log[Mean[{First[Slot[1]], Conjugate[Last[Slot[1]]]}]]]]], VALUE] ;
+      VECTOR = VECTOR[[ORDERING]] ;
+	  FACTOR = FACTOR[[ORDERING]] ;
+      EIGEN = Transpose[Flatten[VECTOR/FACTOR, 1]] ;
+      NORMAL = Chop[Dot[EIGEN, COMPLEX], TOLERANCE] ;
+	  WOLSKI = Map[Function[Dot[NORMAL, Slot[1], Transpose[NORMAL]]], PROJECTION] ;
+    ] ;
+    GAUGE = Sign[Table[NORMAL[[2*X - 1, 2*X - 1]], {X, 0, DIMENSION - 1}]] ;
+	  If[
+	  	UnsameQ[GAUGE, ConstantArray[1, DIMENSION]],
+		  NORMAL = Dot[NORMAL, Apply[Times,Pick[ROTATION, GAUGE, 1]]] ;
+		  WOLSKI = Map[Function[Dot[NORMAL, Slot[1], Transpose[NORMAL]]], PROJECTION] ;
+  	] ;
+	  Association[Rule["TUNE", TUNE], Rule["WOLSKI", WOLSKI], Rule["NORMAL", NORMAL], Rule["EIGEN", EIGEN]]
+  ]
+] ;
+ClearAll[S$ADVANCE] ;
+S$ADVANCE::usage = "
+S$ADVANCE[MATRIX12, WOLSKI1] -- advance Wolski representation <WOLSKI1> at point 1 throught given trasport matrix <MATRIX12>
+" ;
+S$ADVANCE[MATRIX12_, WOLSKI1_] := Map[Function[Dot[MATRIX12, Slot[1], Transpose[MATRIX12]]], WOLSKI1] ;
+ClearAll[S$SHIFT] ;
+S$SHIFT::usage = "
+S$SHIFT[MATRIX12, NORMAL1] -- compute phase advance for given transport matrix <MATRIX12> and normalization matrix <NORMAL1> at point 1
+" ;
+S$SHIFT[MATRIX12_, NORMAL1_] := Block[
+	{ROTATION},
+	ROTATION = MATRIX12.NORMAL1 ;
+	Table[ArcTan[ROTATION[[2*X+1, 2*X+1]], ROTATION[[2*X+1, 2*X+2]]], {X, 0, 1/2*Length[MATRIX12] - 1}]
+] ;
 (* ################################################################################################################################################################ *)
 (* COMPLETION *)
 (* ################################################################################################################################################################ *)
