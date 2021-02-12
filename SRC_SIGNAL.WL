@@ -2199,25 +2199,25 @@ S$WOLSKI[
         },
         {X, 1, DIMENSION}
       ] ;
-      ORDERING = Flatten[Map[Function[Position[Abs[ORDERING - Slot[1]], Min[Abs[ORDERING - Slot[1]]]]], TUNE]]
+      ORDERING = Flatten[Map[Function[Position[Abs[ORDERING - Slot[1]], Min[Abs[ORDERING - Slot[1]]]]], TUNE]] ;
     ] ;
     If[
       UnsameQ[ORDERING, Range[DIMENSION]],
       VALUE = VALUE[[ORDERING]] ;
       TUNE = Map[Function[Abs[Im[Log[Mean[{First[Slot[1]], Conjugate[Last[Slot[1]]]}]]]]], VALUE] ;
       VECTOR = VECTOR[[ORDERING]] ;
-	  FACTOR = FACTOR[[ORDERING]] ;
+      FACTOR = FACTOR[[ORDERING]] ;
       EIGEN = Transpose[Flatten[VECTOR/FACTOR, 1]] ;
       NORMAL = Chop[Dot[EIGEN, COMPLEX], TOLERANCE] ;
-	  WOLSKI = Map[Function[Dot[NORMAL, Slot[1], Transpose[NORMAL]]], PROJECTION] ;
+      WOLSKI = Map[Function[Dot[NORMAL, Slot[1], Transpose[NORMAL]]], PROJECTION] ;
     ] ;
     GAUGE = Sign[Table[NORMAL[[2*X - 1, 2*X - 1]], {X, 0, DIMENSION - 1}]] ;
-	  If[
-	  	UnsameQ[GAUGE, ConstantArray[1, DIMENSION]],
-		  NORMAL = Dot[NORMAL, Apply[Times,Pick[ROTATION, GAUGE, 1]]] ;
-		  WOLSKI = Map[Function[Dot[NORMAL, Slot[1], Transpose[NORMAL]]], PROJECTION] ;
-  	] ;
-	  Association[Rule["TUNE", TUNE], Rule["WOLSKI", WOLSKI], Rule["NORMAL", NORMAL], Rule["EIGEN", EIGEN]]
+    If[
+      UnsameQ[GAUGE, ConstantArray[1, DIMENSION]],
+      NORMAL = Dot[NORMAL, Apply[Times,Pick[ROTATION, GAUGE, 1]]] ;
+      WOLSKI = Map[Function[Dot[NORMAL, Slot[1], Transpose[NORMAL]]], PROJECTION] ;
+    ] ;
+    Association[Rule["TUNE", TUNE], Rule["WOLSKI", WOLSKI], Rule["NORMAL", NORMAL], Rule["EIGEN", EIGEN]]
   ]
 ] ;
 ClearAll[S$ADVANCE] ;
@@ -2233,6 +2233,45 @@ S$SHIFT[MATRIX12_, NORMAL1_] := Block[
 	{ROTATION},
 	ROTATION = MATRIX12.NORMAL1 ;
 	Table[ArcTan[ROTATION[[2*X+1, 2*X+1]], ROTATION[[2*X+1, 2*X+2]]], {X, 0, 1/2*Length[MATRIX12] - 1}]
+] ;
+ClearAll[S$LB$NORMAL] ;
+S$LB$NORMAL::usage = "
+S$LB$NORMAL[{B1X, B1Y, B2X, B2Y, A1X, A1Y, A2X, A2Y, U, CV1, SV1, CV2, SV2}] -- compute normalization matrix from Lebedev-Bogacz representation, where CVI = Cos[VI] and SVI = Sin[VI]
+" ;
+S$LB$NORMAL[{B1X_, B1Y_, B2X_, B2Y_, A1X_, A1Y_, A2X_, A2Y_, U_, CV1_, SV1_, CV2_, SV2_}] := {
+  {Sqrt[B1X], 0, Sqrt[B2X]*CV2, -Sqrt[B2X]*SV2},
+  {-(A1X/Sqrt[B1X]), (1-U)/Sqrt[B1X], If[B2X > 0, (-A2X*CV2 + SV2*U)/Sqrt[B2X], 0], If[B2X >0, (A2X*SV2 + CV2*U)/Sqrt[B2X], 0]},
+  {Sqrt[B1Y]*CV1, -Sqrt[B1Y]*SV1, Sqrt[B2Y], 0},
+  {If[B1Y > 0, (-A1Y*CV1 + SV1*U)/Sqrt[B1Y], 0], If[B1Y > 0, (A1Y*SV1 + CV1*U)/Sqrt[B1Y], 0], -(A2Y/Sqrt[B2Y]),(1-U)/Sqrt[B2Y]}
+} ;
+ClearAll[S$LB$CONVERT] ;
+S$LB$CONVERT::usage = "
+S$LB$CONVERT[{W1, W2}] -- convert Wolski representation to Lebedev-Bogacz representation
+S$LB$CONVERT[{B1X, B1Y, B2X, B2Y, A1X, A1Y, A2X, A2Y, U, CV1, SV1, CV2, SV2}] -- convert Lebedev-Bogacz representation to Wolski representation, where CVI = Cos[VI] and SVI = Sin[VI]
+" ;
+S$LB$CONVERT[{W1_, W2_}] := Block[
+  {B1X, B1Y, B2X, B2Y, A1X, A1Y, A2X, A2Y, U, CV1, SV1, CV2, SV2},
+  B1X = +W1[[1,1]] ;
+  B1Y = +W1[[3,3]] ;
+  B2X = +W2[[1,1]] ;
+  B2Y = +W2[[3,3]] ;
+  A1X = -W1[[1,2]] ;
+  A1Y = -W1[[3,4]] ;
+  A2X = -W2[[1,2]] ;
+  A2Y = -W2[[3,4]] ;
+  U = 1/2*(1 + A1X^2 - A1Y^2 - B1X*W1[[2,2]] + B1Y*W1[[4,4]]) ;
+  {CV1, SV1} = If[B1Y > 0, {1/Sqrt[B1X*B1Y]*W1[[1,3]], 1/U*(A1Y*CV1 + 1/Sqrt[B1X]*(Sqrt[B1Y]*W1[[1,4]]))}, {-1, 0}] ;
+  {CV2, SV2} = If[B2X > 0, {1/Sqrt[B2X*B2Y]*W2[[1,3]], 1/U*(A2X*CV2 + 1/Sqrt[B2Y]*(Sqrt[B2X]*W2[[2,3]]))}, {+1, 0}] ;
+  {B1X, B1Y, B2X, B2Y, A1X, A1Y, A2X, A2Y, U, CV1, SV1, CV2, SV2}
+] ;
+S$LB$CONVERT[{B1X_, B1Y_, B2X_, B2Y_, A1X_, A1Y_, A2X_, A2Y_, U_, CV1_, SV1_, CV2_, SV2_}] := Block[
+  {NORMAL, P1, P2, W1, W2},
+  NORMAL = S$LB$NORMAL[{B1X, B1Y, B2X, B2Y, A1X, A1Y, A2X, A2Y, U, CV1, SV1, CV2, SV2}] ;
+  P1 = {{1, 0, 0, 0}, {0, 1, 0, 0}, {0, 0, 0, 0}, {0, 0, 0, 0}} ;
+  P2 = {{0, 0, 0, 0}, {0, 0, 0, 0}, {0, 0, 1, 0}, {0, 0, 0, 1}} ;
+  W1 = Dot[NORMAL, P1, Transpose[NORMAL]] ;
+  W2 = Dot[NORMAL, P2, Transpose[NORMAL]] ;
+  {W1, W2}
 ] ;
 (* ################################################################################################################################################################ *)
 (* COMPLETION *)
