@@ -344,7 +344,7 @@ S$MAKE$SIGNAL[MATRIX] -- generate signal for given history matrix <MATRIX> (matr
 " ;
 S$MAKE$SIGNAL[                      (* -- MAKE SIGNAL *)
   List[MATRIX__List],               (* -- INPUT HISTORY MATRIX (MATRIX) *)
-  BUILDER_:S$MAKE$SIGNAL$DIAGONAL   (* -- BUILDER FUNCTION (S$MAKE$SIGNAL$ROW, S$MAKE$SIGNAL$SUM OR S$MAKE$SIGNAL$DIAGONAL (DEFAULT)) *)
+  BUILDER_:S$MAKE$SIGNAL$SUM        (* -- BUILDER FUNCTION (S$MAKE$SIGNAL$ROW OR S$MAKE$SIGNAL$SUM *)
 ] := Block[
   {SIGNAL},
   SIGNAL = BUILDER[List[MATRIX]] ;
@@ -379,7 +379,7 @@ S$SVD$FILTER[NUMBER,SIGNAL] -- apply svd filter using <NUMBER> (integer) singula
 S$SVD$FILTER[                       (* -- SVD FILTER *)
   NUMBER_Integer,                   (* -- NUMBER OF SINGULAR VALUE TO KEEP (INTEGER) *)
   SIGNAL_List,                      (* -- INPUT SIGNAL (LIST) *)
-  BUILDER_:S$MAKE$SIGNAL$DIAGONAL   (* -- BUILDER FUNCTION (S$MAKE$SIGNAL$ROW, S$MAKE$SIGNAL$SUM OR S$MAKE$SIGNAL$DIAGONAL (DEFAULT)) *)
+  BUILDER_:S$MAKE$SIGNAL$SUM        (* -- BUILDER FUNCTION (S$MAKE$SIGNAL$ROW OR S$MAKE$SIGNAL$SUM) *)
 ] := Block[
   {DATA,LENGTH,MATRIX,MTU,MTS,MTV,SVL},
   DATA = SIGNAL ;
@@ -1216,7 +1216,7 @@ S$LINEAR$PROGRAMMING[               (* -- L1 MINIMIZATION WITH LINEAR PROGRAMMIN
   B = Join[-VECTOR, VECTOR] ;
   C = Join[Table[1, {M}], Table[0, {N}]] ;
   BOUND = Table[-Infinity, {M + N}] ;
-  SOLUTION = LinearProgramming[C, A, B, BOUND] ;
+  SOLUTION = LinearProgramming[C, A, B, BOUND, Method->"CLP"] ;
   Drop[SOLUTION, M]
 ] ;
 (* ################################################################################################################################################################ *)
@@ -2211,10 +2211,10 @@ S$WOLSKI[
       NORMAL = Chop[Dot[EIGEN, COMPLEX], TOLERANCE] ;
       WOLSKI = Map[Function[Dot[NORMAL, Slot[1], Transpose[NORMAL]]], PROJECTION] ;
     ] ;
-    GAUGE = Sign[Table[NORMAL[[2*X - 1, 2*X - 1]], {X, 0, DIMENSION - 1}]] ;
+    GAUGE = Sign[Table[NORMAL[[2*X - 1, 2*X - 1]], {X, 1, DIMENSION}]] ;
     If[
       UnsameQ[GAUGE, ConstantArray[1, DIMENSION]],
-      NORMAL = Dot[NORMAL, Apply[Times,Pick[ROTATION, GAUGE, 1]]] ;
+      NORMAL = Dot[NORMAL, Apply[Times,Pick[ROTATION, GAUGE, -1]]] ;
       WOLSKI = Map[Function[Dot[NORMAL, Slot[1], Transpose[NORMAL]]], PROJECTION] ;
     ] ;
     Association[Rule["TUNE", TUNE], Rule["WOLSKI", WOLSKI], Rule["NORMAL", NORMAL], Rule["EIGEN", EIGEN]]
@@ -2232,7 +2232,7 @@ S$SHIFT[MATRIX12, NORMAL1] -- compute phase advance for given transport matrix <
 S$SHIFT[MATRIX12_, NORMAL1_] := Block[
 	{ROTATION},
 	ROTATION = MATRIX12.NORMAL1 ;
-	Table[ArcTan[ROTATION[[2*X+1, 2*X+1]], ROTATION[[2*X+1, 2*X+2]]], {X, 0, 1/2*Length[MATRIX12] - 1}]
+	Table[Abs[ArcTan[ROTATION[[2*X+1, 2*X+1]], ROTATION[[2*X+1, 2*X+2]]]], {X, 0, 1/2*Length[MATRIX12] - 1}]
 ] ;
 ClearAll[S$LB$NORMAL] ;
 S$LB$NORMAL::usage = "
