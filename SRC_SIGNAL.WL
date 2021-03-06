@@ -2250,20 +2250,29 @@ S$WOLSKI[
 ] ;
 ClearAll[S$ADVANCE] ;
 S$ADVANCE::usage = "
-S$ADVANCE[MATRIX12, WOLSKI1] -- advance Wolski representation <WOLSKI1> at point 1 throught given trasport matrix <MATRIX12>
+S$ADVANCE[WOLSKI1, MATRIX12] -- advance Wolski representation <WOLSKI1> at point 1 throught given trasport matrix <MATRIX12>
+S$ADVANCE[WOLSKI1, {MATRIX12, MATRIX23, ...}] -- advance Wolski representation <WOLSKI1> at point 1 throught given trasport matrices <MATRIX12>, <MATRIX23>, ...
 " ;
-S$ADVANCE[MATRIX12_, WOLSKI1_] := Map[Function[Dot[MATRIX12, Slot[1], Transpose[MATRIX12]]], WOLSKI1] ;
-ClearAll[S$SHIFT] ;
+S$ADVANCE[WOLSKI_, List[VECTOR__?VectorQ]] := Map[Function[Dot[List[VECTOR], Slot[1], Transpose[List[VECTOR]]]], WOLSKI] ;
+S$ADVANCE[WOLSKI_, List[MATRIX__?MatrixQ]] := Rest[FoldList[S$ADVANCE, WOLSKI, List[MATRIX]]] ;
 S$SHIFT::usage = "
-S$SHIFT[MATRIX12, NORMAL1] -- compute phase advance for given transport matrix <MATRIX12> and normalization matrix <NORMAL1> at point 1
+S$SHIFT[NORMAL1, MATRIX12] -- compute phase advance between points 1 and 2, normalization matrix at point 2 for given normalization matrix <NORMAL1> at point 1 and transport matrix <MATRIX12> between points 1 and 2
+S$SHIFT[NORMAL1, {MATRIX12, MATRIX23, ...}] -- compute phase advance between points and normalization matrices for given normalization matrix <NORMAL1> at point 1 and transport matrices {<MATRIX12>, <MATRIX23>, ...}
 " ;
-S$SHIFT[MATRIX12_, NORMAL1_] := Block[
-	{ROTATION},
-	ROTATION = Dot[MATRIX12,NORMAL1] ;
-	List[
-		Table[Abs[ArcTan[ROTATION[[2*X+1, 2*X+1]], ROTATION[[2*X+1, 2*X+2]]]], {X, 0, 1/2*Length[MATRIX12] - 1}]
-	]
+S$SHIFT[NORMAL_List, List[VECTOR__?VectorQ]] := Block[
+	{ROTATION, SHIFT, TURN},
+	ROTATION = Dot[List[VECTOR], NORMAL] ;
+	SHIFT = Table[ArcTan[ROTATION[[2*X+1, 2*X+1]], ROTATION[[2*X+1, 2*X+2]]], {X, 0, 1/2*Length[NORMAL] - 1}] ;
+	TURN = IdentityMatrix[1/2*Length[NORMAL]] ;
+	Do[
+		TURN[[PLANE, PLANE]] = {{+Cos[SHIFT[[PLANE]]], -Sin[SHIFT[[PLANE]]]}, {+Sin[SHIFT[[PLANE]]], +Cos[SHIFT[[PLANE]]]}},
+		{PLANE, 1, 1/2*Length[NORMAL]}
+	] ;
+	TURN = N[ArrayFlatten[TURN]] ;
+	{SHIFT, Chop[Dot[ROTATION, TURN]]}
 ] ;
+S$SHIFT[List[SHIFT_List, NORMAL_List], List[VECTOR__?VectorQ]] := S$SHIFT[NORMAL, List[VECTOR]] ;
+S$SHIFT[DATA_List, List[MATRIX__?MatrixQ]] := Rest[FoldList[S$SHIFT, DATA, List[MATRIX]]] ;
 ClearAll[S$LB$NORMAL] ;
 S$LB$NORMAL::usage = "
 S$LB$NORMAL[{B1X, B1Y, B2X, B2Y, A1X, A1Y, A2X, A2Y, U, CV1, SV1, CV2, SV2}] -- compute normalization matrix from Lebedev-Bogacz representation, where CVI = Cos[VI] and SVI = Sin[VI]
