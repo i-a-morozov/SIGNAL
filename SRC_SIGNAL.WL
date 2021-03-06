@@ -1,13 +1,12 @@
 (* ################################################################################################################################################################ *)
-(* SIGNAL (FREQUENCY IDENTIFICATION, QUASIPERIODIC SIGNAL DECOMPOSITION AND CHAOS INDICATORS), 2018-2020, I.A.MOROZOV@INP.NSK.SU *)
+(* SIGNAL (FREQUENCY IDENTIFICATION, QUASIPERIODIC SIGNAL DECOMPOSITION AND CHAOS INDICATORS), 2018-2021, I.A.MOROZOV@INP.NSK.SU *)
 (* ################################################################################################################################################################ *)
 ClearSystemCache[] ;                (* -- CLEAR SYSTEM CACHE *)
 Set[$HistoryLength,0] ;             (* -- NO HISTORY *)
 Get["CompiledFunctionTools`"] ;     (* -- LOAD COMPILED FUNCTION PACKAGE *)
 Get["CCompilerDriver`"] ;           (* -- LOAD COMPILER DRIVER PACKAGE *)
-Get["MaTeX`"] ;                     (* -- LOAD MATEX PACKAGE *)
 (* ################################################################################################################################################################ *)
-(* SYSTEM COMPILE OPTIONS  *)
+(* SYSTEM COMPILE OPTIONS *)
 (* ################################################################################################################################################################ *)
 Compiler`$CCompilerOptions = List[Rule["SystemCompileOptions","-O3  -ffast-math -march=native"]] ;
 (* ################################################################################################################################################################ *)
@@ -15,23 +14,15 @@ Compiler`$CCompilerOptions = List[Rule["SystemCompileOptions","-O3  -ffast-math 
 (* ################################################################################################################################################################ *)
 ClearAll[S$COMPILE$FLAG] ;
 S$COMPILE$FLAG::usage = "
-S$COMPILE$FLAG -- flag to use compiled version of S$FREQUENCY[] function (logical), frequency estimation accuracy corresponds to \"PARABOLA\" method, S$FREQUENCY[] options will be ignored, decomposition functions that pass non-default options to S$FREQUENCY[] might produce wrong results
+S$COMPILE$FLAG -- flag to use compiled version of S$FREQUENCY[] function (logical), frequency estimation accuracy corresponds to \"PARABOLA\" method, other S$FREQUENCY[] options will be ignored, decomposition functions that pass non-default options to S$FREQUENCY[] might produce wrong results
 " ;
 S$COMPILE$FLAG = False ;
-(* ################################################################################################################################################################ *)
-(* SIGNAL SAMPLING RATE *)
-(* ################################################################################################################################################################ *)
-ClearAll[S$SAMPLING$RATE] ;
-S$SAMPLING$RATE::usage = "
-S$SAMPLING$RATE -- signal sampling rate (integer)
-" ;
-S$SAMPLING$RATE = 1 ;
 (* ################################################################################################################################################################ *)
 (* COMPLEX SIGNAL FLAG *)
 (* ################################################################################################################################################################ *)
 ClearAll[S$COMPLEX$FLAG] ;
 S$COMPLEX$FLAG::usage = "
-S$COMPLEX$FLAG -- complex signal flag (logical)
+S$COMPLEX$FLAG -- complex signal flag (logical), default value is 'False', i.e. signal is assumed to be real
 " ;
 S$COMPLEX$FLAG = False ;
 (* ################################################################################################################################################################ *)
@@ -39,15 +30,15 @@ S$COMPLEX$FLAG = False ;
 (* ################################################################################################################################################################ *)
 ClearAll[S$FREQUENCY$RANGE] ;
 S$FREQUENCY$RANGE::usage = "
-S$FREQUENCY$RANGE -- frequency range (real), recomputed by S$SET$VARIABLES[] function
+S$FREQUENCY$RANGE -- frequency range (real), 0.5 for real input signals and 1.0 for complex input signals
 " ;
-S$FREQUENCY$RANGE = N[If[S$COMPLEX$FLAG,S$SAMPLING$RATE,Divide[S$SAMPLING$RATE,Plus[1,1]]]] ;
+S$FREQUENCY$RANGE = N[If[S$COMPLEX$FLAG,1.0,0.5]] ;
 (* ################################################################################################################################################################ *)
 (* WINDOW ORDER *)
 (* ################################################################################################################################################################ *)
 ClearAll[S$WINDOW$ORDER] ;
 S$WINDOW$ORDER::usage = "
-S$WINDOW$ORDER -- cosine window order (integer)
+S$WINDOW$ORDER -- cosine window order (integer or real)
 " ;
 S$WINDOW$ORDER = Plus[1,1] ;
 (* ################################################################################################################################################################ *)
@@ -67,7 +58,7 @@ S$PEAK$ORDER -- fourier amplitude spectra peak interpolation or fitting order (i
 " ;
 S$PEAK$ORDER = 10 ;
 (* ################################################################################################################################################################ *)
-(* NUMBER OF INTERPOLATION/FITTING POINTS *)
+(* NUMBER OF PEAK INTERPOLATION/FITTING POINTS *)
 (* ################################################################################################################################################################ *)
 ClearAll[S$PEAK$POINTS] ;
 S$PEAK$POINTS::usage = "
@@ -79,7 +70,7 @@ S$PEAK$POINTS = 20 ;
 (* ################################################################################################################################################################ *)
 ClearAll[S$FIT$METHOD] ;
 S$FIT$METHOD::usage = "
-S$FIT$METHOD -- signal fitting method used with NonlinearModelFit[]
+S$FIT$METHOD -- signal fitting method used with NonlinearModelFit[], default value is 'Automatic'
 " ;
 S$FIT$METHOD = Automatic ;
 (* ################################################################################################################################################################ *)
@@ -109,11 +100,13 @@ S$COSINE$WINDOW[                    (* -- GENERATE COSINE WINDOW DATA (LIST) *)
 (* KAISER WINDOW FUNCTION *)
 (* ################################################################################################################################################################ *)
 ClearAll[S$KAISER$WINDOW] ;
-S$KAISER$WINDOW::usage = "S$KAISER$WINDOW[ORDER,LENGTH] -- generate kaiser window data for order parameter <ORDER> (real) and window length <LENGTH> (integer) " ;
+S$KAISER$WINDOW::usage = "
+S$KAISER$WINDOW[ORDER,LENGTH] -- generate kaiser window data of order <ORDER> (real) and window length <LENGTH> (integer)
+" ;
 S$KAISER$WINDOW[ORDER_?NumericQ,LENGTH_Integer] := Block[
-  {DATA},
-  DATA = Subtract[Divide[Subtract[N[Range[LENGTH]],1],LENGTH],Divide[1,Plus[1,1]]] ;
-  DATA = BesselI[0,Pi*ORDER*Sqrt[1-2*DATA]*Sqrt[1+2*DATA]]/BesselI[0,Pi*ORDER]
+  {WINDOW},
+  WINDOW = Subtract[Divide[Subtract[N[Range[LENGTH]],1],LENGTH],Divide[1,Plus[1,1]]] ;
+  WINDOW = BesselI[0,Pi*ORDER*Sqrt[1-2*WINDOW]*Sqrt[1+2*WINDOW]]/BesselI[0,Pi*ORDER]
 ] /; And[
   GreaterEqual[ORDER,0],
   GreaterEqual[LENGTH,1]
@@ -135,7 +128,6 @@ S$PRINT$GLOBAL[] -- print global variables
 " ;
 S$PRINT$GLOBAL[] := Column[
   List[
-    StringTemplate["S$SAMPLING$RATE         :    `1`"][S$SAMPLING$RATE],
     StringTemplate["S$COMPLEX$FLAG          :    `1`"][S$COMPLEX$FLAG],
     StringTemplate["S$FREQUENCY$RANGE       :    `1`"][S$FREQUENCY$RANGE],
     StringTemplate["S$WINDOW$ORDER          :    `1`"][S$WINDOW$ORDER],
@@ -151,42 +143,58 @@ S$PRINT$GLOBAL[] := Column[
 (* ################################################################################################################################################################ *)
 ClearAll[S$SET$VARIABLES] ;
 S$SET$VARIABLES::usage = "
-S$SET$VARIABLES[RATE,FLAG,ORDER,LENGTH,DEGREE,POINT,METHOD] -- initialize global variables with <RATE> (integer) -- sampling rate, <FLAG> (logical) -- complex signal flag, <ORDER> (integer) -- cosine window order, <LENGTH> (integer) -- window length, <DEGREE> (integer) -- amplitude spectra interpolation/fitting order, <POINT> (integer) -- number of points to use in amplitude spectra interpolation/fitting and <METHOD> -- signal fitting method
+S$SET$VARIABLES[FLAG,ORDER,LENGTH] -- initialize global variables with <FLAG> (logical) -- complex signal flag, <ORDER> (integer) -- cosine window order, <LENGTH> (integer) -- window length
 " ;
 Options[S$SET$VARIABLES] = List[
   Rule["VERBOSE",False]             (* -- VERBOSE FLAG (LOGICAL) *)
 ] ;
 S$SET$VARIABLES[                    (* -- SET GLOBAL VARIABLES *)
-  RATE_Integer,                     (* -- SAMPLING RATE (INTEGER) *)
   FLAG_,                            (* -- COMPLEX FLAG (LOGICAL) *)
   ORDER_?NumericQ,                  (* -- WINDOW ORDER (INTEGER) *)
-  LENGTH_Integer,                   (* -- WINDOW LENGTH (INTEGER) *)
-  DEGREE_Integer,                   (* -- PEAK ORDER (INTEGER) *)
-  POINT_Integer,                    (* -- PEAK POINTS (INTEGER) *)
-  METHOD_:Automatic,                (* -- SIGNAL FIT METHOD *)
-  OPTIONS:OptionsPattern[]          (* -- OPTION(S) *)
+  LENGTH_Integer                    (* -- WINDOW LENGTH (INTEGER) *)
 ] := Block[
-  List[],
-  S$SAMPLING$RATE = RATE ;
+  {},
   S$COMPLEX$FLAG = FLAG ;
-  S$FREQUENCY$RANGE = N[If[S$COMPLEX$FLAG,S$SAMPLING$RATE,Divide[S$SAMPLING$RATE,Plus[1,1]]]] ;
+  S$FREQUENCY$RANGE = N[If[S$COMPLEX$FLAG,1.0,0.5]] ;
   S$WINDOW$ORDER = ORDER ;
   S$WINDOW$LENGTH = LENGTH ;
   S$WINDOW$DATA = S$COSINE$WINDOW[S$WINDOW$ORDER,S$WINDOW$LENGTH] ;
-  S$PEAK$ORDER = DEGREE ;
-  S$PEAK$POINTS = POINT ;
-  S$FIT$METHOD = METHOD ;
   If[OptionValue["VERBOSE"],Print[S$PRINT$GLOBAL[]]] ;
+] ;
+(* ################################################################################################################################################################ *)
+(* FOURIER *)
+(* ################################################################################################################################################################ *)
+ClearAll[S$FOURIER] ;
+S$FOURIER::usage = "
+S$FOURIER[SIGNAL] -- compute discrete fourier transform for given input signal <SIGNAL> (list), Fourier[] function wrapper
+S$FOURIER[START, SPAN, SIGNAL] -- compute zoom discrete fourier transform (FRFT Bailey, unit circle CZT) for given starting position <START> (integer), interval <SPAN> (integer) and input signal <SIGNAL> (list)
+" ;
+Options[S$FOURIER] = List[
+  Rule["FOURIER",List[1,1]]         (* -- FOURIER PARAMETERS *)
+] ;
+S$FOURIER[                          (* -- COMPUTE DISCRETE FOURIER *)
+  SIGNAL_List,                      (* -- SIGNAL (LIST) *)
+  OPTIONS:OptionsPattern[]          (* -- OPTIONS(S) *)
+] := Fourier[SIGNAL, Rule[FourierParameters,OptionValue["FOURIER"]]] ;
+S$FOURIER[                          (* -- COMPUTE ZOOM DISCRETE FOURIER (FRFT BAILEY, UNIT CIRCLE CZT) *)
+  START_Integer,                    (* -- STARTING POSITION (INTEGER), ZERO FREQUENCY IS AT INDEX ONE *)
+  SPAN_Integer,                     (* -- SPAN RANGE (INTEGER) *)
+  SIGNAL_List                       (* -- SIGNAL (LIST) *)
+] := S$FOURIER[
+  SIGNAL*Exp[2*Pi*I*START/Length[SIGNAL]*Range[0.0,Length[SIGNAL]-1.0]],
+  Rule["FOURIER",List[1,2*SPAN/Length[SIGNAL]]]
 ] ;
 (* ################################################################################################################################################################ *)
 (* FOURIER AMPLITUDE SPECTRA *)
 (* ################################################################################################################################################################ *)
 ClearAll[S$SPECTRA] ;
 S$SPECTRA::usage = "
-S$SPECTRA[SIGNAL] -- compute fourier amplitude specta for given signal <SIGNAL> (list)
+S$SPECTRA[SIGNAL] -- compute discrete fourier amplitude spectra for given input signal <SIGNAL> (list), Fourier[] function wrapper
+S$SPECTRA[START, SPAN, SIGNAL] -- compute zoomed discrete fourier amplitude spectra (FRFT Bailey, unit circle CZT) for given starting position <START> (integer), interval <SPAN> (integer) and input signal <SIGNAL> (list)
+S$SPECTRA[{MIN, MAX}, SIGNAL] -- compute zoomed discrete fourier amplitude spectra (FRFT Bailey, unit circle CZT) for given frequency range {<MIN>, <MAX>} (real) and input signal <SIGNAL> (list)
 " ;
 Options[S$SPECTRA] = List[
-  Rule["FOURIER",List[-1,1]],       (* -- FOURIER PARAMETERS *)
+  Rule["FOURIER",List[1,1]],        (* -- FOURIER PARAMETERS *)
   Rule["NORMALIZED",False],         (* -- FLAG TO NORMALIZE OUTPUT WITH RESPECT TO IT'S MAXIMUM VALUE, ELSE LOG10 OF CORRESPONDING AMPLITUDE SPECTRA IS RETURNED (LOGICAL) *)
   Rule["COMPLEX",False],            (* -- COMPLEX FLAG (LOGICAL) *)
   Rule["2D",False],                 (* -- RETURN 2D DATA (LOGICAL) *)
@@ -196,17 +204,39 @@ S$SPECTRA[                          (* -- COMPUTE FOURIER AMPLITUDE SPECTA *)
   SIGNAL_List,                      (* -- SIGNAL (LIST) *)
   OPTIONS:OptionsPattern[]          (* -- OPTIONS(S) *)
 ] := Block[
-  {LEVEL,FOURIER},
+  {LEVEL,FOURIER,RANGE},
   LEVEL = 10^OptionValue["LEVEL"] ;
-  FOURIER = Plus[Abs[Fourier[SIGNAL,Rule[FourierParameters,OptionValue["FOURIER"]]]],LEVEL] ;
+  FOURIER = Plus[Abs[S$FOURIER[SIGNAL, Rule["FOURIER",OptionValue["FOURIER"]]]],LEVEL] ;
   FOURIER = If[OptionValue["COMPLEX"],FOURIER,Take[FOURIER,List[1,Floor[Divide[Length[FOURIER],Plus[1,1]]]]]] ;
   FOURIER = If[OptionValue["NORMALIZED"],Divide[FOURIER,Max[FOURIER]],Log10[FOURIER]] ;
-  If[
-    OptionValue["2D"],
-    Transpose[List[Times[Plus[1,1],S$FREQUENCY$RANGE,Divide[N[Take[Range[0,Subtract[Length[SIGNAL],1]],Length[FOURIER]]],Length[SIGNAL]]],FOURIER]],
-    FOURIER
-  ]
+  RANGE = Range[0.0, 1.0-1.0/Length[SIGNAL], 1.0/Length[SIGNAL]] ;
+  RANGE = If[OptionValue["COMPLEX"],RANGE,Take[RANGE,List[1,Floor[Divide[Length[RANGE],Plus[1,1]]]]]] ;
+  If[OptionValue["2D"],Transpose[List[RANGE, FOURIER]],FOURIER]
 ] ;
+S$SPECTRA[                          (* -- COMPUTE ZOOMED FOURIER AMPLITUDE SPECTA *)
+  START_Integer,                    (* -- STARTING POSITION (INTEGER), ZERO FREQUENCY IS AT INDEX ONE *)
+  SPAN_Integer,                     (* -- SPAN RANGE (INTEGER) *)
+  SIGNAL_List,                      (* -- SIGNAL (LIST) *)
+  OPTIONS:OptionsPattern[]          (* -- OPTIONS(S) *)
+] := Block[
+  {LEVEL,FOURIER,RANGE},
+  LEVEL = 10^OptionValue["LEVEL"] ;
+  FOURIER = Plus[Abs[S$FOURIER[START, SPAN, SIGNAL]],LEVEL] ;
+  FOURIER = If[OptionValue["NORMALIZED"],Divide[FOURIER,Max[FOURIER]],Log10[FOURIER]] ;
+  RANGE = Range[START/Length[SIGNAL],(START+2*SPAN)/Length[SIGNAL]-2/Length[SIGNAL]^2,2.0*SPAN/Length[SIGNAL]^2] ;
+  If[OptionValue["2D"],Transpose[List[RANGE, FOURIER]],FOURIER]
+] ;
+S$SPECTRA[                          (* -- COMPUTE ZOOMED FOURIER AMPLITUDE SPECTA *)
+  List[MIN_Real, MAX_Real],         (* -- FREQUENCY RANGE, MIN & MAX ARE ADJUSTED TO MATCH DFT GRID, RANGE LENGTH HAS EVEN NUMBER OF STEPS *)
+  SIGNAL_List,                      (* -- SIGNAL (LIST) *)
+  OPTIONS:OptionsPattern[]          (* -- OPTIONS(S) *)
+] := Block[
+  {UNIT, START, SPAN},
+  UNIT = 1.0/Length[SIGNAL] ;
+  START = Floor[MIN/UNIT] ;
+  SPAN = Max[List[1,Floor[0.5*(MAX-MIN)/UNIT]]] ;
+  S$SPECTRA[START,SPAN,SIGNAL,OPTIONS]
+] /; Greater[MAX,MIN] ;
 (* ################################################################################################################################################################ *)
 (* FIND PEAKS *)
 (* ################################################################################################################################################################ *)
@@ -225,31 +255,38 @@ S$FIND$PEAKS[                       (* -- FIND PEAK POSITIONS (LIST) *)
   If[Greater[Length[POSITION],NUMBER],Take[POSITION,List[1,NUMBER]],POSITION]
 ] /; GreaterEqual[NUMBER,1] ;
 (* ################################################################################################################################################################ *)
+(* ROUND UP *)
+(* ################################################################################################################################################################ *)
+ClearAll[S$ROUND$UP] ;
+S$ROUND$UP::usage = "
+S$ROUND$UP[NUMBER] -- return next power of two number greater then <NUMBER> (integer)
+" ;
+S$ROUND$UP[NUMBER_Integer] := 2^Ceiling[Log[N[NUMBER]]/Log[N[2]]] ;
+(* ################################################################################################################################################################ *)
+(* PAD LENGTH *)
+(* ################################################################################################################################################################ *)
+ClearAll[S$PAD$LENGTH] ;
+S$PAD$LENGTH::usage = "
+S$PAD$LENGTH[NUMBER] -- return numbers to pad (sum) to the next power of two
+" ;
+S$PAD$LENGTH[NUMBER_Integer] := Block[
+  {TOTAL},
+  TOTAL = Subtract[S$ROUND$UP[NUMBER],NUMBER] ;
+  List[Floor[Divide[TOTAL,Plus[1,1]]],Ceiling[Divide[TOTAL,Plus[1,1]]]]
+] ;
+(* ################################################################################################################################################################ *)
 (* PAD ZEROS *)
 (* ################################################################################################################################################################ *)
 ClearAll[S$PAD$ZEROS] ;
 S$PAD$ZEROS::usage = "
 S$PAD$ZEROS[LPAD,RPAD,SIGNAL] -- pad <LPAD> (integer) zeros to the left and <RPAD> (integer) zeros to the right for given signal <SIGNAL> (list)
+S$PAD$ZEROS[SIGNAL] -- pad given signal <SIGNAL> (list) with zeros to the nearest power of two length
 " ;
 S$PAD$ZEROS[                        (* -- PAD ZEROS (LIST) *)
   LPAD_Integer,                     (* -- NUMBER OF LEFT ZEROS (INTEGER) *)
   RPAD_Integer,                     (* -- NUMBER OF RIGHT ZEROS (INTEGER) *)
   SIGNAL_List                       (* -- SIGNAL (LIST) *)
 ] := Developer`ToPackedArray[Flatten[List[ConstantArray[N[0],LPAD],SIGNAL,ConstantArray[N[0],RPAD]]]] ;
-ClearAll[S$ROUND$UP] ;
-S$ROUND$UP::usage = "
-S$ROUND$UP[NUMBER] -- return next power of two number greater then <NUMBER> (integer)
-" ;
-S$ROUND$UP[NUMBER_Integer] := 2^Ceiling[Log[N[NUMBER]]/Log[N[2.0]]] ;
-ClearAll[S$PAD$LENGTH] ;
-S$PAD$LENGTH::usage = "
-S$PAD$LENGTH[NUMBER] -- return numbers to pad (sum) to the next power of two
-" ;
-S$PAD$LENGTH[NUMBER_Integer] := Block[
-	{TOTAL},
-	TOTAL = Subtract[S$ROUND$UP[NUMBER],NUMBER] ;
-	List[Floor[Divide[TOTAL,Plus[1,1]]],Ceiling[Divide[TOTAL,Plus[1,1]]]]
-] ;
 S$PAD$ZEROS[SIGNAL_List] := Block[
   {LPAD, RPAD},
   {LPAD, RPAD} = S$PAD$LENGTH[Length[SIGNAL]] ;
@@ -289,7 +326,7 @@ S$MAKE$MATRIX[SIGNAL] -- generate history matrix for given signal <SIGNAL> (list
 S$MAKE$MATRIX[                      (* -- MAKE MATRIX *)
   SIGNAL_List                       (* -- INPUT SIGNAL (LIST) *)
 ] := Block[
-  {DATA,LENGTH,MATRIX,MTU,MTS,MTV,SVL},
+  {DATA,LENGTH,MATRIX},
   DATA = SIGNAL ;
   LENGTH = Length[DATA] ;
   MATRIX = Partition[DATA,Floor[Divide[LENGTH,Plus[1,1]]],1] ;
@@ -302,7 +339,7 @@ S$MAKE$MATRIX[                      (* -- MAKE MATRIX *)
 ClearAll[S$MAKE$SIGNAL$ROW] ;
 S$MAKE$SIGNAL$ROW[MATRIX_] := Flatten[List[First[MATRIX],Last[MATRIX]]] ;
 ClearAll[S$MAKE$SIGNAL$DIAGONAL] ;
-S$MAKE$SIGNAL$$DIAGONAL[MATRIX_] := Block[
+S$MAKE$SIGNAL$DIAGONAL[MATRIX_] := Block[
   {NR, NC, ROTATE, DIAGONAL},
   {NR, NC} = Dimensions[MATRIX] ;
   ROTATE = Reverse[Transpose[MATRIX]] ;
@@ -344,7 +381,7 @@ S$MAKE$SIGNAL[MATRIX] -- generate signal for given history matrix <MATRIX> (matr
 " ;
 S$MAKE$SIGNAL[                      (* -- MAKE SIGNAL *)
   List[MATRIX__List],               (* -- INPUT HISTORY MATRIX (MATRIX) *)
-  BUILDER_:S$MAKE$SIGNAL$SUM        (* -- BUILDER FUNCTION (S$MAKE$SIGNAL$ROW OR S$MAKE$SIGNAL$SUM *)
+  BUILDER_:S$MAKE$SIGNAL$DIAGONAL   (* -- BUILDER FUNCTION (S$MAKE$SIGNAL$ROW, S$MAKE$SIGNAL$DIAGONAL OR S$MAKE$SIGNAL$SUM *)
 ] := Block[
   {SIGNAL},
   SIGNAL = BUILDER[List[MATRIX]] ;
@@ -362,12 +399,11 @@ S$SVD$LIST[                         (* -- SVD LIST *)
   NUMBER_Integer,                   (* -- NUMBER OF SINGULAR VALUES TO COMPUTE (INTEGER) *)
   SIGNAL_List                       (* -- INPUT SIGNAL (LIST) *)
 ] := Block[
-  {DATA,LENGTH,MATRIX,MTU,MTS,MTV,SVL},
+  {DATA,LENGTH,MATRIX},
   DATA = SIGNAL ;
   LENGTH = Length[DATA] ;
   MATRIX = S$MAKE$MATRIX[SIGNAL] ;
-  List[MTU,MTS,MTV] = SingularValueDecomposition[MATRIX,NUMBER] ;
-  Diagonal[MTS]
+  SingularValueList[MATRIX,NUMBER]
 ] ;
 (* ################################################################################################################################################################ *)
 (* SVD FILTER *)
@@ -379,7 +415,7 @@ S$SVD$FILTER[NUMBER,SIGNAL] -- apply svd filter using <NUMBER> (integer) singula
 S$SVD$FILTER[                       (* -- SVD FILTER *)
   NUMBER_Integer,                   (* -- NUMBER OF SINGULAR VALUE TO KEEP (INTEGER) *)
   SIGNAL_List,                      (* -- INPUT SIGNAL (LIST) *)
-  BUILDER_:S$MAKE$SIGNAL$SUM        (* -- BUILDER FUNCTION (S$MAKE$SIGNAL$ROW OR S$MAKE$SIGNAL$SUM) *)
+  BUILDER_:S$MAKE$SIGNAL$DIAGONAL   (* -- BUILDER FUNCTION (S$MAKE$SIGNAL$ROW OR S$MAKE$SIGNAL$SUM) *)
 ] := Block[
   {DATA,LENGTH,MATRIX,MTU,MTS,MTV,SVL},
   DATA = SIGNAL ;
@@ -487,6 +523,10 @@ S$AMPLITUDE[                        (* -- ESTIMATE ABSOLUTE AMPLITYDE (REAL) *)
     Total[S$WINDOW$DATA,Rule[Method,"CompensatedSummation"]]
   ] ;
   If[
+    Not[S$COMPLEX$FLAG],
+    AMPLITUDE = 2.0*AMPLITUDE ;
+  ] ;
+  If[
     OptionValue["ABS"],
     Log10[Abs[AMPLITUDE]],
     AMPLITUDE
@@ -591,12 +631,12 @@ Options[S$FREQUENCY] = List[
   Rule["PEAK",0],                   (* -- PEAK NUMBER (INTEGER) *)
   Rule["METHOD","PARABOLA"]         (* -- FREQUENCY ESTIMATION METHOD (STRING) ("FFT", "REFINE", "PARABOLA", "INTERPOLATION" OR "FIT") *)
 ] ;
-S$FREQUENCY[                        (* -- ESTIMATE FREQUENCY (LIST) *)
+S$FREQUENCY[                        (* -- ESTIMATE FREQUENCY *)
   SIGNAL_List,                      (* -- INPUT SIGNAL (LIST) *)
   OPTIONS:OptionsPattern[]          (* -- OPTION(S) *)
 ] := Catch[
   Block[
-    {LENGTH,SAMPLE,PROCESS,PADDING,FOURIER,BIN,SHIFT,MAX,LIST,DATA,ROOT,MODEL,COEFFICIENT,VARIABLE,FREQUENCY},
+    {LENGTH,SAMPLE,PROCESS,PADDING,FOURIER,BIN,MAX,LIST,DATA,ROOT,MODEL,COEFFICIENT,VARIABLE,FREQUENCY},
     (* SET INITIAL SAMPLE LENGTH *)
     LENGTH = S$WINDOW$LENGTH ;
     (* SET SAMPLE *)
@@ -623,7 +663,7 @@ S$FREQUENCY[                        (* -- ESTIMATE FREQUENCY (LIST) *)
       LENGTH = Length[SAMPLE] ;
     ] ;
     (* COMPUTE FOURIER AMPLITUDE SPECTRA *)
-    FOURIER = S$SPECTRA[SAMPLE,Rule["COMPLEX",S$COMPLEX$FLAG],Rule["FOURIER",List[-1,1]]] ;
+    FOURIER = S$SPECTRA[SAMPLE,Rule["COMPLEX",S$COMPLEX$FLAG]] ;
     (* MAXIMUM OR SELECTED PEAK POSITION *)
     BIN = If[
       SameQ[OptionValue["PEAK"],0],
@@ -633,21 +673,17 @@ S$FREQUENCY[                        (* -- ESTIMATE FREQUENCY (LIST) *)
     (* METHOD (FFT) *)
     If[
       SameQ[OptionValue["METHOD"],"FFT"],
-      FREQUENCY = N[Times[S$SAMPLING$RATE,Divide[Subtract[BIN,1],LENGTH]]] ;
+      FREQUENCY = N[Divide[Subtract[BIN,1],LENGTH]] ;
       Throw[FREQUENCY]
     ] ;
-    (* SHIFTED FREQUENCY *)
-    SHIFT = N[Times[S$SAMPLING$RATE,Divide[Subtract[BIN,Plus[1,1]],LENGTH]]] ;
-    (* MODULATE SIGNAL *)
-    SAMPLE = Times[SAMPLE,Exp[Times[Plus[1,1],Pi,I,SHIFT,N[Divide[Range[0,Subtract[LENGTH,1]],S$SAMPLING$RATE]]]]] ;
     (* REFINED SPECTRA *)
-    FOURIER = S$SPECTRA[SAMPLE,Rule["COMPLEX",True],Rule["FOURIER",List[0,Divide[Plus[1,1],LENGTH]]]] ;
+    FOURIER = S$SPECTRA[Subtract[BIN,Plus[1,1]],1,SAMPLE] ;
     (* REFINED SPECTRA MAXIMUM *)
     MAX = Extract[Position[FOURIER,Max[FOURIER]],List[1,1]] ;
     (* METHOD (REFINE) *)
     If[
       SameQ[OptionValue["METHOD"],"REFINE"],
-      FREQUENCY = N[Times[S$SAMPLING$RATE,Power[LENGTH,Subtract[0,1]],Plus[Times[Plus[1,1],Subtract[0,1]],BIN,Times[Plus[1,1],Power[LENGTH,Subtract[0,1]],Plus[Subtract[0,1],MAX]]]]] ;
+      FREQUENCY = N[Times[Power[LENGTH,Subtract[0,1]],Plus[Times[Plus[1,1],Subtract[0,1]],BIN,Times[Plus[1,1],Power[LENGTH,Subtract[0,1]],Plus[Subtract[0,1],MAX]]]]] ;
       Throw[FREQUENCY]
     ] ;
     (* METHOD (PARABOLA) *)
@@ -655,11 +691,11 @@ S$FREQUENCY[                        (* -- ESTIMATE FREQUENCY (LIST) *)
       SameQ[OptionValue["METHOD"],"PARABOLA"],
       If[
         Or[SameQ[MAX,1],SameQ[MAX,Length[FOURIER]]],
-        FREQUENCY = N[Times[S$SAMPLING$RATE,Power[LENGTH,Subtract[0,1]],Plus[Times[Plus[1,1],Subtract[0,1]],BIN,Times[Plus[1,1],Power[LENGTH,Subtract[0,1]],Plus[Subtract[0,1],MAX]]]]] ;
+        FREQUENCY = N[Times[Power[LENGTH,Subtract[0,1]],Plus[Times[Plus[1,1],Subtract[0,1]],BIN,Times[Plus[1,1],Power[LENGTH,Subtract[0,1]],Plus[Subtract[0,1],MAX]]]]] ;
         Throw[FREQUENCY]
       ] ;
       MAX = MAX-1/2+(FOURIER[[MAX-1]]-FOURIER[[MAX]])/(FOURIER[[MAX-1]]-2*FOURIER[[MAX]]+FOURIER[[MAX+1]]) ;
-      FREQUENCY = N[Times[S$SAMPLING$RATE,Power[LENGTH,Subtract[0,1]],Plus[Times[Plus[1,1],Subtract[0,1]],BIN,Times[Plus[1,1],Power[LENGTH,Subtract[0,1]],Plus[Subtract[0,1],MAX]]]]] ;
+      FREQUENCY = N[Times[Power[LENGTH,Subtract[0,1]],Plus[Times[Plus[1,1],Subtract[0,1]],BIN,Times[Plus[1,1],Power[LENGTH,Subtract[0,1]],Plus[Subtract[0,1],MAX]]]]] ;
       Throw[FREQUENCY]
     ] ;
     (* INTERPOLATION/FIT POINTS *)
@@ -674,7 +710,7 @@ S$FREQUENCY[                        (* -- ESTIMATE FREQUENCY (LIST) *)
       SameQ[OptionValue["METHOD"],"INTERPOLATION"],
       DATA = Interpolation[DATA,Rule[InterpolationOrder,S$PEAK$ORDER],Rule[Method,"Spline"]] ;
       MAX = Extract[Quiet[FindRoot[D[DATA[ROOT],ROOT],List[ROOT,MAX],Rule[Method,"Newton"],Rule[MaxIterations,Infinity],Rule[AccuracyGoal,$MachinePrecision],Rule[PrecisionGoal,$MachinePrecision]]],List[1,Plus[1,1]]] ;
-      FREQUENCY = N[Times[S$SAMPLING$RATE,Power[LENGTH,Subtract[0,1]],Plus[Times[Plus[1,1],Subtract[0,1]],BIN,Times[Plus[1,1],Power[LENGTH,Subtract[0,1]],Plus[Subtract[0,1],MAX]]]]] ;
+      FREQUENCY = N[Times[Power[LENGTH,Subtract[0,1]],Plus[Times[Plus[1,1],Subtract[0,1]],BIN,Times[Plus[1,1],Power[LENGTH,Subtract[0,1]],Plus[Subtract[0,1],MAX]]]]] ;
       Throw[FREQUENCY]
     ] ;
     (* METHOD (FIT) *)
@@ -687,18 +723,18 @@ S$FREQUENCY[                        (* -- ESTIMATE FREQUENCY (LIST) *)
       MODEL = Quiet[NonlinearModelFit[DATA,MODEL,Array[COEFFICIENT,S$PEAK$ORDER],VARIABLE,Rule[MaxIterations,Infinity],Rule[AccuracyGoal,$MachinePrecision],Rule[PrecisionGoal,$MachinePrecision]]] ;
       MODEL = MODEL["Function"] ;
       MAX = Extract[Quiet[FindRoot[D[MODEL[ROOT],ROOT],List[ROOT,MAX],Rule[Method,"Newton"],Rule[MaxIterations,Infinity],Rule[AccuracyGoal,$MachinePrecision],Rule[PrecisionGoal,$MachinePrecision]]],List[1,Plus[1,1]]] ;
-      FREQUENCY = N[Times[S$SAMPLING$RATE,Power[LENGTH,Subtract[0,1]],Plus[Times[Plus[1,1],Subtract[0,1]],BIN,Times[Plus[1,1],Power[LENGTH,Subtract[0,1]],Plus[Subtract[0,1],MAX]]]]] ;
+      FREQUENCY = N[Times[Power[LENGTH,Subtract[0,1]],Plus[Times[Plus[1,1],Subtract[0,1]],BIN,Times[Plus[1,1],Power[LENGTH,Subtract[0,1]],Plus[Subtract[0,1],MAX]]]]] ;
       Throw[FREQUENCY]
     ] ;
   ]
 ] ;
-S$FREQUENCY[                        (* -- ESTIMATE FREQUENCY (LIST) *)
+S$FREQUENCY[                        (* -- ESTIMATE FREQUENCY (IN RANGE) *)
   SIGNAL_List,                      (* -- INPUT SIGNAL (LIST) *)
   List[FMIN_,FMAX_],                (* -- FREQUENCY RANGE *)
   OPTIONS:OptionsPattern[]          (* -- OPTION(S) *)
 ] := Catch[
   Block[
-    {LENGTH,SAMPLE,PROCESS,PADDING,FOURIER,BMIN,BMAX,BIN,SHIFT,MAX,LIST,DATA,ROOT,MODEL,COEFFICIENT,VARIABLE,FREQUENCY},
+    {LENGTH,SAMPLE,PROCESS,PADDING,FOURIER,BMIN,BMAX,BIN,MAX,LIST,DATA,ROOT,MODEL,COEFFICIENT,VARIABLE,FREQUENCY},
     (* SET INITIAL SAMPLE LENGTH *)
     LENGTH = S$WINDOW$LENGTH ;
     (* SET SAMPLE *)
@@ -725,7 +761,7 @@ S$FREQUENCY[                        (* -- ESTIMATE FREQUENCY (LIST) *)
       LENGTH = Length[SAMPLE] ;
     ] ;
     (* COMPUTE FOURIER AMPLITUDE SPECTRA *)
-    FOURIER = S$SPECTRA[SAMPLE,Rule["COMPLEX",S$COMPLEX$FLAG],Rule["FOURIER",List[-1,1]]] ;
+    FOURIER = S$SPECTRA[SAMPLE,Rule["COMPLEX",S$COMPLEX$FLAG]] ;
     BMIN = Floor[FMIN*LENGTH] + 1 ;
     BMAX = Floor[FMAX*LENGTH] + 0 ;
     FOURIER = Take[FOURIER,List[BMIN,BMAX]] ;
@@ -739,21 +775,17 @@ S$FREQUENCY[                        (* -- ESTIMATE FREQUENCY (LIST) *)
     (* METHOD (FFT) *)
     If[
       SameQ[OptionValue["METHOD"],"FFT"],
-      FREQUENCY = N[Times[S$SAMPLING$RATE,Divide[Subtract[BIN,1],LENGTH]]] ;
+      FREQUENCY = N[Times[Divide[Subtract[BIN,1],LENGTH]]] ;
       Throw[FREQUENCY]
     ] ;
-    (* SHIFTED FREQUENCY *)
-    SHIFT = N[Times[S$SAMPLING$RATE,Divide[Subtract[BIN,Plus[1,1]],LENGTH]]] ;
-    (* MODULATE SIGNAL *)
-    SAMPLE = Times[SAMPLE,Exp[Times[Plus[1,1],Pi,I,SHIFT,N[Divide[Range[0,Subtract[LENGTH,1]],S$SAMPLING$RATE]]]]] ;
     (* REFINED SPECTRA *)
-    FOURIER = S$SPECTRA[SAMPLE,Rule["COMPLEX",True],Rule["FOURIER",List[0,Divide[Plus[1,1],LENGTH]]]] ;
+    FOURIER = S$SPECTRA[Subtract[BIN,Plus[1,1]],1,SAMPLE] ;
     (* REFINED SPECTRA MAXIMUM *)
     MAX = Extract[Position[FOURIER,Max[FOURIER]],List[1,1]] ;
     (* METHOD (REFINE) *)
     If[
       SameQ[OptionValue["METHOD"],"REFINE"],
-      FREQUENCY = N[Times[S$SAMPLING$RATE,Power[LENGTH,Subtract[0,1]],Plus[Times[Plus[1,1],Subtract[0,1]],BIN,Times[Plus[1,1],Power[LENGTH,Subtract[0,1]],Plus[Subtract[0,1],MAX]]]]] ;
+      FREQUENCY = N[Times[Power[LENGTH,Subtract[0,1]],Plus[Times[Plus[1,1],Subtract[0,1]],BIN,Times[Plus[1,1],Power[LENGTH,Subtract[0,1]],Plus[Subtract[0,1],MAX]]]]] ;
       Throw[FREQUENCY]
     ] ;
     (* METHOD (PARABOLA) *)
@@ -761,11 +793,11 @@ S$FREQUENCY[                        (* -- ESTIMATE FREQUENCY (LIST) *)
       SameQ[OptionValue["METHOD"],"PARABOLA"],
       If[
         Or[SameQ[MAX,1],SameQ[MAX,Length[FOURIER]]],
-        FREQUENCY = N[Times[S$SAMPLING$RATE,Power[LENGTH,Subtract[0,1]],Plus[Times[Plus[1,1],Subtract[0,1]],BIN,Times[Plus[1,1],Power[LENGTH,Subtract[0,1]],Plus[Subtract[0,1],MAX]]]]] ;
+        FREQUENCY = N[Times[Power[LENGTH,Subtract[0,1]],Plus[Times[Plus[1,1],Subtract[0,1]],BIN,Times[Plus[1,1],Power[LENGTH,Subtract[0,1]],Plus[Subtract[0,1],MAX]]]]] ;
         Throw[FREQUENCY]
       ] ;
       MAX = MAX-1/2+(FOURIER[[MAX-1]]-FOURIER[[MAX]])/(FOURIER[[MAX-1]]-2*FOURIER[[MAX]]+FOURIER[[MAX+1]]) ;
-      FREQUENCY = N[Times[S$SAMPLING$RATE,Power[LENGTH,Subtract[0,1]],Plus[Times[Plus[1,1],Subtract[0,1]],BIN,Times[Plus[1,1],Power[LENGTH,Subtract[0,1]],Plus[Subtract[0,1],MAX]]]]] ;
+      FREQUENCY = N[Times[Power[LENGTH,Subtract[0,1]],Plus[Times[Plus[1,1],Subtract[0,1]],BIN,Times[Plus[1,1],Power[LENGTH,Subtract[0,1]],Plus[Subtract[0,1],MAX]]]]] ;
       Throw[FREQUENCY]
     ] ;
     (* INTERPOLATION/FIT POINTS *)
@@ -780,7 +812,7 @@ S$FREQUENCY[                        (* -- ESTIMATE FREQUENCY (LIST) *)
       SameQ[OptionValue["METHOD"],"INTERPOLATION"],
       DATA = Interpolation[DATA,Rule[InterpolationOrder,S$PEAK$ORDER],Rule[Method,"Spline"]] ;
       MAX = Extract[Quiet[FindRoot[D[DATA[ROOT],ROOT],List[ROOT,MAX],Rule[Method,"Newton"],Rule[MaxIterations,Infinity],Rule[AccuracyGoal,$MachinePrecision],Rule[PrecisionGoal,$MachinePrecision]]],List[1,Plus[1,1]]] ;
-      FREQUENCY = N[Times[S$SAMPLING$RATE,Power[LENGTH,Subtract[0,1]],Plus[Times[Plus[1,1],Subtract[0,1]],BIN,Times[Plus[1,1],Power[LENGTH,Subtract[0,1]],Plus[Subtract[0,1],MAX]]]]] ;
+      FREQUENCY = N[Times[Power[LENGTH,Subtract[0,1]],Plus[Times[Plus[1,1],Subtract[0,1]],BIN,Times[Plus[1,1],Power[LENGTH,Subtract[0,1]],Plus[Subtract[0,1],MAX]]]]] ;
       Throw[FREQUENCY]
     ] ;
     (* METHOD (FIT) *)
@@ -793,7 +825,7 @@ S$FREQUENCY[                        (* -- ESTIMATE FREQUENCY (LIST) *)
       MODEL = Quiet[NonlinearModelFit[DATA,MODEL,Array[COEFFICIENT,S$PEAK$ORDER],VARIABLE,Rule[MaxIterations,Infinity],Rule[AccuracyGoal,$MachinePrecision],Rule[PrecisionGoal,$MachinePrecision]]] ;
       MODEL = MODEL["Function"] ;
       MAX = Extract[Quiet[FindRoot[D[MODEL[ROOT],ROOT],List[ROOT,MAX],Rule[Method,"Newton"],Rule[MaxIterations,Infinity],Rule[AccuracyGoal,$MachinePrecision],Rule[PrecisionGoal,$MachinePrecision]]],List[1,Plus[1,1]]] ;
-      FREQUENCY = N[Times[S$SAMPLING$RATE,Power[LENGTH,Subtract[0,1]],Plus[Times[Plus[1,1],Subtract[0,1]],BIN,Times[Plus[1,1],Power[LENGTH,Subtract[0,1]],Plus[Subtract[0,1],MAX]]]]] ;
+      FREQUENCY = N[Times[Power[LENGTH,Subtract[0,1]],Plus[Times[Plus[1,1],Subtract[0,1]],BIN,Times[Plus[1,1],Power[LENGTH,Subtract[0,1]],Plus[Subtract[0,1],MAX]]]]] ;
       Throw[FREQUENCY]
     ] ;
   ]
@@ -821,7 +853,7 @@ S$FREQUENCY[                        (* -- ESTIMATE FREQUENCY (DTFT MAXIMUM SEARC
       SAMPLE = S$PAD$ZEROS[PADDING,PADDING,SAMPLE] ;
       LENGTH = Length[SAMPLE] ;
     ] ;
-    FOURIER = S$SPECTRA[SAMPLE,Rule["COMPLEX",S$COMPLEX$FLAG],Rule["FOURIER",List[-1,1]]] ;
+    FOURIER = S$SPECTRA[SAMPLE,Rule["COMPLEX",S$COMPLEX$FLAG]] ;
     BIN = If[
       SameQ[OptionValue["PEAK"],0],
       Extract[Position[FOURIER,Max[FOURIER]],List[1,1]],
@@ -829,8 +861,8 @@ S$FREQUENCY[                        (* -- ESTIMATE FREQUENCY (DTFT MAXIMUM SEARC
     ] ;
     SEARCH[
       S$AMPLITUDE[SAMPLE],
-      N[Times[S$SAMPLING$RATE,Divide[Subtract[BIN,1],LENGTH]]],
-      N[1/S$WINDOW$LENGTH],
+      N[Times[Divide[Subtract[BIN,1],LENGTH]]],
+      N[Divide[1,S$WINDOW$LENGTH]],
       LIMIT,
       TOLERANCE
     ]
@@ -940,7 +972,6 @@ S$GENERATE$MODEL[                 (* -- GENERATE SIGNAL MODEL *)
 ] := Block[
   {LENGTH,COS,SIN,EXP,MEAN,TIME,MODEL,VARIABLE,DATA},
   LENGTH = Length[LIST] ;
-  (* SET MODEL PARAMETERS *)
   COS = ToExpression[Array[StringTemplate["COS$`1`"],LENGTH]] ;
   SIN = ToExpression[Array[StringTemplate["SIN$`1`"],LENGTH]] ;
   EXP = ToExpression[Array[StringTemplate["EXP$`1`"],LENGTH]] ;
@@ -1081,7 +1112,7 @@ S$QUASIPERIODIC$SUBTRACT[           (* -- QUASIPERIODIC DECOMPOSITION BASED ON I
         Rule["PADDING",OptionValue["PADDING"]],
         Rule["METHOD",OptionValue["METHOD"]]
       ] ;
-      SAMPLE = Subtract[Take[SIGNAL,List[1,S$WINDOW$LENGTH]],MODEL["MODEL"]["Function"][Divide[Range[S$WINDOW$LENGTH],S$SAMPLING$RATE]]] ;
+      SAMPLE = Subtract[Take[SIGNAL,List[1,S$WINDOW$LENGTH]],MODEL["MODEL"]["Function"][Range[S$WINDOW$LENGTH]]] ;
     ],
     NUMBER
   ] ;
@@ -1241,7 +1272,7 @@ S$QUASIPERIODIC$COMPRESSED[         (* -- FIND COEFFICIENTS WITH COMPRESSED SENS
   ROW[TIME_] := Evaluate[N[D[First[MODEL],List[COEFFICIENT]]]] ;
   LENGTH = Floor[Times[Length[COEFFICIENT],FACTOR]] ;
   POSITION = Sort[RandomSample[Range[1,Length[SIGNAL]],LENGTH]] ;
-  MATRIX = Map[ROW,Divide[POSITION,S$SAMPLING$RATE]] ;
+  MATRIX = Map[ROW,POSITION] ;
   VECTOR = Part[SIGNAL,POSITION] ;
   SOLUTION = S$ORTHOGONAL$MATCHING$PURSUIT[MATRIX,VECTOR,ERROR] ;
   MEAN = First[SOLUTION] ;
@@ -1289,7 +1320,6 @@ S$PRONY[                            (* -- DECOMPOSITION (PRONY) *)
     SOLUTION = Dot[PseudoInverse[MATRIX],VECTOR] ;
     ROOT = ReplaceAll[VARIABLE,NSolve[Equal[Subtract[Power[VARIABLE,RANGE],Dot[SOLUTION,Power[VARIABLE,Range[0,Subtract[RANGE,1]]]]],0],VARIABLE]] ;
     EXPONENT = Chop[Divide[Log[ROOT],Times[Plus[1,1],Pi]],OptionValue["CHOP"]] ;
-    EXPONENT = Times[S$SAMPLING$RATE,EXPONENT] ;
     MATRIX = Map[Function[Power[ROOT,Slot[1]]],Range[1,SIZE]] ;
     AMPLITUDE = Dot[PseudoInverse[MATRIX],DATA] ;
     FUNCTION = TrigExpand[ExpToTrig[Dot[AMPLITUDE,Exp[Times[Plus[1,1],Pi,EXPONENT,TIME]]]]] ;
@@ -1496,9 +1526,7 @@ S$FIRST$BOUNDARY$LAYER = {{{-1,1},{0,1},{1,1}},{{1,1},{1,0},{1,-1}},{{1,-1},{0,-
 ClearAll[S$NEXT$BOUNDARY$LAYER] ;
 S$NEXT$BOUNDARY$LAYER::usage = "S$NEXT$BOUNDARY$LAYER[LAYER] -- generate next boundary layer from given current layer <LAYER> (list) " ;
 S$NEXT$BOUNDARY$LAYER = Compile[
-  {
-    {LAYER,_Integer,3}
-  },
+  {{LAYER,_Integer,3}},
   Block[
     {UPLEFT,UPRIGHT,DOWNRIGHT,DOWNLEFT,UP,RIGHT,DOWN,LEFT},
     UPLEFT = Compile`GetElement[LAYER,1,1]+{-1,1} ;
@@ -2025,7 +2053,7 @@ S$DHT[                              (* -- DISCRETE HILBERT TRANSFORM *)
   SIGNAL_List                       (* -- INPUT SIGNAL (LIST) *)
 ] := Block[
   {FOURIER,LENGTH,FLAG},
-  FOURIER = Rule[FourierParameters,List[1,-1]] ;
+  FOURIER = Rule[FourierParameters,List[1,1]] ;
   LENGTH = Length[SIGNAL] ;
   FLAG = Boole[EvenQ[LENGTH]];
   Plus[SIGNAL,Times[I,Im[InverseFourier[Times[Fourier[SIGNAL,FOURIER],PadRight[ArrayPad[ConstantArray[Plus[1,1],Subtract[Quotient[LENGTH,Plus[1,1]],FLAG]],List[1,FLAG],1],LENGTH]],FOURIER]]]]
@@ -2140,7 +2168,7 @@ ClearAll[S$FLI] ;
 S$FLI::usage = "S$FLI[VEC] -- compute FLI indicator using several (orthonormal) deviation vectors <VEC> given for all iterations, <VEC> = {<VEC>_1, <VEC>_2, ...}, <VEC>_I = {<VEC>_I_1, <VEC>_I_2, ...} (returns only last value) " ;
 S$FLI = S$FLI$LAS ;
 (* ################################################################################################################################################################ *)
-(* OPTICS *)
+(* LINEAR OPTICS PARAMETERIZATION *)
 (* ################################################################################################################################################################ *)
 ClearAll[S$WOLSKI] ;
 S$WOLSKI::usage = "
@@ -2231,8 +2259,10 @@ S$SHIFT[MATRIX12, NORMAL1] -- compute phase advance for given transport matrix <
 " ;
 S$SHIFT[MATRIX12_, NORMAL1_] := Block[
 	{ROTATION},
-	ROTATION = MATRIX12.NORMAL1 ;
-	Table[Abs[ArcTan[ROTATION[[2*X+1, 2*X+1]], ROTATION[[2*X+1, 2*X+2]]]], {X, 0, 1/2*Length[MATRIX12] - 1}]
+	ROTATION = Dot[MATRIX12,NORMAL1] ;
+	List[
+		Table[Abs[ArcTan[ROTATION[[2*X+1, 2*X+1]], ROTATION[[2*X+1, 2*X+2]]]], {X, 0, 1/2*Length[MATRIX12] - 1}]
+	]
 ] ;
 ClearAll[S$LB$NORMAL] ;
 S$LB$NORMAL::usage = "
@@ -2281,7 +2311,7 @@ S$COMPLETION = Composition[FE`Evaluate,FEPrivate`AddSpecialArgCompletion] ;
 ClearAll[S$COMLETION$OPTION] ;
 S$COMLETION$OPTION[] := Block[
   {},
-  S$COMPLETION[Rule["S$SET$VARIABLES",List[0,0,0,0,0,0,0,Apply[Sequence,ConstantArray[Map[First,Options[S$SET$VARIABLES]],Length[Options[S$SET$VARIABLES]]]]]]] ;
+  S$COMPLETION[Rule["S$SET$VARIABLES",List[0,0,0,Apply[Sequence,ConstantArray[Map[First,Options[S$SET$VARIABLES]],Length[Options[S$SET$VARIABLES]]]]]]] ;
   S$COMPLETION[Rule["S$SPECTRA",List[0,Apply[Sequence,ConstantArray[Map[First,Options[S$SPECTRA]],Length[Options[S$SPECTRA]]]]]]] ;
   S$COMPLETION[Rule["S$FREQUENCY",List[0,Apply[Sequence,ConstantArray[Map[First,Options[S$FREQUENCY]],Length[Options[S$FREQUENCY]]]]]]] ;
   S$COMPLETION[Rule["S$DECOMPOSITION",List[0,Apply[Sequence,ConstantArray[Map[First,Options[S$DECOMPOSITION]],Length[Options[S$DECOMPOSITION]]]]]]] ;
@@ -2442,7 +2472,7 @@ S$COMPLETION$RULE[DIRECTORY_String] := Block[
   StringTemplate["cp `1`/*.m `2`/"][PATH,FileNameJoin[List[$InstallationDirectory,"SystemFiles","Components","AutoCompletionData","Main","OptionValues"]]]
 ] ;
 (* ################################################################################################################################################################ *)
-(* COMPILED *)
+(* COMPILED FUNCTIONS *)
 (* ################################################################################################################################################################ *)
 ClearAll[S$COMPILED$FFT] ;
 S$COMPILED$FFT::usage = "
@@ -2629,8 +2659,7 @@ S$COMPILED$FREQUENCY = Compile[
   ],
   CompilationTarget -> "C",
   CompilationOptions -> {
-    "InlineExternalDefinitions" -> True,
-    "InlineCompiledFunctions" -> True
+    "InlineExternalDefinitions" -> True
   },
   RuntimeOptions -> "Speed",
   Parallelization -> True,
