@@ -2260,19 +2260,33 @@ S$SHIFT[NORMAL1, MATRIX12] -- compute phase advance between points 1 and 2, norm
 S$SHIFT[NORMAL1, {MATRIX12, MATRIX23, ...}] -- compute phase advance between points and normalization matrices for given normalization matrix <NORMAL1> at point 1 and transport matrices {<MATRIX12>, <MATRIX23>, ...}
 " ;
 S$SHIFT[NORMAL_List, List[VECTOR__?VectorQ]] := Block[
-	{ROTATION, SHIFT, TURN},
-	ROTATION = Dot[List[VECTOR], NORMAL] ;
-	SHIFT = Table[ArcTan[ROTATION[[2*X+1, 2*X+1]], ROTATION[[2*X+1, 2*X+2]]], {X, 0, 1/2*Length[NORMAL] - 1}] ;
-	TURN = IdentityMatrix[1/2*Length[NORMAL]] ;
+	{MATRIX, SHIFT, ROTATION},
+	MATRIX = Dot[List[VECTOR], NORMAL] ;
+	SHIFT = Abs[Table[ArcTan[MATRIX[[2*X+1, 2*X+1]], MATRIX[[2*X+1, 2*X+2]]], {X, 0, 1/2*Length[NORMAL] - 1}]] ;
+	ROTATION = IdentityMatrix[1/2*Length[NORMAL]] ;
 	Do[
-		TURN[[PLANE, PLANE]] = {{+Cos[SHIFT[[PLANE]]], -Sin[SHIFT[[PLANE]]]}, {+Sin[SHIFT[[PLANE]]], +Cos[SHIFT[[PLANE]]]}},
+		ROTATION[[PLANE, PLANE]] = {{+Cos[SHIFT[[PLANE]]], -Sin[SHIFT[[PLANE]]]}, {+Sin[SHIFT[[PLANE]]], +Cos[SHIFT[[PLANE]]]}},
 		{PLANE, 1, 1/2*Length[NORMAL]}
 	] ;
-	TURN = N[ArrayFlatten[TURN]] ;
-	{SHIFT, Chop[Dot[ROTATION, TURN]]}
+	ROTATION = N[ArrayFlatten[ROTATION]] ;
+	{SHIFT, Chop[Dot[MATRIX, ROTATION]]}
 ] ;
 S$SHIFT[List[SHIFT_List, NORMAL_List], List[VECTOR__?VectorQ]] := S$SHIFT[NORMAL, List[VECTOR]] ;
 S$SHIFT[DATA_List, List[MATRIX__?MatrixQ]] := Rest[FoldList[S$SHIFT, DATA, List[MATRIX]]] ;
+ClearAll[S$ROTATION] ;
+S$ROTATION::usage = "
+S$ROTATION[{ANGLE1, ANGLE2, ...}] -- generate rotation matrix for given list of angles
+" ;
+S$ROTATION[SHIFT_List] := Block[
+  {LENGTH, ROTATION},
+  LENGTH = Length[SHIFT] ;
+  ROTATION = IdentityMatrix[LENGTH] ;
+  Do[
+    ROTATION[[PLANE, PLANE]] = {{+Cos[SHIFT[[PLANE]]], +Sin[SHIFT[[PLANE]]]}, {-Sin[SHIFT[[PLANE]]], +Cos[SHIFT[[PLANE]]]}},
+    {PLANE, 1, LENGTH}
+  ] ;
+  N[ArrayFlatten[ROTATION]]
+] ;
 ClearAll[S$LB$NORMAL] ;
 S$LB$NORMAL::usage = "
 S$LB$NORMAL[{B1X, B1Y, B2X, B2Y, A1X, A1Y, A2X, A2Y, U, CV1, SV1, CV2, SV2}] -- compute normalization matrix from Lebedev-Bogacz representation, where CVI = Cos[VI] and SVI = Sin[VI]
@@ -2283,6 +2297,11 @@ S$LB$NORMAL[{B1X_, B1Y_, B2X_, B2Y_, A1X_, A1Y_, A2X_, A2Y_, U_, CV1_, SV1_, CV2
   {Sqrt[B1Y]*CV1, -Sqrt[B1Y]*SV1, Sqrt[B2Y], 0},
   {If[B1Y > 0, (-A1Y*CV1 + SV1*U)/Sqrt[B1Y], 0], If[B1Y > 0, (A1Y*SV1 + CV1*U)/Sqrt[B1Y], 0], -(A2Y/Sqrt[B2Y]),(1-U)/Sqrt[B2Y]}
 } ;
+ClearAll[S$CS$NORMAL] ;
+S$CS$NORMAL::usage = "
+S$CS$NORMAL[{BX, BY, AX, AY}] -- compute normalization matrix from Courant-Snyder representation
+" ;
+S$CS$NORMAL[{BX_, BY_, AX_, AY_}] := S$LB$NORMAL[{BX, 0, 0, BY, AX, 0, 0, AY, 0, 0, 0, 0, 0}] ;
 ClearAll[S$LB$CONVERT] ;
 S$LB$CONVERT::usage = "
 S$LB$CONVERT[{W1, W2}] -- convert Wolski representation to Lebedev-Bogacz representation
@@ -2311,6 +2330,31 @@ S$LB$CONVERT[{B1X_, B1Y_, B2X_, B2Y_, A1X_, A1Y_, A2X_, A2Y_, U_, CV1_, SV1_, CV
   W1 = Dot[NORMAL, P1, Transpose[NORMAL]] ;
   W2 = Dot[NORMAL, P2, Transpose[NORMAL]] ;
   {W1, W2}
+] ;
+ClearAll[S$CS$CONVERT] ;
+S$CS$CONVERT::usage = "
+S$CS$CONVERT[{W1, W2}] -- convert Wolski representation to Courant-Snyder representation
+S$CS$CONVERT[{BX, BY, AX, AY}] -- convert LCourant-Snyder representation to Wolski representation
+" ;
+S$CS$CONVERT[{W1_, W2_}] := Part[S$LB$CONVERT[{W1, W2}], {1, 4, 5, 8}] ;
+S$CS$CONVERT[{BX_, BY_, AX_, AY_}] := S$LB$CONVERT[{BX, 0, 0, BY, AX, 0, 0, AY, 0, 0, 0, 0, 0}] ;
+ClearAll[S$LB$MATRIX] ;
+S$LB$MATRIX::usage = "
+S$LB$MATRIX[{ANGLE1, ANGLE2}, {OPTICS1, OPTICS2}]
+" ;
+S$LB$MATRIX[{ANGLE1_, ANGLE2_}, {OPTICS1_, OPTICS2_}] := Dot[
+  S$LB$NORMAL[OPTICS2],
+  S$ROTATION[{ANGLE1, ANGLE2}],
+  Inverse[S$LB$NORMAL[OPTICS1]]
+] ;
+ClearAll[S$CS$MATRIX] ;
+S$CS$MATRIX::usage = "
+S$CS$MATRIX[{ANGLE1, ANGLE2}, {OPTICS1, OPTICS2}]
+" ;
+S$CS$MATRIX[{ANGLE1_, ANGLE2_}, {OPTICS1_, OPTICS2_}] := Dot[
+  S$CS$NORMAL[OPTICS2],
+  S$ROTATION[{ANGLE1, ANGLE2}],
+  Inverse[S$CS$NORMAL[OPTICS1]]
 ] ;
 (* ################################################################################################################################################################ *)
 (* COMPLETION *)
