@@ -426,6 +426,67 @@ S$SVD$FILTER[                       (* -- SVD FILTER *)
   S$MAKE$SIGNAL[MATRIX,BUILDER]
 ] ;
 (* ################################################################################################################################################################ *)
+(* RPCA (PRINCIPAL COMPONENT PURSUIT BY ALTERNATING DIRECTIONS) *)
+(* ################################################################################################################################################################ *)
+ClearAll[S$RPCA$SHRINK] ;
+S$RPCA$SHRINK::usage = "
+S$RPCA$SHRINK[MATRIX, TAU] -- RPCA shrink auxiliary function
+" ;
+S$RPCA$SHRINK[                      (* -- RPCA AUXILIARY FUNCTION *)
+  MATRIX_?MatrixQ,                  (* -- MATRIX *)
+  TAU_Real                          (* -- SHRINK VALUE *)
+] := Sign[MATRIX]*(Ramp[Abs[MATRIX] - TAU]) ;
+ClearAll[S$RPCA$THRESHOLD] ;
+S$RPCA$THRESHOLD::usage = "
+S$RPCA$THRESHOLD[MATRIX, TAU] -- RPCA threshold auxiliary function
+" ;
+S$RPCA$THRESHOLD[                   (* -- RPCA AUXILIARY FUNCTION *)
+  MATRIX_?MatrixQ,                  (* -- MATRIX *)
+  TAU_Real                          (* -- SHRINK VALUE *)
+] := Block[
+  {U, S, V},
+  {U, S, V} = SingularValueDecomposition[MATRIX] ;
+  Dot[U, Dot[S$RPCA$SHRINK[S, TAU], Transpose[V]]]
+] ;
+ClearAll[S$RPCA] ;
+S$RPCA::usage = "
+S$RPCA[MATRIX, MU, LAMBDA, TOLERANCE, LIMIT] -- perform RPCA decomposition for given matrix <MATRIX> (matrix), L2 penalty <MU> (real), L1 penalty <LAMBDA>, error tolerance <TOLERANCE> (real) and max number of iterations <LIMIT> (integer)
+S$RPCA[MATRIX, FACTOR, LIMIT] -- perform RPCA decomposition for given matrix <MATRIX> (matrix), error tolerance factor <FACTOR> (real) and max number of iterations <LIMIT> (integer)
+" ;
+S$RPCA[                             (* -- PRINCIPAL COMPONENT PURSUIT BY ALTERNATING DIRECTIONS *)
+  MATRIX_?MatrixQ,                  (* -- MATRIX *)
+  MU_Real,                          (* -- L2 PENALTY *)
+  LAMBDA_Real,                      (* -- L1 PENALTY *)
+  TOLERANCE_Real,                   (* -- ERROR TOLERANCE *)
+  LIMIT_Integer                     (* -- MAX NUMBER OF ITERATIONS *)
+] := Block[
+  {INVERSE, COUNT, ERROR, SK, YK, LK},
+  INVERSE = 1.0/MU ;
+  COUNT = 0 ;
+  SK = YK = LK = ConstantArray[0.0, Dimensions[MATRIX]] ;
+  While[
+    COUNT < LIMIT,
+    LK = S$RPCA$THRESHOLD[MATRIX - SK + INVERSE*YK, INVERSE] ;
+    SK = S$RPCA$SHRINK[MATRIX - LK + INVERSE*YK, INVERSE*LAMBDA] ;
+    ERROR = MATRIX - LK - SK ;
+    YK = YK + MU*ERROR ;
+    ERROR = Norm[ERROR, "Frobenius"] ;
+    COUNT++ ;
+    If[ERROR < TOLERANCE, Break[]] ;
+  ] ;
+  {LK, SK, {COUNT, ERROR}}
+] ;
+S$RPCA[MATRIX_?MatrixQ, FACTOR_Real, LIMIT_Integer] := S$RPCA[
+  MATRIX,
+  1/4*1/Norm[MATRIX, 1]*Apply[Times, Dimensions[MATRIX]],
+  1/Sqrt[N[Max[Dimensions[MATRIX]]]],
+  FACTOR*Norm[MATRIX, "Frobenius"],
+  LIMIT
+] ;
+(* MU        = 1/4*1/Norm[MATRIX, 1]*Apply[Times, Dimensions[MATRIX]] ; *)
+(* LAMBDA    = 1/Sqrt[N[Max[Dimensions[MATRIX]]]] ; *)
+(* TOLERANCE = 10.0^-7*Norm[MATRIX, "Frobenius"] ; *)
+(* ################################################################################################################################################################ *)
 (* GENERATE HARMONICS *)
 (* ################################################################################################################################################################ *)
 ClearAll[S$HARMONICS] ;
@@ -2255,23 +2316,24 @@ S$ADVANCE[WOLSKI1, {MATRIX12, MATRIX23, ...}] -- advance Wolski representation <
 " ;
 S$ADVANCE[WOLSKI_, List[VECTOR__?VectorQ]] := Map[Function[Dot[List[VECTOR], Slot[1], Transpose[List[VECTOR]]]], WOLSKI] ;
 S$ADVANCE[WOLSKI_, List[MATRIX__?MatrixQ]] := Rest[FoldList[S$ADVANCE, WOLSKI, List[MATRIX]]] ;
+ClearAll[S$SHIFT] ;
 S$SHIFT::usage = "
 S$SHIFT[NORMAL1, MATRIX12] -- compute phase advance between points 1 and 2, normalization matrix at point 2 for given normalization matrix <NORMAL1> at point 1 and transport matrix <MATRIX12> between points 1 and 2
 S$SHIFT[NORMAL1, {MATRIX12, MATRIX23, ...}] -- compute phase advance between points and normalization matrices for given normalization matrix <NORMAL1> at point 1 and transport matrices {<MATRIX12>, <MATRIX23>, ...}
 " ;
-S$SHIFT[NORMAL_List, List[VECTOR__?VectorQ]] := Block[
+S$SHIFT[NORMAL_?MatrixQ, List[VECTOR__?VectorQ]] := Block[
 	{MATRIX, SHIFT, ROTATION},
 	MATRIX = Dot[List[VECTOR], NORMAL] ;
-	SHIFT = Abs[Table[ArcTan[MATRIX[[2*X+1, 2*X+1]], MATRIX[[2*X+1, 2*X+2]]], {X, 0, 1/2*Length[NORMAL] - 1}]] ;
+	SHIFT = Table[ArcTan[MATRIX[[2*X+1, 2*X+1]], MATRIX[[2*X+1, 2*X+2]]], {X, 0, 1/2*Length[NORMAL] - 1}] ;
 	ROTATION = IdentityMatrix[1/2*Length[NORMAL]] ;
 	Do[
 		ROTATION[[PLANE, PLANE]] = {{+Cos[SHIFT[[PLANE]]], -Sin[SHIFT[[PLANE]]]}, {+Sin[SHIFT[[PLANE]]], +Cos[SHIFT[[PLANE]]]}},
 		{PLANE, 1, 1/2*Length[NORMAL]}
 	] ;
 	ROTATION = N[ArrayFlatten[ROTATION]] ;
-	{SHIFT, Chop[Dot[MATRIX, ROTATION]]}
+	{-SHIFT, Chop[Dot[MATRIX, ROTATION]]}
 ] ;
-S$SHIFT[List[SHIFT_List, NORMAL_List], List[VECTOR__?VectorQ]] := S$SHIFT[NORMAL, List[VECTOR]] ;
+S$SHIFT[List[SHIFT_?VectorQ, NORMAL_?MatrixQ], List[VECTOR__?VectorQ]] := S$SHIFT[NORMAL, List[VECTOR]] ;
 S$SHIFT[DATA_List, List[MATRIX__?MatrixQ]] := Rest[FoldList[S$SHIFT, DATA, List[MATRIX]]] ;
 ClearAll[S$ROTATION] ;
 S$ROTATION::usage = "
