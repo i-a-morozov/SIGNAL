@@ -273,7 +273,7 @@ SUBMODULE (SIGNAL) TRANSFORMATION
   ! ############################################################################################################################# !
   ! MAKE FFRFT DATA
   ! (SUBROUTINE) MAKE_FFRFT_DATA__(LENGTH, COS_FST, SIN_FST, COS_LST, SIN_LST)
-  SUBROUTINE MAKE_FFRFT_DATA__(LENGTH, COS_FST, SIN_FST, COS_LST, SIN_LST)
+  MODULE SUBROUTINE MAKE_FFRFT_DATA__(LENGTH, COS_FST, SIN_FST, COS_LST, SIN_LST)
     INTEGER(IK), INTENT(IN) :: LENGTH
     REAL(RK), DIMENSION(LENGTH), INTENT(OUT)   :: COS_FST
     REAL(RK), DIMENSION(LENGTH), INTENT(OUT)   :: SIN_FST
@@ -292,7 +292,7 @@ SUBMODULE (SIGNAL) TRANSFORMATION
   END SUBROUTINE MAKE_FFRFT_DATA__
   ! ############################################################################################################################# !
   ! (TAKUYA OOURA) CDFT_
-  SUBROUTINE CDFT_(LENGTH, DIRECTION, SEQUENCE, IP, WORK)
+  MODULE SUBROUTINE CDFT_(LENGTH, DIRECTION, SEQUENCE, IP, WORK)
     INTEGER(IK), INTENT(IN) :: LENGTH
     INTEGER(IK), INTENT(IN) :: DIRECTION
     REAL(RK), INTENT(INOUT) :: SEQUENCE(0_IK : *)
@@ -325,7 +325,7 @@ SUBMODULE (SIGNAL) TRANSFORMATION
   END SUBROUTINE CDFT__
   ! ############################################################################################################################# !
   ! BIT_REVERSE_
-  SUBROUTINE BIT_REVERSE_(N, IP, A)
+  MODULE SUBROUTINE BIT_REVERSE_(N, IP, A)
     INTEGER(IK), INTENT(IN) :: N
     INTEGER(IK), INTENT(INOUT) :: IP(0_IK : *)
     REAL(RK), INTENT(INOUT) :: A(0_IK : N - 1_IK)
@@ -426,7 +426,7 @@ SUBMODULE (SIGNAL) TRANSFORMATION
   END SUBROUTINE BIT_REVERSE_
   ! ############################################################################################################################# !
   ! BIT_REVERSE_CONJUGATE_
-  SUBROUTINE BIT_REVERSE_CONJUGATE_(N, IP, A)
+  MODULE SUBROUTINE BIT_REVERSE_CONJUGATE_(N, IP, A)
     INTEGER(IK), INTENT(IN) :: N
     INTEGER(IK), INTENT(INOUT) :: IP(0_IK : *)
     REAL(RK), INTENT(INOUT) :: A(0_IK : N - 1_IK)
@@ -536,7 +536,7 @@ SUBMODULE (SIGNAL) TRANSFORMATION
   END SUBROUTINE BIT_REVERSE_CONJUGATE_
   ! ############################################################################################################################# !
   ! MAKE_FFT_TABLE_
-  SUBROUTINE MAKE_FFT_TABLE_(NW, IP, W)
+  MODULE SUBROUTINE MAKE_FFT_TABLE_(NW, IP, W)
     INTEGER(IK), INTENT(IN) :: NW
     INTEGER(IK), INTENT(INOUT) :: IP(0_IK : *)
     REAL(RK), INTENT(INOUT) :: W(0_IK : NW - 1_IK)
@@ -570,7 +570,7 @@ SUBMODULE (SIGNAL) TRANSFORMATION
   END SUBROUTINE MAKE_FFT_TABLE_
   ! ############################################################################################################################# !
   ! CFT_FORWARD_
-  SUBROUTINE CFT_FORWARD_(N, A, W)
+  MODULE SUBROUTINE CFT_FORWARD_(N, A, W)
     INTEGER(IK), INTENT(IN) :: N
     REAL(RK), INTENT(INOUT) :: A(0_IK : N - 1_IK)
     REAL(RK), INTENT(IN) :: W(0_IK : *)
@@ -621,7 +621,7 @@ SUBMODULE (SIGNAL) TRANSFORMATION
   END SUBROUTINE CFT_FORWARD_
   ! ############################################################################################################################# !
   ! CFT_INVERSE_
-  SUBROUTINE CFT_INVERSE_(N, A, W)
+  MODULE SUBROUTINE CFT_INVERSE_(N, A, W)
     INTEGER(IK), INTENT(IN) :: N
     REAL(RK), INTENT(INOUT) :: A(0_IK : N - 1_IK)
     REAL(RK), INTENT(IN) :: W(0_IK : *)
@@ -737,7 +737,7 @@ SUBMODULE (SIGNAL) TRANSFORMATION
   END SUBROUTINE CFT_INVERSE_
   ! ############################################################################################################################# !
   ! CFT_1ST_
-  SUBROUTINE CFT_1ST_(N, A, W)
+  MODULE SUBROUTINE CFT_1ST_(N, A, W)
     INTEGER(IK), INTENT(IN) :: N
     REAL(RK), INTENT(INOUT) :: A(0_IK : N - 1_IK)
     REAL(RK), INTENT(IN) :: W(0_IK : *)
@@ -953,7 +953,7 @@ SUBMODULE (SIGNAL) TRANSFORMATION
   END SUBROUTINE CFT_1ST_
   ! ############################################################################################################################# !
   ! CFT_MDL_
-  SUBROUTINE CFT_MDL_(N, L, A, W)
+  MODULE SUBROUTINE CFT_MDL_(N, L, A, W)
     INTEGER(IK), INTENT(IN) :: N
     INTEGER(IK), INTENT(IN) :: L
     REAL(RK), INTENT(INOUT) :: A(0_IK : N - 1_IK)

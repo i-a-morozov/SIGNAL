@@ -15,7 +15,6 @@ DEP  := \
 	$(OBJ)/decomposition.o  \
 	$(OBJ)/optimization.o
 
-
 FC   :=  gfortran-10
 
 FCF  := -cpp
@@ -25,8 +24,6 @@ FCF  += -frecursive
 FCF  += -O3 -ffast-math -march=native
 FCF  += -Wno-unused-function -Wno-unused-value
 FCF  +=  -J $(MOD)
-
-
 
 all: libsignal.a
 
