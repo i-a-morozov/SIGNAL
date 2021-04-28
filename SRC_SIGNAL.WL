@@ -426,7 +426,87 @@ S$SVD$FILTER[                       (* -- SVD FILTER *)
   S$MAKE$SIGNAL[MATRIX,BUILDER]
 ] ;
 (* ################################################################################################################################################################ *)
-(* RPCA (PRINCIPAL COMPONENT PURSUIT BY ALTERNATING DIRECTIONS) *)
+(* OPTIMAL SINGULAR VALUE TRUNCATION, Matan Gavish, David L. Donoho, The Optimal Hard Threshold for Singular Values is 4/sqrt(3), https://arxiv.org/abs/1305.5870 *)
+(* ################################################################################################################################################################ *)
+ClearAll[S$OPTIMAL$SVD$TRUNCATION] ;
+S$OPTIMAL$SVD$TRUNCATION::usage = "
+S$OPTIMAL$SVD$TRUNCATION[MATRIX, SIGMA] -- optimal truncation for given (m x n) matrix <MATRIX> with m < n and known noise sigma <SIGMA>, returns number of singular values to keep, threshold singular value and noise sigma
+S$OPTIMAL$SVD$TRUNCATION[MATRIX] -- optimal truncation for given (m x n) matrix <MATRIX> with m < n and unknown noise sigma, returns number of singular values to keep, threshold singular value and noise sigma estimation
+" ;
+S$OPTIMAL$SVD$TRUNCATION[           (* -- OPTIMAL SVD TRUNCATION *)
+  MATRIX_?MatrixQ,                  (* -- MATRIX WITH M < N *)
+  SIGMA_Real                        (* -- NOISE SIGMA (REAL) *)
+] := Block[
+  {NR, NC, LIST, BETA, LAMBDA, TAU},
+  {NR, NC} = Dimensions[MATRIX] ;
+  LIST = SingularValueList[MATRIX, Min[{NR, NC}]] ;
+  BETA = N[Apply[Divide, {NR, NC}]] ;
+  LAMBDA = Sqrt[2*(BETA + 1) + 8*BETA/(BETA + 1 + Sqrt[BETA^2 + 14*BETA + 1])] ;
+  TAU = LAMBDA*Sqrt[N[NC]]*SIGMA ;
+  {Length[DeleteCases[Ramp[Subtract[LIST, TAU]], N[0]]], TAU, SIGMA}
+] ;
+S$OPTIMAL$SVD$TRUNCATION[           (* -- OPTIMAL SVD TRUNCATION *)
+  MATRIX_?MatrixQ                   (* -- MATRIX WITH M < N *)
+] := Block[
+  {NR, NC, LIST, MEDIAN, BETA, LAMBDA, OMEGA, TAU},
+  {NR, NC} = Dimensions[MATRIX] ;
+  LIST = SingularValueList[MATRIX, Min[{NR, NC}]] ;
+  MEDIAN = Median[LIST] ;
+  BETA = N[Apply[Divide, {NR, NC}]] ;
+  LAMBDA = Sqrt[2*(BETA + 1) + 8*BETA/(BETA + 1 + Sqrt[BETA^2 + 14*BETA + 1])] ;
+  OMEGA = 0.56*BETA^3 - 0.95*BETA^2 + 1.82*BETA + 1.43 ;
+  TAU = OMEGA*MEDIAN ;
+  {Length[DeleteCases[Ramp[Subtract[LIST, TAU]], N[0]]], TAU, TAU/LAMBDA/Sqrt[N[NC]]}
+] ;
+(* ################################################################################################################################################################ *)
+(* RANDOMIZED SVD, Rachel Thomas, Computational Linear Algebra for Coders, https://github.com/fastai/numerical-linear-algebra, nb2 & nb3 *)
+(* ################################################################################################################################################################ *)
+ClearAll[S$RANDOMIZED$RANGE] ;
+S$RANDOMIZED$RANGE::usage = "
+S$RANDOMIZED$RANGE[MATRIX, SIZE, ITERATION, SEED] -- approximation of matrix range 
+" ;
+S$RANDOMIZED$RANGE[                 (* -- RANDOMIZED RANGE APPROXIMATION *)
+  MATRIX_?MatrixQ,                  (* -- ORIGINAL M x N MATRIX *)
+  SIZE_Integer,                     (* -- REQUESTED NUMBER OF COLUMNS IN APPROXIMATION *)
+  ITERATION_Integer,                (* -- NUMBER OF ITERATIONS (MULTIPLICATIONS, KRILOV SPACE DIMENSION) *)
+  SEED_                             (* -- RANDOM SEED *)
+] := Block[
+  {PROJECTION, TRANSPOSE},
+  SeedRandom[SEED] ;
+  PROJECTION = RandomVariate[NormalDistribution[], {Last[Dimensions[MATRIX]], SIZE}] ;
+  TRANSPOSE = Transpose[MATRIX] ;
+  Do[
+    PROJECTION = Transpose[First[QRDecomposition[Dot[MATRIX, PROJECTION]]]] ;
+	  PROJECTION = Transpose[First[QRDecomposition[Dot[TRANSPOSE, PROJECTION]]]],
+	  ITERATION
+  ] ;
+  Transpose[First[QRDecomposition[Dot[MATRIX, PROJECTION]]]]
+] ;
+ClearAll[S$RANDOMIZED$SVD] ;
+S$RANDOMIZED$SVD::usage = "
+S$RANDOMIZED$SVD[MATRIX, NUMBER] -- gives the randomized singular value decomposition associated with the <NUMBER> (integer) largest singular values of given real matrix <MATRIX>
+" ;
+Options[S$RANDOMIZED$SVD] = List[
+  Rule["BUFFER", 10],               (* -- EXTRA BUFFER SIZE (INTEGER) *)
+  Rule["ITERATION", 10],               (* -- NUMBER OF ITERATIONS FOR RANDOM RANGE (INTEGER) *)
+  Rule["SEED", 1]                   (* -- RANDOM SEED *)
+] ;
+S$RANDOMIZED$SVD[
+  MATRIX_?MatrixQ,
+  SIZE_Integer,
+  OPTIONS:OptionsPattern[]
+] := Block[
+  {BUFFER, ITERATION, SEED, PROJECTION, U, S, V},
+  BUFFER = OptionValue["BUFFER"] ;
+  ITERATION = OptionValue["ITERATION"] ;
+  SEED = OptionValue["SEED"] ;
+  PROJECTION = S$RANDOMIZED$RANGE[MATRIX, SIZE + BUFFER, ITERATION, SEED] ;
+  {U, S, V} = SingularValueDecomposition[Dot[Transpose[PROJECTION], MATRIX], SIZE] ;
+  U = Dot[PROJECTION, U] ;
+  {U, S, V}
+] ;
+(* ################################################################################################################################################################ *)
+(* RPCA (PRINCIPAL COMPONENT PURSUIT BY ALTERNATING DIRECTIONS), https://github.com/dganguli/robust-pca *)
 (* ################################################################################################################################################################ *)
 ClearAll[S$RPCA$SHRINK] ;
 S$RPCA$SHRINK::usage = "
@@ -438,14 +518,16 @@ S$RPCA$SHRINK[                      (* -- RPCA AUXILIARY FUNCTION *)
 ] := Sign[MATRIX]*(Ramp[Abs[MATRIX] - TAU]) ;
 ClearAll[S$RPCA$THRESHOLD] ;
 S$RPCA$THRESHOLD::usage = "
-S$RPCA$THRESHOLD[MATRIX, TAU] -- RPCA threshold auxiliary function
+S$RPCA$THRESHOLD[MATRIX, TAU, SVD, RNK] -- RPCA threshold auxiliary function
 " ;
 S$RPCA$THRESHOLD[                   (* -- RPCA AUXILIARY FUNCTION *)
   MATRIX_?MatrixQ,                  (* -- MATRIX *)
-  TAU_Real                          (* -- SHRINK VALUE *)
+  TAU_Real,                         (* -- SHRINK VALUE *)
+  SVD_,                             (* -- SVD DRIVER *)
+  RNK_Integer                       (* -- REQUESTED RANK (INTEGER) *)
 ] := Block[
   {U, S, V},
-  {U, S, V} = SingularValueDecomposition[MATRIX] ;
+  {U, S, V} = SVD[MATRIX, RNK] ;
   Dot[U, Dot[S$RPCA$SHRINK[S, TAU], Transpose[V]]]
 ] ;
 ClearAll[S$RPCA] ;
@@ -453,28 +535,53 @@ S$RPCA::usage = "
 S$RPCA[MATRIX, MU, LAMBDA, TOLERANCE, LIMIT] -- perform RPCA decomposition for given matrix <MATRIX> (matrix), L2 penalty <MU> (real), L1 penalty <LAMBDA>, error tolerance <TOLERANCE> (real) and max number of iterations <LIMIT> (integer)
 S$RPCA[MATRIX, FACTOR, LIMIT] -- perform RPCA decomposition for given matrix <MATRIX> (matrix), error tolerance factor <FACTOR> (real) and max number of iterations <LIMIT> (integer)
 " ;
+Options[S$RPCA] = {
+  "RNK" -> Full,
+  "SVD" -> SingularValueDecomposition
+} ;
+(* HYPER-PARAMETERS *)
+(* MU        = 1/4*1/Norm[MATRIX, 1]*Apply[Times, Dimensions[MATRIX]] ; *)
+(* LAMBDA    = 1/Sqrt[N[Max[Dimensions[MATRIX]]]] ; *)
+(* TOLERANCE = 10.0^-7*Norm[MATRIX, "Frobenius"] ; *)
 S$RPCA[                             (* -- PRINCIPAL COMPONENT PURSUIT BY ALTERNATING DIRECTIONS *)
   MATRIX_?MatrixQ,                  (* -- MATRIX *)
   MU_Real,                          (* -- L2 PENALTY *)
   LAMBDA_Real,                      (* -- L1 PENALTY *)
   TOLERANCE_Real,                   (* -- ERROR TOLERANCE *)
-  LIMIT_Integer                     (* -- MAX NUMBER OF ITERATIONS *)
-] := Block[
-  {INVERSE, COUNT, ERROR, SK, YK, LK},
-  INVERSE = 1.0/MU ;
-  COUNT = 0 ;
-  SK = YK = LK = ConstantArray[0.0, Dimensions[MATRIX]] ;
-  While[
-    COUNT < LIMIT,
-    LK = S$RPCA$THRESHOLD[MATRIX - SK + INVERSE*YK, INVERSE] ;
-    SK = S$RPCA$SHRINK[MATRIX - LK + INVERSE*YK, INVERSE*LAMBDA] ;
-    ERROR = MATRIX - LK - SK ;
-    YK = YK + MU*ERROR ;
-    ERROR = Norm[ERROR, "Frobenius"] ;
-    COUNT++ ;
-    If[ERROR < TOLERANCE, Break[]] ;
-  ] ;
-  {LK, SK, {COUNT, ERROR}}
+  LIMIT_Integer,                    (* -- MAX NUMBER OF ITERATIONS *)
+  OPTIONS:OptionsPattern[]          (* -- OPTIONS *)
+] := Catch[
+  Block[
+    {NR, NC, RNK, SVD, INVERSE, COUNT, ERROR, SK, YK, LK},
+    {NR, NC} = Dimensions[MATRIX] ;
+    RNK = OptionValue["RNK"] ;
+    RNK = Which[
+	  SameQ[RNK, Full],
+	  Min[{NR, NC}],
+	  MatchQ[RNK, RNK_Integer?Positive /; RNK <= Min[{NR, NC}]],
+	  RNK,
+	  SameQ[Head[RNK], List],
+	  Throw[$Failed],
+	  True,
+	  Throw[$Failed]
+	] ;
+	SVD = OptionValue["SVD"] ;
+	If[Not[MemberQ[{SingularValueDecomposition, S$RANDOMIZED$SVD}, SVD]], Throw[$Failed]] ;
+	INVERSE = 1.0/MU ;
+	COUNT = 0 ;
+	SK = YK = LK = ConstantArray[0.0, Dimensions[MATRIX]] ;
+	While[
+	  COUNT < LIMIT,
+	  LK = S$RPCA$THRESHOLD[MATRIX - SK + INVERSE*YK, INVERSE, SVD, RNK] ;
+	  SK = S$RPCA$SHRINK[MATRIX - LK + INVERSE*YK, INVERSE*LAMBDA] ;
+	  ERROR = MATRIX - LK - SK ;
+	  YK = YK + MU*ERROR ;
+	  ERROR = Norm[ERROR, "Frobenius"] ;
+	  COUNT++ ;
+	  If[ERROR < TOLERANCE, Break[]] ;
+	] ;
+	{LK, SK, {COUNT, ERROR}}
+  ]
 ] ;
 S$RPCA[MATRIX_?MatrixQ, FACTOR_Real, LIMIT_Integer] := S$RPCA[
   MATRIX,
@@ -483,9 +590,6 @@ S$RPCA[MATRIX_?MatrixQ, FACTOR_Real, LIMIT_Integer] := S$RPCA[
   FACTOR*Norm[MATRIX, "Frobenius"],
   LIMIT
 ] ;
-(* MU        = 1/4*1/Norm[MATRIX, 1]*Apply[Times, Dimensions[MATRIX]] ; *)
-(* LAMBDA    = 1/Sqrt[N[Max[Dimensions[MATRIX]]]] ; *)
-(* TOLERANCE = 10.0^-7*Norm[MATRIX, "Frobenius"] ; *)
 (* ################################################################################################################################################################ *)
 (* GENERATE HARMONICS *)
 (* ################################################################################################################################################################ *)
