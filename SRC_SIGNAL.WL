@@ -583,12 +583,13 @@ S$RPCA[                             (* -- PRINCIPAL COMPONENT PURSUIT BY ALTERNA
 	{LK, SK, {COUNT, ERROR}}
   ]
 ] ;
-S$RPCA[MATRIX_?MatrixQ, FACTOR_Real, LIMIT_Integer] := S$RPCA[
+S$RPCA[MATRIX_?MatrixQ, FACTOR_Real, LIMIT_Integer, OPTIONS:OptionsPattern[]] := S$RPCA[
   MATRIX,
   1/4*1/Norm[MATRIX, 1]*Apply[Times, Dimensions[MATRIX]],
   1/Sqrt[N[Max[Dimensions[MATRIX]]]],
   FACTOR*Norm[MATRIX, "Frobenius"],
-  LIMIT
+  LIMIT,
+  OPTIONS
 ] ;
 (* ################################################################################################################################################################ *)
 (* GENERATE HARMONICS *)
