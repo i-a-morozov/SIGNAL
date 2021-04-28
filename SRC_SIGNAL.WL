@@ -415,7 +415,7 @@ S$SVD$FILTER[NUMBER,SIGNAL] -- apply svd filter using <NUMBER> (integer) singula
 S$SVD$FILTER[                       (* -- SVD FILTER *)
   NUMBER_Integer,                   (* -- NUMBER OF SINGULAR VALUE TO KEEP (INTEGER) *)
   SIGNAL_List,                      (* -- INPUT SIGNAL (LIST) *)
-  BUILDER_:S$MAKE$SIGNAL$DIAGONAL   (* -- BUILDER FUNCTION (S$MAKE$SIGNAL$ROW OR S$MAKE$SIGNAL$SUM) *)
+  BUILDER_:S$MAKE$SIGNAL$DIAGONAL   (* -- BUILDER FUNCTION (S$MAKE$SIGNAL$ROW OR S$MAKE$SIGNAL$SUM OR S$MAKE$SIGNAL$DIAGONAL) *)
 ] := Block[
   {DATA,LENGTH,MATRIX,MTU,MTS,MTV,SVL},
   DATA = SIGNAL ;
@@ -488,7 +488,7 @@ S$RANDOMIZED$SVD[MATRIX, NUMBER] -- gives the randomized singular value decompos
 " ;
 Options[S$RANDOMIZED$SVD] = List[
   Rule["BUFFER", 10],               (* -- EXTRA BUFFER SIZE (INTEGER) *)
-  Rule["ITERATION", 10],               (* -- NUMBER OF ITERATIONS FOR RANDOM RANGE (INTEGER) *)
+  Rule["ITERATION", 10],            (* -- NUMBER OF ITERATIONS FOR RANDOM RANGE (INTEGER) *)
   Rule["SEED", 1]                   (* -- RANDOM SEED *)
 ] ;
 S$RANDOMIZED$SVD[
@@ -504,6 +504,32 @@ S$RANDOMIZED$SVD[
   {U, S, V} = SingularValueDecomposition[Dot[Transpose[PROJECTION], MATRIX], SIZE] ;
   U = Dot[PROJECTION, U] ;
   {U, S, V}
+] ;
+(* ################################################################################################################################################################ *)
+(* SVD FILTER (RANDOMIZED) *)
+(* ################################################################################################################################################################ *)
+ClearAll[S$RANDOMIZED$SVD$FILTER] ;
+S$RANDOMIZED$SVD$FILTER::usage = "
+S$RANDOMIZED$SVD$FILTER[NUMBER,SIGNAL] -- apply svd filter using <NUMBER> (integer) singular values to given signal <SIGNAL> (list)
+" ;
+Options[S$RANDOMIZED$SVD$FILTER] = List[
+  Rule["BUFFER", 10],               (* -- EXTRA BUFFER SIZE (INTEGER) *)
+  Rule["ITERATION", 10],            (* -- NUMBER OF ITERATIONS FOR RANDOM RANGE (INTEGER) *)
+  Rule["SEED", 1]                   (* -- RANDOM SEED *)
+] ;
+S$RANDOMIZED$SVD$FILTER[            (* -- SVD FILTER *)
+  NUMBER_Integer,                   (* -- NUMBER OF SINGULAR VALUE TO KEEP (INTEGER) *)
+  SIGNAL_List,                      (* -- INPUT SIGNAL (LIST) *)
+  BUILDER_:S$MAKE$SIGNAL$DIAGONAL,  (* -- BUILDER FUNCTION (S$MAKE$SIGNAL$ROW OR S$MAKE$SIGNAL$SUM OR S$MAKE$SIGNAL$DIAGONAL) *)
+  OPTIONS:OptionsPattern[]          (* -- OPTION(S) *)
+] := Block[
+  {DATA,LENGTH,MATRIX,MTU,MTS,MTV,SVL},
+  DATA = SIGNAL ;
+  LENGTH = Length[DATA] ;
+  MATRIX = S$MAKE$MATRIX[SIGNAL] ;
+  List[MTU,MTS,MTV] = S$RANDOMIZED$SVD[MATRIX,NUMBER,OPTIONS] ;
+  MATRIX = Dot[MTU,MTS,Transpose[MTV]] ;
+  S$MAKE$SIGNAL[MATRIX,BUILDER]
 ] ;
 (* ################################################################################################################################################################ *)
 (* RPCA (PRINCIPAL COMPONENT PURSUIT BY ALTERNATING DIRECTIONS), https://github.com/dganguli/robust-pca *)
