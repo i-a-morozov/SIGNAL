@@ -463,7 +463,7 @@ S$OPTIMAL$SVD$TRUNCATION[           (* -- OPTIMAL SVD TRUNCATION *)
 (* ################################################################################################################################################################ *)
 ClearAll[S$RANDOMIZED$RANGE] ;
 S$RANDOMIZED$RANGE::usage = "
-S$RANDOMIZED$RANGE[MATRIX, SIZE, ITERATION, SEED] -- approximation of matrix range 
+S$RANDOMIZED$RANGE[MATRIX, SIZE, ITERATION, SEED] -- approximation of matrix range
 " ;
 S$RANDOMIZED$RANGE[                 (* -- RANDOMIZED RANGE APPROXIMATION *)
   MATRIX_?MatrixQ,                  (* -- ORIGINAL M x N MATRIX *)
