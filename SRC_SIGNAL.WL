@@ -550,11 +550,15 @@ S$RPCA$THRESHOLD[                   (* -- RPCA AUXILIARY FUNCTION *)
   MATRIX_?MatrixQ,                  (* -- MATRIX *)
   TAU_Real,                         (* -- SHRINK VALUE *)
   SVD_,                             (* -- SVD DRIVER *)
-  RNK_Integer                       (* -- REQUESTED RANK (INTEGER) *)
+  RNK_Integer,                      (* -- REQUESTED RANK (INTEGER) *)
+  FLAG_,                            (* -- ADAPTIVE RANK FLAG *)
+  FACTOR_                           (* -- RANK MULT FACTOR *)
 ] := Block[
-  {U, S, V},
+  {U, S, V, M},
   {U, S, V} = SVD[MATRIX, RNK] ;
-  Dot[U, Dot[S$RPCA$SHRINK[S, TAU], Transpose[V]]]
+  S = S$RPCA$SHRINK[S, TAU] ;
+  M = Dot[U, Dot[S, Transpose[V]]] ;
+  {M, If[FLAG, Ceiling[FACTOR*MatrixRank[S]], RNK]}
 ] ;
 ClearAll[S$RPCA] ;
 S$RPCA::usage = "
@@ -563,7 +567,9 @@ S$RPCA[MATRIX, FACTOR, LIMIT] -- perform RPCA decomposition for given matrix <MA
 " ;
 Options[S$RPCA] = {
   "RNK" -> Full,
-  "SVD" -> SingularValueDecomposition
+  "SVD" -> SingularValueDecomposition,
+  "ADAPTIVE" -> False,
+  "FACTOR" -> 1
 } ;
 (* HYPER-PARAMETERS *)
 (* MU        = 1/4*1/Norm[MATRIX, 1]*Apply[Times, Dimensions[MATRIX]] ; *)
@@ -578,7 +584,7 @@ S$RPCA[                             (* -- PRINCIPAL COMPONENT PURSUIT BY ALTERNA
   OPTIONS:OptionsPattern[]          (* -- OPTIONS *)
 ] := Catch[
   Block[
-    {NR, NC, RNK, SVD, INVERSE, COUNT, ERROR, SK, YK, LK},
+    {NR, NC, RNK, SVD, FLAG, FACTOR, INVERSE, COUNT, ERROR, SK, YK, LK},
     {NR, NC} = Dimensions[MATRIX] ;
     RNK = OptionValue["RNK"] ;
     RNK = Which[
@@ -593,12 +599,14 @@ S$RPCA[                             (* -- PRINCIPAL COMPONENT PURSUIT BY ALTERNA
 	] ;
 	SVD = OptionValue["SVD"] ;
 	If[Not[MemberQ[{SingularValueDecomposition, S$RANDOMIZED$SVD}, SVD]], Throw[$Failed]] ;
+  FLAG = OptionValue["ADAPTIVE"] ;
+  FACTOR = OptionValue["FACTOR"] ;
 	INVERSE = 1.0/MU ;
 	COUNT = 0 ;
 	SK = YK = LK = ConstantArray[0.0, Dimensions[MATRIX]] ;
 	While[
 	  COUNT < LIMIT,
-	  LK = S$RPCA$THRESHOLD[MATRIX - SK + INVERSE*YK, INVERSE, SVD, RNK] ;
+	  {LK, RNK} = S$RPCA$THRESHOLD[MATRIX - SK + INVERSE*YK, INVERSE, SVD, RNK, FLAG, FACTOR] ;
 	  SK = S$RPCA$SHRINK[MATRIX - LK + INVERSE*YK, INVERSE*LAMBDA] ;
 	  ERROR = MATRIX - LK - SK ;
 	  YK = YK + MU*ERROR ;
