@@ -1069,6 +1069,25 @@ S$FREQUENCY[                        (* -- ESTIMATE FREQUENCY (DTFT MAXIMUM SEARC
   ]
 ] ;
 (* ################################################################################################################################################################ *)
+(* FREQUENCY (CANDAN) *)
+(* ################################################################################################################################################################ *)
+ClearAll[S$CANDAN] ;
+S$CANDAN::usage = "
+S$CANDAN[SIGNAL] -- estimate frequency for given input signal <SIGNAL> (list) using Candan approximation
+" ;
+S$CANDAN[                           (* -- ESTIMATE FREQUENCY (CANDAN METHOD) *)
+  SIGNAL_List                       (* -- INPUT SIGNAL (LIST) *)
+] := Block[
+  {FOURIER, MAX, JACOBSENT, CANDAN},
+  FOURIER = Fourier[SIGNAL] ;
+  MAX = First[Flatten[Position[Abs[FOURIER], Max[Abs[FOURIER]]]]] ;
+  JACOBSENT = Re[(FOURIER[[MAX - 1]] - FOURIER[[MAX + 1]])/(2*FOURIER[[MAX]] - FOURIER[[MAX - 1]]-FOURIER[[MAX + 1]])] ;
+  CANDAN = Times[JACOBSENT, LENGTH, Power[Pi, -1], Tan[Times[Power[LENGTH, -1], Pi]]] ;
+  CANDAN = Times[LENGTH, Power[Pi, -1], ArcTan[Times[CANDAN, Power[LENGTH, -1], Pi]]] ;
+  CANDAN = 1/LENGTH*(MAX - 1 + CANDAN) ;
+  CANDAN
+] ;
+(* ################################################################################################################################################################ *)
 (* DECOMPOSITION (FOURIER) *)
 (* ################################################################################################################################################################ *)
 Clear[S$DECOMPOSITION] ;
