@@ -17,5 +17,6 @@
 (* EXAMPLE-16 -- Anomaly detection and repair *)
 (* EXAMPLE-17 -- Frequency estimation accuracy *)
 (* EXAMPLE-18 -- SVD based chaos indicator *)
+(* EXAMPLE-19 -- Anomaly detection and repair (autoencoder) *)
 
-(* 07_05_2021 *)
+(* 10_05_2021 *)
