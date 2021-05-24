@@ -1,5 +1,5 @@
-#ifndef _SIGNAL__H__
-#define _SIGNAL__H__
+#ifndef _signal__h__
+#define _signal__h__
 void    generate_signal_(int* flag, int* length, double* sequence, int* loop, double* frequency, double* cos_amp, double* sin_amp) ;
 void    ffrft_(int* length, double* argument, double* sequence) ;
 void    fft_external_(int* length, int* direction, double* sequence) ;

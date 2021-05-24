@@ -1,219 +1,221 @@
 
 #include "signal.inc"
 
-SUBMODULE (SIGNAL) OPTIMIZATION
-  IMPLICIT NONE
-  CONTAINS
+submodule (signal) optimization
+  implicit none
+  contains
   ! ############################################################################################################################# !
-  ! LEAST SQUARES (SVD)
-  ! (SUBROUTINE) LEAST_SQUARES_(<NR>, <NC>, <MATRIX>(<NR>, <NC>), <VECTOR>(<NR>), <SOLUTION>(<NC>))
-  ! <NR>                   -- (IN)     NUMBER OF ROWS (IK)
-  ! <NC>                   -- (IN)     NUMBER OF COLS (IK)
-  ! <MATRIX>               -- (IN)     INPUT DATA MATRIX (<NR>, <NC>) (RK)
-  ! <VECTOR>               -- (IN)     INPUT VECTOR (<NR>) (RK)
-  ! <SOLUTION>             -- (OUT)    LS SOLUTION (<NC>) (RK)
-  MODULE SUBROUTINE LEAST_SQUARES_(NR, NC, MATRIX, VECTOR, SOLUTION)
-    INTEGER(IK), INTENT(IN) :: NR
-    INTEGER(IK), INTENT(IN) :: NC
-    REAL(RK), DIMENSION(NR, NC), INTENT(IN) :: MATRIX
-    REAL(RK), DIMENSION(NR), INTENT(IN) :: VECTOR
-    REAL(RK), DIMENSION(NC), INTENT(OUT) :: SOLUTION
-    REAL(RK), DIMENSION(MIN(NR, NC)) :: SVD_LIST
-    REAL(RK), DIMENSION(NR, NR) :: U_MATRIX
-    REAL(RK), DIMENSION(NC, NC) :: V_MATRIX
-    REAL(RK), DIMENSION(NR, NC) :: COPY
-    INTEGER(IK) :: I
-    REAL(RK) :: V1(NR), V2(NR), V3(NC), V4(NC)
-    CALL SVD_(NR, NC, MATRIX, SVD_LIST, U_MATRIX, V_MATRIX)
-    COPY = 0.0_RK
-    DO I = 1_IK, INT(SIZE(SVD_LIST), IK), 1_IK
-      IF (SVD_LIST(I) >= SVD_LEVEL) COPY(I, I) = 1.0_RK/SVD_LIST(I)
-    END DO
-    V1 = VECTOR
-    CALL DGEMV('T',NR,NR,1.0_RK,U_MATRIX,NR,V1,1_IK,0.0_RK,V2,1_IK)
-    CALL DGEMV('T',NR,NC,1.0_RK,COPY,NR,V2,1_IK,0.0_RK,V3,1_IK)
-    CALL DGEMV('N',NC,NC,1.0_RK,V_MATRIX,NC,V3,1_IK,0.0_RK,V4,1_IK)
-    SOLUTION = REAL(V4, RK)
-  END SUBROUTINE LEAST_SQUARES_
+  ! least squares (svd)
+  ! (subroutine) least_squares_(<nr>, <nc>, <matrix>(<nr>, <nc>), <vector>(<nr>), <solution>(<nc>))
+  ! <nr>                   -- (in)     number of rows (ik)
+  ! <nc>                   -- (in)     number of cols (ik)
+  ! <matrix>               -- (in)     input data matrix (<nr>, <nc>) (rk)
+  ! <vector>               -- (in)     input vector (<nr>) (rk)
+  ! <solution>             -- (out)    ls solution (<nc>) (rk)
+  module subroutine least_squares_(nr, nc, matrix, vector, solution)
+    integer(ik), intent(in) :: nr
+    integer(ik), intent(in) :: nc
+    real(rk), dimension(nr, nc), intent(in) :: matrix
+    real(rk), dimension(nr), intent(in) :: vector
+    real(rk), dimension(nc), intent(out) :: solution
+    real(rk), dimension(min(nr, nc)) :: svd_list
+    real(rk), dimension(nr, nr) :: u_matrix
+    real(rk), dimension(nc, nc) :: v_matrix
+    real(rk), dimension(nr, nc) :: copy
+    integer(ik) :: i
+    real(rk) :: v1(nr), v2(nr), v3(nc), v4(nc)
+    call svd_(nr, nc, matrix, svd_list, u_matrix, v_matrix)
+    copy = 0.0_rk
+    do i = 1_ik, int(size(svd_list), ik), 1_ik
+      if (svd_list(i) >= svd_level) copy(i, i) = 1.0_rk/svd_list(i)
+    end do
+    v1 = vector
+    call dgemv('t',nr,nr,1.0_rk,u_matrix,nr,v1,1_ik,0.0_rk,v2,1_ik)
+    call dgemv('t',nr,nc,1.0_rk,copy,nr,v2,1_ik,0.0_rk,v3,1_ik)
+    call dgemv('n',nc,nc,1.0_rk,v_matrix,nc,v3,1_ik,0.0_rk,v4,1_ik)
+    solution = real(v4, rk)
+  end subroutine least_squares_
   ! ############################################################################################################################# !
-  ! FIT (HARMONIC SIGNAL)
-  ! (SUBROUTINE) FIT_(<LENGTH>, <SEQUENCE>, <LOOP>, <FREQUENCY>, <MEAN>, <COS_AMP>, <SIN_AMP>, <ERROR>)
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK), POWER OF TWO
-  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <LOOP>                 -- (IN)     NUMBER OF HARMONICS (IK)
-  ! <FREQUENCY>            -- (IN)     FREQUENCY ARRAY (RK ARRAY OF LENGTH = <LOOP>)
-  ! <MEAN>                 -- (OUT)    MEAN VALUE
-  ! <COS_AMP>              -- (OUT)    COS AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
-  ! <SIN_AMP>              -- (OUT)    SIN AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
-  ! <ERROR>                -- (OUT)    ERROR
+  ! fit (harmonic signal)
+  ! (subroutine) fit_(<length>, <sequence>, <loop>, <frequency>, <mean>, <cos_amp>, <sin_amp>, <error>)
+  ! <length>               -- (in)     sequence length (ik), power of two
+  ! <sequence>             -- (in)     input sequence (rk array of length = <length>)
+  ! <loop>                 -- (in)     number of harmonics (ik)
+  ! <frequency>            -- (in)     frequency array (rk array of length = <loop>)
+  ! <mean>                 -- (out)    mean value
+  ! <cos_amp>              -- (out)    cos amplitude array (rk array of length = <loop>)
+  ! <sin_amp>              -- (out)    sin amplitude array (rk array of length = <loop>)
+  ! <error>                -- (out)    error
   ! void    fit_(int* length, double* sequence, int* loop, double* frequency, double* mean, double* cos_amp, double* sin_amp, double* error) ;
-  MODULE SUBROUTINE FIT_(LENGTH, SEQUENCE, LOOP, FREQUENCY, MEAN, COS_AMP, SIN_AMP, ERROR) &
-    BIND(C, NAME = "fit_")
-    INTEGER(IK), INTENT(IN) :: LENGTH
-    REAL(RK), DIMENSION(LENGTH), INTENT(IN) :: SEQUENCE
-    INTEGER(IK), INTENT(IN) :: LOOP
-    REAL(RK), DIMENSION(LOOP), INTENT(IN) :: FREQUENCY
-    REAL(RK), INTENT(OUT) :: MEAN
-    REAL(RK), DIMENSION(LOOP), INTENT(OUT) :: COS_AMP
-    REAL(RK), DIMENSION(LOOP), INTENT(OUT) :: SIN_AMP
-    REAL(RK), INTENT(OUT) :: ERROR
-    REAL(RK), DIMENSION(LENGTH) :: RANGE
-    REAL(RK), DIMENSION(LENGTH, 2_IK*LOOP+1_IK) :: MATRIX
-    REAL(RK), DIMENSION(2_IK*LOOP+1_IK) :: SOLUTION
-    REAL(RK), DIMENSION(LENGTH) :: FIT
-    INTEGER(IK) :: I
-    RANGE = TWO_PI*REAL([(I, I = 1_IK, LENGTH, 1_IK)], RK)
-    MATRIX = 1.0_RK
-    DO I = 1_IK, LOOP, 1_IK
-      MATRIX(:,2_IK*I)      = COS(FREQUENCY(I)*RANGE)
-      MATRIX(:,2_IK*I+1_IK) = SIN(FREQUENCY(I)*RANGE)
-    END DO
-    CALL LEAST_SQUARES_(LENGTH, 2_IK*LOOP+1_IK, MATRIX, SEQUENCE, SOLUTION)
-    MEAN = SOLUTION(1_IK)
-    COS_AMP = SOLUTION(2_IK:2_IK*LOOP+1_IK:2_IK)
-    SIN_AMP = SOLUTION(3_IK:2_IK*LOOP+1_IK:2_IK)
-    FIT = MEAN
-    DO I = 1_IK, LOOP, 1_IK
-      FIT = FIT + COS_AMP(I)*COS(FREQUENCY(I)*RANGE) + SIN_AMP(I)*SIN(FREQUENCY(I)*RANGE)
-    END DO
-    ERROR = NORM2(SEQUENCE-FIT)
-  END SUBROUTINE FIT_
+  module subroutine fit_(length, sequence, loop, frequency, mean, cos_amp, sin_amp, error) &
+    bind(c, name = "fit_")
+    integer(ik), intent(in) :: length
+    real(rk), dimension(length), intent(in) :: sequence
+    integer(ik), intent(in) :: loop
+    real(rk), dimension(loop), intent(in) :: frequency
+    real(rk), intent(out) :: mean
+    real(rk), dimension(loop), intent(out) :: cos_amp
+    real(rk), dimension(loop), intent(out) :: sin_amp
+    real(rk), intent(out) :: error
+    real(rk), dimension(length) :: range
+    real(rk), dimension(length, 2_ik*loop+1_ik) :: matrix
+    real(rk), dimension(2_ik*loop+1_ik) :: solution
+    real(rk), dimension(length) :: fit
+    integer(ik) :: i
+    range = two_pi*real([(i, i = 1_ik, length, 1_ik)], rk)
+    matrix = 1.0_rk
+    do i = 1_ik, loop, 1_ik
+      matrix(:,2_ik*i)      = cos(frequency(i)*range)
+      matrix(:,2_ik*i+1_ik) = sin(frequency(i)*range)
+    end do
+    call least_squares_(length, 2_ik*loop+1_ik, matrix, sequence, solution)
+    mean = solution(1_ik)
+    cos_amp = solution(2_ik:2_ik*loop+1_ik:2_ik)
+    sin_amp = solution(3_ik:2_ik*loop+1_ik:2_ik)
+    fit = mean
+    do i = 1_ik, loop, 1_ik
+      fit = fit + cos_amp(i)*cos(frequency(i)*range) + sin_amp(i)*sin(frequency(i)*range)
+    end do
+    error = norm2(sequence-fit)
+  end subroutine fit_
   ! ############################################################################################################################# !
-  ! FIT (PARABOLA) Y = A*X**2 + B*X + C
-  ! (SUBROUTINE) FIT_PARABOLA_(<LENGTH>, <X>, <Y>, <A>, <B>, <C>, <MAXIMUM>)
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK), POWER OF TWO
-  ! <X>                    -- (IN)     X (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <Y>                    -- (IN)     Y (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <A>                    -- (OUT)    A (RK)
-  ! <B>                    -- (OUT)    B (RK)
-  ! <C>                    -- (OUT)    C (RK)
-  ! <MAXIMUM>              -- (OUT)    MAXIMUM (MINIMUM) POSITION (RK)
+  ! fit (parabola) y = a*x**2 + b*x + c
+  ! (subroutine) fit_parabola_(<length>, <x>, <y>, <a>, <b>, <c>, <maximum>)
+  ! <length>               -- (in)     sequence length (ik), power of two
+  ! <x>                    -- (in)     x (rk array of length = <length>)
+  ! <y>                    -- (in)     y (rk array of length = <length>)
+  ! <a>                    -- (out)    a (rk)
+  ! <b>                    -- (out)    b (rk)
+  ! <c>                    -- (out)    c (rk)
+  ! <maximum>              -- (out)    maximum (minimum) position (rk)
   ! void    fit_parabola_(int* length, double* x, double* y, double* a, double* b, double* c, double* maximum) ;
-  MODULE SUBROUTINE FIT_PARABOLA_(LENGTH, X, Y, A, B, C, MAXIMUM) &
-    BIND(C, NAME = "fit_parabola_")
-    INTEGER(IK), INTENT(IN) :: LENGTH
-    REAL(RK), DIMENSION(LENGTH), INTENT(IN) :: X
-    REAL(RK), DIMENSION(LENGTH), INTENT(IN) :: Y
-    REAL(RK), INTENT(OUT) :: A
-    REAL(RK), INTENT(OUT) :: B
-    REAL(RK), INTENT(OUT) :: C
-    REAL(RK), INTENT(OUT) :: MAXIMUM
-    REAL(RK), DIMENSION(LENGTH, 3_IK) :: MATRIX
-    REAL(RK), DIMENSION(3_IK) :: SOLUTION
-    MATRIX(:,1_IK) = X**2_IK
-    MATRIX(:,2_IK) = X
-    MATRIX(:,3_IK) = 1.0_RK
-    CALL LEAST_SQUARES_(LENGTH, 3_IK, MATRIX, Y, SOLUTION)
-    A = SOLUTION(1_IK)
-    B = SOLUTION(2_IK)
-    C = SOLUTION(3_IK)
-    MAXIMUM = - B/(2.0_RK*A)
-  END SUBROUTINE FIT_PARABOLA_
+  module subroutine fit_parabola_(length, x, y, a, b, c, maximum) &
+    bind(c, name = "fit_parabola_")
+    integer(ik), intent(in) :: length
+    real(rk), dimension(length), intent(in) :: x
+    real(rk), dimension(length), intent(in) :: y
+    real(rk), intent(out) :: a
+    real(rk), intent(out) :: b
+    real(rk), intent(out) :: c
+    real(rk), intent(out) :: maximum
+    real(rk), dimension(length, 3_ik) :: matrix
+    real(rk), dimension(3_ik) :: solution
+    matrix(:,1_ik) = x**2_ik
+    matrix(:,2_ik) = x
+    matrix(:,3_ik) = 1.0_rk
+    call least_squares_(length, 3_ik, matrix, y, solution)
+    a = solution(1_ik)
+    b = solution(2_ik)
+    c = solution(3_ik)
+    maximum = - b/(2.0_rk*a)
+  end subroutine fit_parabola_
   ! ############################################################################################################################# !
-  ! BINARY SEARCH MAXIMIZATION
-  ! (FUNCTION) BINARY_(<FUN>, <GUESS>, <INTERVAL>, <LIMIT>, <TOLERANCE>)
-  ! <FUN>                  -- (IN)     FUNCTION TO MAXIMIZE (RK) -> (RK)
-  ! <GUESS>                -- (IN)     INITIAL GUESS VALUE (RK)
-  ! <INTERVAL>             -- (IN)     SEARCH INTERVAL (RK), GUESS IS IN THE MIDLE
-  ! <LIMIT>                -- (IN)     MAXIMUM NUMBER OF ITERATIONS (IK)
-  ! <TOLERANCE>            -- (IN)     MAXIMUM TOLERANCE (RK)
-  ! <BINARY_>              -- (OUT)    MAXIMUM POSITION
-  MODULE REAL(RK) FUNCTION BINARY_(FUN, GUESS, INTERVAL, LIMIT, TOLERANCE)
-    INTERFACE
-      REAL(RK) FUNCTION FUN(ARG)
-        IMPORT :: RK
-        REAL(RK), INTENT(IN) :: ARG
-      END FUNCTION FUN
-    END INTERFACE
-    REAL(RK), INTENT(IN) :: GUESS
-    REAL(RK), INTENT(IN) :: INTERVAL
-    INTEGER(IK), INTENT(IN) :: LIMIT
-    REAL(RK), INTENT(IN) :: TOLERANCE
-    REAL(RK) :: DELTA
-    REAL(RK) :: XL, XR, XX
-    REAL(RK) :: FL, FR
-    INTEGER(IK) :: I
-    DELTA = INTERVAL/2.0_RK
-    XL = GUESS-DELTA
-    XR = GUESS+DELTA
-    FL = FUN(FL)
-    FR = FUN(FR)
-    DO I = 1_IK, LIMIT, 1_IK
-      IF (FL > FR) THEN
-        XX = XL
-      ELSE
-        XX = XR
-      END IF
-      XL = XX-DELTA
-      XR = XX+DELTA
-      DELTA = DELTA/2.0_RK
-      FL = FUN(XL)
-      FR = FUN(XR)
-      IF (ABS(FL-FR) < TOLERANCE) EXIT
-    END DO
-    IF (FL > FR) THEN
-      BINARY_ = XL
-    ELSE
-      BINARY_ = XR
-    END IF
-  END FUNCTION BINARY_
+  ! binary search maximization
+  ! (function) binary_(<fun>, <guess>, <interval>, <limit>, <tolerance>)
+  ! <fun>                  -- (in)     function to maximize (rk) -> (rk)
+  ! <guess>                -- (in)     initial guess value (rk)
+  ! <interval>             -- (in)     search interval (rk), guess is in the midle
+  ! <limit>                -- (in)     maximum number of iterations (ik)
+  ! <tolerance>            -- (in)     maximum tolerance (rk)
+  ! <binary_>              -- (out)    maximum position
+  module real(rk) function binary_(fun, guess, interval, limit, tolerance)
+    interface
+      real(rk) function search(x)
+        import :: rk
+        real(rk), intent(in) :: x
+      end function search
+    end interface
+    procedure(search) :: fun
+    real(rk), intent(in) :: guess
+    real(rk), intent(in) :: interval
+    integer(ik), intent(in) :: limit
+    real(rk), intent(in) :: tolerance
+    real(rk) :: delta
+    real(rk) :: xl, xr, xx
+    real(rk) :: fl, fr
+    integer(ik) :: i
+    delta = interval/2.0_rk
+    xl = guess-delta
+    xr = guess+delta
+    fl = fun(fl)
+    fr = fun(fr)
+    do i = 1_ik, limit, 1_ik
+      if (fl > fr) then
+        xx = xl
+      else
+        xx = xr
+      end if
+      xl = xx-delta
+      xr = xx+delta
+      delta = delta/2.0_rk
+      fl = fun(xl)
+      fr = fun(xr)
+      if (abs(fl-fr) < tolerance) exit
+    end do
+    if (fl > fr) then
+      binary_ = xl
+    else
+      binary_ = xr
+    end if
+  end function binary_
   ! ############################################################################################################################# !
-  ! GOLDEN SEARCH MAXIMIZATION
-  ! (FUNCTION) GOLDEN_(<FUN>, <GUESS>, <INTERVAL>, <LIMIT>, <TOLERANCE>)
-  ! <FUN>                  -- (IN)     FUNCTION TO MAXIMIZE (RK) -> (RK)
-  ! <GUESS>                -- (IN)     INITIAL GUESS VALUE (RK)
-  ! <INTERVAL>             -- (IN)     SEARCH INTERVAL (RK), GUESS IS IN THE MIDLE
-  ! <LIMIT>                -- (IN)     MAXIMUM NUMBER OF ITERATIONS (IK)
-  ! <TOLERANCE>            -- (IN)     MAXIMUM TOLERANCE (RK)
-  ! <GOLDEN_>              -- (OUT)    MAXIMUM POSITION
-  MODULE REAL(RK) FUNCTION GOLDEN_(FUN, GUESS, INTERVAL, LIMIT, TOLERANCE)
-    INTERFACE
-      REAL(RK) FUNCTION FUN(ARG)
-        IMPORT :: RK
-        REAL(RK), INTENT(IN) :: ARG
-      END FUNCTION FUN
-    END INTERFACE
-    REAL(RK), INTENT(IN) :: GUESS
-    REAL(RK), INTENT(IN) :: INTERVAL
-    INTEGER(IK), INTENT(IN) :: LIMIT
-    REAL(RK), INTENT(IN) :: TOLERANCE
-    REAL(RK), PARAMETER :: GOLDEN = (1.0_RK+SQRT(5.0_RK))/2.0_RK
-    REAL(RK), PARAMETER :: PSI = 1.0_RK-1.0_RK/GOLDEN
-    REAL(RK), PARAMETER :: PHI = 1.0_RK/GOLDEN
-    REAL(RK) :: DELTA
-    REAL(RK) :: XL, XR
-    REAL(RK) :: FL, FR
-    REAL(RK) :: M1, M2
-    INTEGER(IK) :: I
-    DELTA = INTERVAL/2.0_RK
-    XL = GUESS-DELTA
-    XR = GUESS+DELTA
-    M1 = XL+PSI*(XR-XL)
-    M2 = XL+PHI*(XR-XL)
-    FL = FUN(M1)
-    FR = FUN(M2)
-    DO I = 1_IK, LIMIT, 1_IK
-      IF (I > LIMIT) EXIT
-      IF (ABS(FL-FR) < TOLERANCE) EXIT
-      IF (FL > FR) THEN
-        XR = M2
-        M2 = M1
-        M1 = PSI*XL+PHI*M2
-        FR = FL
-        FL = FUN(M1)
-      ELSE
-        XL = M1
-        M1 = M2
-        M2 = PHI*M1+PSI*XR
-        FL = FR
-        FR = FUN(M2)
-      END IF
-    END DO
-    IF (FL > FR) THEN
-      GOLDEN_ = XL
-    ELSE
-      GOLDEN_ = XR
-    END IF
-  END FUNCTION GOLDEN_
+  ! golden search maximization
+  ! (function) golden_(<fun>, <guess>, <interval>, <limit>, <tolerance>)
+  ! <fun>                  -- (in)     function to maximize (rk) -> (rk)
+  ! <guess>                -- (in)     initial guess value (rk)
+  ! <interval>             -- (in)     search interval (rk), guess is in the midle
+  ! <limit>                -- (in)     maximum number of iterations (ik)
+  ! <tolerance>            -- (in)     maximum tolerance (rk)
+  ! <golden_>              -- (out)    maximum position
+  module real(rk) function golden_(fun, guess, interval, limit, tolerance)
+    interface
+      real(rk) function search(x)
+        import :: rk
+        real(rk), intent(in) :: x
+      end function search
+    end interface
+    procedure(search) :: fun
+    real(rk), intent(in) :: guess
+    real(rk), intent(in) :: interval
+    integer(ik), intent(in) :: limit
+    real(rk), intent(in) :: tolerance
+    real(rk), parameter :: golden = (1.0_rk+sqrt(5.0_rk))/2.0_rk
+    real(rk), parameter :: psi = 1.0_rk-1.0_rk/golden
+    real(rk), parameter :: phi = 1.0_rk/golden
+    real(rk) :: delta
+    real(rk) :: xl, xr
+    real(rk) :: fl, fr
+    real(rk) :: m1, m2
+    integer(ik) :: i
+    delta = interval/2.0_rk
+    xl = guess-delta
+    xr = guess+delta
+    m1 = xl+psi*(xr-xl)
+    m2 = xl+phi*(xr-xl)
+    fl = fun(m1)
+    fr = fun(m2)
+    do i = 1_ik, limit, 1_ik
+      if (i > limit) exit
+      if (abs(fl-fr) < tolerance) exit
+      if (fl > fr) then
+        xr = m2
+        m2 = m1
+        m1 = psi*xl+phi*m2
+        fr = fl
+        fl = fun(m1)
+      else
+        xl = m1
+        m1 = m2
+        m2 = phi*m1+psi*xr
+        fl = fr
+        fr = fun(m2)
+      end if
+    end do
+    if (fl > fr) then
+      golden_ = xl
+    else
+      golden_ = xr
+    end if
+  end function golden_
   ! ############################################################################################################################# !
-END SUBMODULE OPTIMIZATION
+end submodule optimization

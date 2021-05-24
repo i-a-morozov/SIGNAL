@@ -1,6 +1,6 @@
-#define __FFT__      FFT_RADIX_EIGHT_
-#define __SEQUENCE__ SEQUENCE_SUM_
-#define __MINLOC__   MINLOC
-#define __MAXLOC__   MAXLOC
-#define __SORT__     SORT_QUICK_
-#define __SEARCH__   GOLDEN_AMPLITUDE_
+#define __fft__      fft_radix_eight_
+#define __sequence__ sequence_sum_
+#define __minloc__   minloc
+#define __maxloc__   maxloc
+#define __sort__     sort_quick_
+#define __search__   golden_amplitude_

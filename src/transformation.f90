@@ -1,1200 +1,1200 @@
 
 #include "signal.inc"
 
-SUBMODULE (SIGNAL) TRANSFORMATION
-  IMPLICIT NONE
-  CONTAINS
+submodule (signal) transformation
+  implicit none
+  contains
   ! ############################################################################################################################# !
-  ! (LINEAR) FRACTIONAL COMPLEX DISCRETE FOURIER TRANSFORM
-  ! (SUBROUTINE) FFRFT_(<LENGTH>, <ARGUMENT>, <SEQUENCE>)
-  ! <LENGTH>               -- (IN)     LENGTH (IK)
-  ! <ARGUMENT>             -- (IN)     PARAMETER (RK)
-  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <SEQUENCE>             -- (OUT)    FCDFT (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., FR_I, FI_I, ...]
+  ! (linear) fractional complex discrete fourier transform
+  ! (subroutine) ffrft_(<length>, <argument>, <sequence>)
+  ! <length>               -- (in)     length (ik)
+  ! <argument>             -- (in)     parameter (rk)
+  ! <sequence>             -- (in)     input sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
+  ! <sequence>             -- (out)    fcdft (rk array of length = 2_ik*<length>), <sequence> = [..., fr_i, fi_i, ...]
   ! void    ffrft_(int* length, double* argument, double* sequence) ;
-  MODULE SUBROUTINE FFRFT_(LENGTH, ARGUMENT, SEQUENCE) &
-    BIND(C, NAME = "ffrft_")
-    INTEGER(IK), INTENT(IN) :: LENGTH
-    REAL(RK), INTENT(IN) :: ARGUMENT
-    REAL(RK), DIMENSION(2_IK*LENGTH), INTENT(INOUT) :: SEQUENCE
-    INTEGER(IK) :: I
-    REAL(RK) :: FACTOR
-    REAL(RK), DIMENSION(LENGTH)   :: MUL, COS_MUL, SIN_MUL
-    REAL(RK), DIMENSION(4_IK*LENGTH) :: ONE, TWO, TRE
-    REAL(RK), DIMENSION(2_IK*LENGTH) :: COPY
-    FACTOR = ARGUMENT*ONE_PI/REAL(LENGTH, RK)
-    MUL = FACTOR*REAL([(I, I = 0_IK, LENGTH-1_IK, 1_IK)], RK)**2_IK
-    COS_MUL = COS(MUL)
-    SIN_MUL = SIN(MUL)
-    ONE = 0.0_RK
-    ONE(1_IK:2_IK*LENGTH:2_IK) = SEQUENCE(1_IK::2_IK)*COS_MUL-SEQUENCE(2_IK::2_IK)*SIN_MUL
-    ONE(2_IK:2_IK*LENGTH:2_IK) = SEQUENCE(1_IK::2_IK)*SIN_MUL+SEQUENCE(2_IK::2_IK)*COS_MUL
-    TWO = 0.0_RK
-    TWO(1_IK:2_IK*LENGTH:2_IK) = +COS_MUL
-    TWO(2_IK:2_IK*LENGTH:2_IK) = -SIN_MUL
-    MUL = -FACTOR*(REAL([(I, I = LENGTH+1_IK, 2_IK*LENGTH, 1_IK)], RK)-1.0_RK-2.0_RK*REAL(LENGTH, RK))**2_IK
-    TWO(2_IK*LENGTH+1_IK:4_IK*LENGTH:2_IK) = COS(MUL)
-    TWO(2_IK*LENGTH+2_IK:4_IK*LENGTH:2_IK) = SIN(MUL)
-    CALL __FFT__(2_IK*LENGTH, FFT_FORWARD, ONE)
-    CALL __FFT__(2_IK*LENGTH, FFT_FORWARD, TWO)
-    TRE = ONE
-    ONE(1_IK::2_IK) = TRE(1_IK::2_IK)*TWO(1_IK::2_IK)-TRE(2_IK::2_IK)*TWO(2_IK::2_IK)
-    ONE(2_IK::2_IK) = TRE(1_IK::2_IK)*TWO(2_IK::2_IK)+TRE(2_IK::2_IK)*TWO(1_IK::2_IK)
-    CALL __FFT__(2_IK*LENGTH, FFT_INVERSE, ONE)
-    COPY = 1.0_RK/REAL(2_IK*LENGTH, RK)*ONE(1_IK:2_IK*LENGTH:1_IK)
-    SEQUENCE(1_IK::2_IK) = COPY(1_IK::2_IK)*COS_MUL-COPY(2_IK::2_IK)*SIN_MUL
-    SEQUENCE(2_IK::2_IK) = COPY(1_IK::2_IK)*SIN_MUL+COPY(2_IK::2_IK)*COS_MUL
-  END SUBROUTINE FFRFT_
+  module subroutine ffrft_(length, argument, sequence) &
+    bind(c, name = "ffrft_")
+    integer(ik), intent(in) :: length
+    real(rk), intent(in) :: argument
+    real(rk), dimension(2_ik*length), intent(inout) :: sequence
+    integer(ik) :: i
+    real(rk) :: factor
+    real(rk), dimension(length)   :: mul, cos_mul, sin_mul
+    real(rk), dimension(4_ik*length) :: one, two, tre
+    real(rk), dimension(2_ik*length) :: copy
+    factor = argument*one_pi/real(length, rk)
+    mul = factor*real([(i, i = 0_ik, length-1_ik, 1_ik)], rk)**2_ik
+    cos_mul = cos(mul)
+    sin_mul = sin(mul)
+    one = 0.0_rk
+    one(1_ik:2_ik*length:2_ik) = sequence(1_ik::2_ik)*cos_mul-sequence(2_ik::2_ik)*sin_mul
+    one(2_ik:2_ik*length:2_ik) = sequence(1_ik::2_ik)*sin_mul+sequence(2_ik::2_ik)*cos_mul
+    two = 0.0_rk
+    two(1_ik:2_ik*length:2_ik) = +cos_mul
+    two(2_ik:2_ik*length:2_ik) = -sin_mul
+    mul = -factor*(real([(i, i = length+1_ik, 2_ik*length, 1_ik)], rk)-1.0_rk-2.0_rk*real(length, rk))**2_ik
+    two(2_ik*length+1_ik:4_ik*length:2_ik) = cos(mul)
+    two(2_ik*length+2_ik:4_ik*length:2_ik) = sin(mul)
+    call __fft__(2_ik*length, fft_forward, one)
+    call __fft__(2_ik*length, fft_forward, two)
+    tre = one
+    one(1_ik::2_ik) = tre(1_ik::2_ik)*two(1_ik::2_ik)-tre(2_ik::2_ik)*two(2_ik::2_ik)
+    one(2_ik::2_ik) = tre(1_ik::2_ik)*two(2_ik::2_ik)+tre(2_ik::2_ik)*two(1_ik::2_ik)
+    call __fft__(2_ik*length, fft_inverse, one)
+    copy = 1.0_rk/real(2_ik*length, rk)*one(1_ik:2_ik*length:1_ik)
+    sequence(1_ik::2_ik) = copy(1_ik::2_ik)*cos_mul-copy(2_ik::2_ik)*sin_mul
+    sequence(2_ik::2_ik) = copy(1_ik::2_ik)*sin_mul+copy(2_ik::2_ik)*cos_mul
+  end subroutine ffrft_
   ! ############################################################################################################################# !
-  ! (LINEAR) FRACTIONAL COMPLEX DISCRETE FOURIER TRANSFORM (MEMORIZATION)
-  ! (SUBROUTINE) FFRFT__(<LENGTH>, <SEQUENCE>, <IP>, <WORK>, <COS_FST>, <SIN_FST>, <COS_LST>, <SIN_LST>)
-  ! <LENGTH>               -- (IN)     LENGTH (IK)
-  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <IP>                   -- (IN)     FFRFT BIT DATA
-  ! <WORK>                 -- (IN)     FFRFT TRIG DATA
-  ! <COS_FST>              -- (IN)     FIRST COS ARRAY
-  ! <SIN_FST>              -- (IN)     FIRST SIN ARRAY
-  ! <COS_LST>              -- (IN)     LAST COS ARRAY
-  ! <SIN_LAT>              -- (IN)     LAST SIN ARRAY
-  ! <SEQUENCE>             -- (OUT)    FCDFT (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., FR_I, FI_I, ...]
-  MODULE SUBROUTINE FFRFT__(LENGTH, SEQUENCE, IP, WORK, COS_FST, SIN_FST, COS_LST, SIN_LST)
-    INTEGER(IK), INTENT(IN) :: LENGTH
-    REAL(RK), DIMENSION(2_IK*LENGTH), INTENT(INOUT) :: SEQUENCE
-    INTEGER(IK), DIMENSION(0_IK : 1_IK+INT(SQRT(REAL(LENGTH, RK)), IK)), INTENT(IN) :: IP
-    REAL(RK), DIMENSION(0_IK : LENGTH - 1_IK), INTENT(IN) :: WORK
-    REAL(RK), DIMENSION(LENGTH), INTENT(IN)   :: COS_FST
-    REAL(RK), DIMENSION(LENGTH), INTENT(IN)   :: SIN_FST
-    REAL(RK), DIMENSION(LENGTH), INTENT(IN)   :: COS_LST
-    REAL(RK), DIMENSION(LENGTH), INTENT(IN)   :: SIN_LST
-    REAL(RK), DIMENSION(4_IK*LENGTH) :: ONE, TWO, TRE
-    REAL(RK), DIMENSION(2_IK*LENGTH) :: COPY
-    ONE = 0.0_RK
-    ONE(1_IK:2_IK*LENGTH:2_IK) = SEQUENCE(1_IK::2_IK)*COS_FST-SEQUENCE(2_IK::2_IK)*SIN_FST
-    ONE(2_IK:2_IK*LENGTH:2_IK) = SEQUENCE(1_IK::2_IK)*SIN_FST+SEQUENCE(2_IK::2_IK)*COS_FST
-    TWO = 0.0_RK
-    TWO(1_IK:2_IK*LENGTH:2_IK) = +COS_FST
-    TWO(2_IK:2_IK*LENGTH:2_IK) = -SIN_FST
-    TWO(2_IK*LENGTH+1_IK:4_IK*LENGTH:2_IK) = COS_LST
-    TWO(2_IK*LENGTH+2_IK:4_IK*LENGTH:2_IK) = SIN_LST
-    CALL FFT_RADIX_EIGHT__(2_IK*LENGTH, FFT_FORWARD, ONE, IP, WORK)
-    CALL FFT_RADIX_EIGHT__(2_IK*LENGTH, FFT_FORWARD, TWO, IP, WORK)
-    TRE = ONE
-    ONE(1_IK::2_IK) = TRE(1_IK::2_IK)*TWO(1_IK::2_IK)-TRE(2_IK::2_IK)*TWO(2_IK::2_IK)
-    ONE(2_IK::2_IK) = TRE(1_IK::2_IK)*TWO(2_IK::2_IK)+TRE(2_IK::2_IK)*TWO(1_IK::2_IK)
-    CALL FFT_RADIX_EIGHT__(2_IK*LENGTH, FFT_INVERSE, ONE, IP, WORK)
-    COPY = 1.0_RK/REAL(2_IK*LENGTH, RK)*ONE(1_IK:2_IK*LENGTH:1_IK)
-    SEQUENCE(1_IK::2_IK) = COPY(1_IK::2_IK)*COS_FST-COPY(2_IK::2_IK)*SIN_FST
-    SEQUENCE(2_IK::2_IK) = COPY(1_IK::2_IK)*SIN_FST+COPY(2_IK::2_IK)*COS_FST
-  END SUBROUTINE FFRFT__
+  ! (linear) fractional complex discrete fourier transform (memorization)
+  ! (subroutine) ffrft__(<length>, <sequence>, <ip>, <work>, <cos_fst>, <sin_fst>, <cos_lst>, <sin_lst>)
+  ! <length>               -- (in)     length (ik)
+  ! <sequence>             -- (in)     input sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
+  ! <ip>                   -- (in)     ffrft bit data
+  ! <work>                 -- (in)     ffrft trig data
+  ! <cos_fst>              -- (in)     first cos array
+  ! <sin_fst>              -- (in)     first sin array
+  ! <cos_lst>              -- (in)     last cos array
+  ! <sin_lat>              -- (in)     last sin array
+  ! <sequence>             -- (out)    fcdft (rk array of length = 2_ik*<length>), <sequence> = [..., fr_i, fi_i, ...]
+  module subroutine ffrft__(length, sequence, ip, work, cos_fst, sin_fst, cos_lst, sin_lst)
+    integer(ik), intent(in) :: length
+    real(rk), dimension(2_ik*length), intent(inout) :: sequence
+    integer(ik), dimension(0_ik : 1_ik+int(sqrt(real(length, rk)), ik)), intent(in) :: ip
+    real(rk), dimension(0_ik : length - 1_ik), intent(in) :: work
+    real(rk), dimension(length), intent(in)   :: cos_fst
+    real(rk), dimension(length), intent(in)   :: sin_fst
+    real(rk), dimension(length), intent(in)   :: cos_lst
+    real(rk), dimension(length), intent(in)   :: sin_lst
+    real(rk), dimension(4_ik*length) :: one, two, tre
+    real(rk), dimension(2_ik*length) :: copy
+    one = 0.0_rk
+    one(1_ik:2_ik*length:2_ik) = sequence(1_ik::2_ik)*cos_fst-sequence(2_ik::2_ik)*sin_fst
+    one(2_ik:2_ik*length:2_ik) = sequence(1_ik::2_ik)*sin_fst+sequence(2_ik::2_ik)*cos_fst
+    two = 0.0_rk
+    two(1_ik:2_ik*length:2_ik) = +cos_fst
+    two(2_ik:2_ik*length:2_ik) = -sin_fst
+    two(2_ik*length+1_ik:4_ik*length:2_ik) = cos_lst
+    two(2_ik*length+2_ik:4_ik*length:2_ik) = sin_lst
+    call fft_radix_eight__(2_ik*length, fft_forward, one, ip, work)
+    call fft_radix_eight__(2_ik*length, fft_forward, two, ip, work)
+    tre = one
+    one(1_ik::2_ik) = tre(1_ik::2_ik)*two(1_ik::2_ik)-tre(2_ik::2_ik)*two(2_ik::2_ik)
+    one(2_ik::2_ik) = tre(1_ik::2_ik)*two(2_ik::2_ik)+tre(2_ik::2_ik)*two(1_ik::2_ik)
+    call fft_radix_eight__(2_ik*length, fft_inverse, one, ip, work)
+    copy = 1.0_rk/real(2_ik*length, rk)*one(1_ik:2_ik*length:1_ik)
+    sequence(1_ik::2_ik) = copy(1_ik::2_ik)*cos_fst-copy(2_ik::2_ik)*sin_fst
+    sequence(2_ik::2_ik) = copy(1_ik::2_ik)*sin_fst+copy(2_ik::2_ik)*cos_fst
+  end subroutine ffrft__
   ! ############################################################################################################################# !
-  ! (FFTW) COMPLEX DISCRETE FOURIER TRANSFORM
-  ! (SUBROUTINE) FFT_EXTERNAL_(<LENGTH>, <DIRECTION>, <SEQUENCE>)
-  ! <LENGTH>               -- (IN)     LENGTH (IK)
-  ! <DIRECTION>            -- (IN)     DIRECTION (IK), FFT_FORWARD = +1_IK OR FFT_INVERSE = -1_IK
-  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <SEQUENCE>             -- (OUT)    CDFT (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., FR_I, FI_I, ...]
+  ! (fftw) complex discrete fourier transform
+  ! (subroutine) fft_external_(<length>, <direction>, <sequence>)
+  ! <length>               -- (in)     length (ik)
+  ! <direction>            -- (in)     direction (ik), fft_forward = +1_ik or fft_inverse = -1_ik
+  ! <sequence>             -- (in)     input sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
+  ! <sequence>             -- (out)    cdft (rk array of length = 2_ik*<length>), <sequence> = [..., fr_i, fi_i, ...]
   ! void    fft_external_(int* length, int* direction, double* sequence) ;
-  MODULE SUBROUTINE FFT_EXTERNAL_(LENGTH, DIRECTION, SEQUENCE) &
-    BIND(C, NAME = "fft_external_")
-    INTEGER(IK), INTENT(IN) :: LENGTH
-    INTEGER(IK), INTENT(IN) :: DIRECTION
-    REAL(RK), DIMENSION(2_IK*LENGTH), INTENT(INOUT) :: SEQUENCE
-    COMPLEX(RK), DIMENSION(LENGTH) :: IN, OUT
-    INTEGER(IK) :: PLAN
-    IN%RE = SEQUENCE(1_IK::2_IK)
-    IN%IM = SEQUENCE(2_IK::2_IK)
-    CALL DFFTW_PLAN_DFT_1D(PLAN, LENGTH, IN, OUT, DIRECTION, 64_IK)
-    CALL DFFTW_EXECUTE_DFT(PLAN, IN, OUT)
-    CALL DFFTW_DESTROY_PLAN(PLAN)
-    SEQUENCE(1_IK::2_IK) = OUT%RE
-    SEQUENCE(2_IK::2_IK) = OUT%IM
-  END SUBROUTINE FFT_EXTERNAL_
+  module subroutine fft_external_(length, direction, sequence) &
+    bind(c, name = "fft_external_")
+    integer(ik), intent(in) :: length
+    integer(ik), intent(in) :: direction
+    real(rk), dimension(2_ik*length), intent(inout) :: sequence
+    complex(rk), dimension(length) :: in, out
+    integer(ik) :: plan
+    in%re = sequence(1_ik::2_ik)
+    in%im = sequence(2_ik::2_ik)
+    call dfftw_plan_dft_1d(plan, length, in, out, direction, 64_ik)
+    call dfftw_execute_dft(plan, in, out)
+    call dfftw_destroy_plan(plan)
+    sequence(1_ik::2_ik) = out%re
+    sequence(2_ik::2_ik) = out%im
+  end subroutine fft_external_
   ! ############################################################################################################################# !
-  ! (NRF77) COMPLEX DISCRETE FOURIER TRANSFORM
-  ! (SUBROUTINE) FFT_RADIX_TWO_(<LENGTH>, <DIRECTION>, <SEQUENCE>)
-  ! <LENGTH>               -- (IN)     LENGTH (IK)
-  ! <DIRECTION>            -- (IN)     DIRECTION (IK), FFT_FORWARD = +1_IK OR FFT_INVERSE = -1_IK
-  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <SEQUENCE>             -- (OUT)    CDFT (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., FR_I, FI_I, ...]
+  ! (nrf77) complex discrete fourier transform
+  ! (subroutine) fft_radix_two_(<length>, <direction>, <sequence>)
+  ! <length>               -- (in)     length (ik)
+  ! <direction>            -- (in)     direction (ik), fft_forward = +1_ik or fft_inverse = -1_ik
+  ! <sequence>             -- (in)     input sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
+  ! <sequence>             -- (out)    cdft (rk array of length = 2_ik*<length>), <sequence> = [..., fr_i, fi_i, ...]
   ! void    fft_radix_two_(int* length, int* direction, double* sequence) ;
-  MODULE SUBROUTINE FFT_RADIX_TWO_(LENGTH, DIRECTION, SEQUENCE) &
-    BIND(C, NAME = "fft_radix_two_")
-    INTEGER(IK), INTENT(IN) :: LENGTH
-    INTEGER(IK), INTENT(IN) :: DIRECTION
-    REAL(RK), DIMENSION(2_IK*LENGTH), INTENT(INOUT) :: SEQUENCE
-    INTEGER(IK) :: I, J
-    INTEGER(IK) :: N, M
-    INTEGER(IK) :: LIMIT, STEP
-    REAL(RK) :: PIM, PRE
-    REAL(RK) :: ANG
-    REAL(RK) :: WR, WI, WPR, WPI, WCOPY
-    REAL(RK) :: FACTOR
-    N = 2_IK*LENGTH
-    J = 1_IK
-    FACTOR = REAL(DIRECTION, RK)*TWO_PI
-    DO I = 1_IK, N, 2_IK
-      IF (J > I) THEN
-        PRE = SEQUENCE(J)
-        PIM = SEQUENCE(J+1_IK)
-        SEQUENCE(J) = SEQUENCE(I)
-        SEQUENCE(J+1_IK) = SEQUENCE(I+1_IK)
-        SEQUENCE(I) = PRE
-        SEQUENCE(I+1_IK) = PIM
-      END IF
-      M = N/2_IK
-      DO
-        IF ((M > 2_IK) .AND. (J > M)) THEN
-          J = J-M
-          M = M/2_IK
-        ELSE
-          EXIT
-        END IF
-      END DO
-      J = J+M
-    END DO
-    LIMIT = 2_IK
-    DO
-      IF (N > LIMIT) THEN
-        STEP = 2_IK*LIMIT
-        ANG = FACTOR/REAL(LIMIT, RK)
-        WPI = SIN(ANG)
-        ANG = SIN(0.5_RK*ANG)
-        WPR = -2.0_RK*ANG*ANG
-        WR = 1.0_RK
-        WI = 0.0_RK
-        DO M = 1_IK, LIMIT, 2_IK
-          DO I = M, N, STEP
-            J = I+LIMIT
-            PRE = WR*SEQUENCE(J)-WI*SEQUENCE(J+1_IK)
-            PIM = WR*SEQUENCE(J+1_IK)+WI*SEQUENCE(J)
-            SEQUENCE(J) = SEQUENCE(I)-PRE
-            SEQUENCE(J+1_IK) = SEQUENCE(I+1_IK)-PIM
-            SEQUENCE(I) = SEQUENCE(I)+PRE
-            SEQUENCE(I+1_IK) = SEQUENCE(I+1_IK)+PIM
-          END DO
-          WCOPY = WR
-          WR = WR*WPR-WI*WPI+WR
-          WI = WI*WPR+WCOPY*WPI+WI
-        END DO
-        LIMIT = STEP
-      ELSE
-        EXIT
-      END IF
-    END DO
-  END SUBROUTINE FFT_RADIX_TWO_
+  module subroutine fft_radix_two_(length, direction, sequence) &
+    bind(c, name = "fft_radix_two_")
+    integer(ik), intent(in) :: length
+    integer(ik), intent(in) :: direction
+    real(rk), dimension(2_ik*length), intent(inout) :: sequence
+    integer(ik) :: i, j
+    integer(ik) :: n, m
+    integer(ik) :: limit, step
+    real(rk) :: pim, pre
+    real(rk) :: ang
+    real(rk) :: wr, wi, wpr, wpi, wcopy
+    real(rk) :: factor
+    n = 2_ik*length
+    j = 1_ik
+    factor = real(direction, rk)*two_pi
+    do i = 1_ik, n, 2_ik
+      if (j > i) then
+        pre = sequence(j)
+        pim = sequence(j+1_ik)
+        sequence(j) = sequence(i)
+        sequence(j+1_ik) = sequence(i+1_ik)
+        sequence(i) = pre
+        sequence(i+1_ik) = pim
+      end if
+      m = n/2_ik
+      do
+        if ((m > 2_ik) .and. (j > m)) then
+          j = j-m
+          m = m/2_ik
+        else
+          exit
+        end if
+      end do
+      j = j+m
+    end do
+    limit = 2_ik
+    do
+      if (n > limit) then
+        step = 2_ik*limit
+        ang = factor/real(limit, rk)
+        wpi = sin(ang)
+        ang = sin(0.5_rk*ang)
+        wpr = -2.0_rk*ang*ang
+        wr = 1.0_rk
+        wi = 0.0_rk
+        do m = 1_ik, limit, 2_ik
+          do i = m, n, step
+            j = i+limit
+            pre = wr*sequence(j)-wi*sequence(j+1_ik)
+            pim = wr*sequence(j+1_ik)+wi*sequence(j)
+            sequence(j) = sequence(i)-pre
+            sequence(j+1_ik) = sequence(i+1_ik)-pim
+            sequence(i) = sequence(i)+pre
+            sequence(i+1_ik) = sequence(i+1_ik)+pim
+          end do
+          wcopy = wr
+          wr = wr*wpr-wi*wpi+wr
+          wi = wi*wpr+wcopy*wpi+wi
+        end do
+        limit = step
+      else
+        exit
+      end if
+    end do
+  end subroutine fft_radix_two_
   ! ############################################################################################################################# !
-  ! (TAKUYA OOURA) COMPLEX DISCRETE FOURIER TRANSFORM
-  ! (SUBROUTINE) FFT_RADIX_EIGHT_(<LENGTH>, <DIRECTION>, <SEQUENCE>)
-  ! <LENGTH>               -- (IN)     LENGTH (IK)
-  ! <DIRECTION>            -- (IN)     DIRECTION (IK), FFT_FORWARD = +1_IK OR FFT_INVERSE = -1_IK
-  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <SEQUENCE>             -- (OUT)    CDFT (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., FR_I, FI_I, ...]
+  ! (takuya ooura) complex discrete fourier transform
+  ! (subroutine) fft_radix_eight_(<length>, <direction>, <sequence>)
+  ! <length>               -- (in)     length (ik)
+  ! <direction>            -- (in)     direction (ik), fft_forward = +1_ik or fft_inverse = -1_ik
+  ! <sequence>             -- (in)     input sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
+  ! <sequence>             -- (out)    cdft (rk array of length = 2_ik*<length>), <sequence> = [..., fr_i, fi_i, ...]
   ! void    fft_radix_eight_(int* length, int* direction, double* sequence) ;
-  MODULE SUBROUTINE FFT_RADIX_EIGHT_(LENGTH, DIRECTION, SEQUENCE) &
-    BIND(C, NAME = "fft_radix_eight_")
-    INTEGER(IK), INTENT(IN) :: LENGTH
-    INTEGER(IK), INTENT(IN) :: DIRECTION
-    REAL(RK), DIMENSION(2_IK*LENGTH), INTENT(INOUT) :: SEQUENCE
-    INTEGER(IK), DIMENSION(2_IK+INT(SQRT(REAL(LENGTH/2_IK, RK)), IK)) :: IP
-    REAL(RK), DIMENSION(LENGTH/2_IK) :: WORK
-    IP = 0_IK
-    WORK = 0.0_RK
-    CALL CDFT_(2_IK*LENGTH, DIRECTION, SEQUENCE, IP, WORK)
-  END SUBROUTINE FFT_RADIX_EIGHT_
+  module subroutine fft_radix_eight_(length, direction, sequence) &
+    bind(c, name = "fft_radix_eight_")
+    integer(ik), intent(in) :: length
+    integer(ik), intent(in) :: direction
+    real(rk), dimension(2_ik*length), intent(inout) :: sequence
+    integer(ik), dimension(2_ik+int(sqrt(real(length/2_ik, rk)), ik)) :: ip
+    real(rk), dimension(length/2_ik) :: work
+    ip = 0_ik
+    work = 0.0_rk
+    call cdft_(2_ik*length, direction, sequence, ip, work)
+  end subroutine fft_radix_eight_
   ! ############################################################################################################################# !
-  ! (TAKUYA OOURA) COMPLEX DISCRETE FOURIER TRANSFORM
-  ! (SUBROUTINE) FFT_RADIX_EIGHT__(<LENGTH>, <DIRECTION>, <SEQUENCE>, <IP>, <WORK>)
-  ! <LENGTH>               -- (IN)     LENGTH (IK)
-  ! <DIRECTION>            -- (IN)     DIRECTION (IK), FFT_FORWARD = +1_IK OR FFT_INVERSE = -1_IK
-  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <SEQUENCE>             -- (OUT)    CDFT (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., FR_I, FI_I, ...]
-  ! <IP>                   -- (IN)     FFRFT BIT DATA
-  ! <WORK>                 -- (IN)     FFRFT TRIG DATA
-  MODULE SUBROUTINE FFT_RADIX_EIGHT__(LENGTH, DIRECTION, SEQUENCE, IP, WORK)
-    INTEGER(IK), INTENT(IN) :: LENGTH
-    INTEGER(IK), INTENT(IN) :: DIRECTION
-    REAL(RK), DIMENSION(2_IK*LENGTH), INTENT(INOUT) :: SEQUENCE
-    INTEGER(IK), DIMENSION(0_IK : 1_IK+INT(SQRT(REAL(LENGTH/2_IK, RK)), IK)), INTENT(IN) :: IP
-    REAL(RK), DIMENSION(0_IK : LENGTH/2_IK - 1_IK), INTENT(IN) :: WORK
-    INTEGER(IK), DIMENSION(0_IK : 1_IK+INT(SQRT(REAL(LENGTH/2_IK, RK)), IK)) :: IP_COPY
-    REAL(RK), DIMENSION(0_IK : LENGTH/2_IK - 1_IK) :: WORK_COPY
-    IP_COPY = IP
-    WORK_COPY = WORK
-    CALL CDFT__(2_IK*LENGTH, DIRECTION, SEQUENCE, IP_COPY, WORK_COPY)
-  END SUBROUTINE FFT_RADIX_EIGHT__
+  ! (takuya ooura) complex discrete fourier transform
+  ! (subroutine) fft_radix_eight__(<length>, <direction>, <sequence>, <ip>, <work>)
+  ! <length>               -- (in)     length (ik)
+  ! <direction>            -- (in)     direction (ik), fft_forward = +1_ik or fft_inverse = -1_ik
+  ! <sequence>             -- (in)     input sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
+  ! <sequence>             -- (out)    cdft (rk array of length = 2_ik*<length>), <sequence> = [..., fr_i, fi_i, ...]
+  ! <ip>                   -- (in)     ffrft bit data
+  ! <work>                 -- (in)     ffrft trig data
+  module subroutine fft_radix_eight__(length, direction, sequence, ip, work)
+    integer(ik), intent(in) :: length
+    integer(ik), intent(in) :: direction
+    real(rk), dimension(2_ik*length), intent(inout) :: sequence
+    integer(ik), dimension(0_ik : 1_ik+int(sqrt(real(length/2_ik, rk)), ik)), intent(in) :: ip
+    real(rk), dimension(0_ik : length/2_ik - 1_ik), intent(in) :: work
+    integer(ik), dimension(0_ik : 1_ik+int(sqrt(real(length/2_ik, rk)), ik)) :: ip_copy
+    real(rk), dimension(0_ik : length/2_ik - 1_ik) :: work_copy
+    ip_copy = ip
+    work_copy = work
+    call cdft__(2_ik*length, direction, sequence, ip_copy, work_copy)
+  end subroutine fft_radix_eight__
   ! ############################################################################################################################# !
-  ! COMPUTE DATA TABLE (MEMORIZATION)
-  ! (SUBROUTINE) COMPUTE_TABLE_(<LENGTH>, <PAD>)
-  ! <LENGTH>               -- (IN)     LENGTH (IK)
-  ! <PAD>                  -- (IN)     PADDED LENGTH (IK)
+  ! compute data table (memorization)
+  ! (subroutine) compute_table_(<length>, <pad>)
+  ! <length>               -- (in)     length (ik)
+  ! <pad>                  -- (in)     padded length (ik)
   ! void    compute_table_(int* length, int* pad) ;
-  MODULE SUBROUTINE COMPUTE_TABLE_(LENGTH, PAD) &
-    BIND(C, NAME = "compute_table_")
-    INTEGER(IK), INTENT(IN) :: LENGTH
-    INTEGER(IK), INTENT(IN) :: PAD
-    ALLOCATE(BANK%BIT_FFT(2_IK+INT(SQRT(REAL(PAD/2_IK, RK)), IK)))
-    ALLOCATE(BANK%BIT_FFRFT(2_IK+INT(SQRT(REAL(LENGTH/1_IK, RK)), IK)))
-    ALLOCATE(BANK%TRIG_FFT(PAD/2_IK))
-    ALLOCATE(BANK%TRIG_FFRFT(LENGTH/1_IK))
-    ALLOCATE(BANK%COS_FST(LENGTH))
-    ALLOCATE(BANK%SIN_FST(LENGTH))
-    ALLOCATE(BANK%COS_LST(LENGTH))
-    ALLOCATE(BANK%SIN_LST(LENGTH))
-    CALL MAKE_FFT_DATA__(PAD, BANK%BIT_FFT, BANK%TRIG_FFT)
-    CALL MAKE_FFT_DATA__(2_IK*LENGTH, BANK%BIT_FFRFT, BANK%TRIG_FFRFT)
-    CALL MAKE_FFRFT_DATA__(LENGTH, BANK%COS_FST, BANK%SIN_FST, BANK%COS_LST, BANK%SIN_LST)
-  END SUBROUTINE COMPUTE_TABLE_
+  module subroutine compute_table_(length, pad) &
+    bind(c, name = "compute_table_")
+    integer(ik), intent(in) :: length
+    integer(ik), intent(in) :: pad
+    allocate(bank%bit_fft(2_ik+int(sqrt(real(pad/2_ik, rk)), ik)))
+    allocate(bank%bit_ffrft(2_ik+int(sqrt(real(length/1_ik, rk)), ik)))
+    allocate(bank%trig_fft(pad/2_ik))
+    allocate(bank%trig_ffrft(length/1_ik))
+    allocate(bank%cos_fst(length))
+    allocate(bank%sin_fst(length))
+    allocate(bank%cos_lst(length))
+    allocate(bank%sin_lst(length))
+    call make_fft_data__(pad, bank%bit_fft, bank%trig_fft)
+    call make_fft_data__(2_ik*length, bank%bit_ffrft, bank%trig_ffrft)
+    call make_ffrft_data__(length, bank%cos_fst, bank%sin_fst, bank%cos_lst, bank%sin_lst)
+  end subroutine compute_table_
   ! ############################################################################################################################# !
-  ! DESTROY DATA TABLE
-  ! (SUBROUTINE) DESTROY_TABLE_()
+  ! destroy data table
+  ! (subroutine) destroy_table_()
   ! void    destroy_table_() ;
-  MODULE SUBROUTINE DESTROY_TABLE_() &
-    BIND(C, NAME = "destroy_table_")
-    DEALLOCATE(BANK%BIT_FFT)
-    DEALLOCATE(BANK%BIT_FFRFT)
-    DEALLOCATE(BANK%TRIG_FFT)
-    DEALLOCATE(BANK%TRIG_FFRFT)
-    DEALLOCATE(BANK%COS_FST)
-    DEALLOCATE(BANK%SIN_FST)
-    DEALLOCATE(BANK%COS_LST)
-    DEALLOCATE(BANK%SIN_LST)
-  END SUBROUTINE DESTROY_TABLE_
+  module subroutine destroy_table_() &
+    bind(c, name = "destroy_table_")
+    deallocate(bank%bit_fft)
+    deallocate(bank%bit_ffrft)
+    deallocate(bank%trig_fft)
+    deallocate(bank%trig_ffrft)
+    deallocate(bank%cos_fst)
+    deallocate(bank%sin_fst)
+    deallocate(bank%cos_lst)
+    deallocate(bank%sin_lst)
+  end subroutine destroy_table_
   ! ############################################################################################################################# !
-  ! MAKE FFT DATA
-  ! (SUBROUTINE) MAKE_FFT_DATA__(<LENGTH>, <IP>, <WORK>)
-  MODULE SUBROUTINE MAKE_FFT_DATA__(LENGTH, IP, WORK)
-    INTEGER(IK), INTENT(IN) :: LENGTH
-    INTEGER(IK), DIMENSION(0_IK : 1_IK+INT(SQRT(REAL(LENGTH/2_IK, RK)), IK)), INTENT(OUT) :: IP
-    REAL(RK), DIMENSION(0_IK : LENGTH/2_IK - 1_IK), INTENT(OUT) :: WORK
-    IP = 0_IK
-    WORK = 0.0_RK
-    CALL MAKE_FFT_TABLE_(LENGTH/2_IK, IP, WORK)
-  END SUBROUTINE MAKE_FFT_DATA__
+  ! make fft data
+  ! (subroutine) make_fft_data__(<length>, <ip>, <work>)
+  module subroutine make_fft_data__(length, ip, work)
+    integer(ik), intent(in) :: length
+    integer(ik), dimension(0_ik : 1_ik+int(sqrt(real(length/2_ik, rk)), ik)), intent(out) :: ip
+    real(rk), dimension(0_ik : length/2_ik - 1_ik), intent(out) :: work
+    ip = 0_ik
+    work = 0.0_rk
+    call make_fft_table_(length/2_ik, ip, work)
+  end subroutine make_fft_data__
   ! ############################################################################################################################# !
-  ! MAKE FFRFT DATA
-  ! (SUBROUTINE) MAKE_FFRFT_DATA__(LENGTH, COS_FST, SIN_FST, COS_LST, SIN_LST)
-  MODULE SUBROUTINE MAKE_FFRFT_DATA__(LENGTH, COS_FST, SIN_FST, COS_LST, SIN_LST)
-    INTEGER(IK), INTENT(IN) :: LENGTH
-    REAL(RK), DIMENSION(LENGTH), INTENT(OUT)   :: COS_FST
-    REAL(RK), DIMENSION(LENGTH), INTENT(OUT)   :: SIN_FST
-    REAL(RK), DIMENSION(LENGTH), INTENT(OUT)   :: COS_LST
-    REAL(RK), DIMENSION(LENGTH), INTENT(OUT)   :: SIN_LST
-    INTEGER(IK) :: I
-    REAL(RK) :: FACTOR
-    REAL(RK), DIMENSION(LENGTH) :: MUL
-    FACTOR = TWO_PI/REAL(LENGTH, RK)**2_IK
-    MUL = FACTOR*REAL([(I, I = 0_IK, LENGTH-1_IK, 1_IK)], RK)**2_IK
-    COS_FST = COS(MUL)
-    SIN_FST = SIN(MUL)
-    MUL = -FACTOR*(REAL([(I, I = LENGTH+1_IK, 2_IK*LENGTH, 1_IK)], RK)-1.0_RK-2.0_RK*REAL(LENGTH, RK))**2_IK
-    COS_LST = COS(MUL)
-    SIN_LST = SIN(MUL)
-  END SUBROUTINE MAKE_FFRFT_DATA__
+  ! make ffrft data
+  ! (subroutine) make_ffrft_data__(length, cos_fst, sin_fst, cos_lst, sin_lst)
+  module subroutine make_ffrft_data__(length, cos_fst, sin_fst, cos_lst, sin_lst)
+    integer(ik), intent(in) :: length
+    real(rk), dimension(length), intent(out)   :: cos_fst
+    real(rk), dimension(length), intent(out)   :: sin_fst
+    real(rk), dimension(length), intent(out)   :: cos_lst
+    real(rk), dimension(length), intent(out)   :: sin_lst
+    integer(ik) :: i
+    real(rk) :: factor
+    real(rk), dimension(length) :: mul
+    factor = two_pi/real(length, rk)**2_ik
+    mul = factor*real([(i, i = 0_ik, length-1_ik, 1_ik)], rk)**2_ik
+    cos_fst = cos(mul)
+    sin_fst = sin(mul)
+    mul = -factor*(real([(i, i = length+1_ik, 2_ik*length, 1_ik)], rk)-1.0_rk-2.0_rk*real(length, rk))**2_ik
+    cos_lst = cos(mul)
+    sin_lst = sin(mul)
+  end subroutine make_ffrft_data__
   ! ############################################################################################################################# !
-  ! (TAKUYA OOURA) CDFT_
-  MODULE SUBROUTINE CDFT_(LENGTH, DIRECTION, SEQUENCE, IP, WORK)
-    INTEGER(IK), INTENT(IN) :: LENGTH
-    INTEGER(IK), INTENT(IN) :: DIRECTION
-    REAL(RK), INTENT(INOUT) :: SEQUENCE(0_IK : *)
-    INTEGER(IK), INTENT(INOUT) :: IP(0_IK : *)
-    REAL(RK), INTENT(INOUT) :: WORK(0_IK : *)
-    CALL MAKE_FFT_TABLE_(LENGTH/4_IK, IP, WORK)
-    IF (DIRECTION == FFT_FORWARD) THEN
-      CALL BIT_REVERSE_(LENGTH, IP(2_IK), SEQUENCE)
-      CALL CFT_FORWARD_(LENGTH, SEQUENCE, WORK)
-    ELSE IF(DIRECTION == FFT_INVERSE) THEN
-      CALL BIT_REVERSE_CONJUGATE_(LENGTH, IP(2_IK), SEQUENCE)
-      CALL CFT_INVERSE_(LENGTH, SEQUENCE, WORK)
-    END IF
-  END SUBROUTINE CDFT_
+  ! (takuya ooura) cdft_
+  module subroutine cdft_(length, direction, sequence, ip, work)
+    integer(ik), intent(in) :: length
+    integer(ik), intent(in) :: direction
+    real(rk), intent(inout) :: sequence(0_ik : *)
+    integer(ik), intent(inout) :: ip(0_ik : *)
+    real(rk), intent(inout) :: work(0_ik : *)
+    call make_fft_table_(length/4_ik, ip, work)
+    if (direction == fft_forward) then
+      call bit_reverse_(length, ip(2_ik), sequence)
+      call cft_forward_(length, sequence, work)
+    else if(direction == fft_inverse) then
+      call bit_reverse_conjugate_(length, ip(2_ik), sequence)
+      call cft_inverse_(length, sequence, work)
+    end if
+  end subroutine cdft_
   ! ############################################################################################################################# !
-  ! (TAKUYA OOURA) CDFT__
-  MODULE SUBROUTINE CDFT__(LENGTH, DIRECTION, SEQUENCE, IP, WORK)
-    INTEGER(IK), INTENT(IN) :: LENGTH
-    INTEGER(IK), INTENT(IN) :: DIRECTION
-    REAL(RK), INTENT(INOUT) :: SEQUENCE(0_IK : *)
-    INTEGER(IK), INTENT(INOUT) :: IP(0_IK : *)
-    REAL(RK), INTENT(INOUT) :: WORK(0_IK : *)
-    IF (DIRECTION == FFT_FORWARD) THEN
-      CALL BIT_REVERSE_(LENGTH, IP(2_IK), SEQUENCE)
-      CALL CFT_FORWARD_(LENGTH, SEQUENCE, WORK)
-    ELSE IF(DIRECTION == FFT_INVERSE) THEN
-      CALL BIT_REVERSE_CONJUGATE_(LENGTH, IP(2_IK), SEQUENCE)
-      CALL CFT_INVERSE_(LENGTH, SEQUENCE, WORK)
-    END IF
-  END SUBROUTINE CDFT__
+  ! (takuya ooura) cdft__
+  module subroutine cdft__(length, direction, sequence, ip, work)
+    integer(ik), intent(in) :: length
+    integer(ik), intent(in) :: direction
+    real(rk), intent(inout) :: sequence(0_ik : *)
+    integer(ik), intent(inout) :: ip(0_ik : *)
+    real(rk), intent(inout) :: work(0_ik : *)
+    if (direction == fft_forward) then
+      call bit_reverse_(length, ip(2_ik), sequence)
+      call cft_forward_(length, sequence, work)
+    else if(direction == fft_inverse) then
+      call bit_reverse_conjugate_(length, ip(2_ik), sequence)
+      call cft_inverse_(length, sequence, work)
+    end if
+  end subroutine cdft__
   ! ############################################################################################################################# !
-  ! BIT_REVERSE_
-  MODULE SUBROUTINE BIT_REVERSE_(N, IP, A)
-    INTEGER(IK), INTENT(IN) :: N
-    INTEGER(IK), INTENT(INOUT) :: IP(0_IK : *)
-    REAL(RK), INTENT(INOUT) :: A(0_IK : N - 1_IK)
-    INTEGER(IK) :: J, J1, K, K1, L, M, M2
-    REAL(RK) :: XR, XI, YR, YI
-    IP(0_IK) = 0_IK
-    L = N
-    M = 1_IK
-    DO WHILE (8_IK * M < L)
-      L = L / 2_IK
-      DO J = 0_IK, M - 1_IK
-        IP(M + J) = IP(J) + L
-      END DO
-      M = M * 2_IK
-    END DO
-    M2 = 2_IK * M
-    IF (8_IK * M == L) THEN
-      DO K = 0_IK, M - 1_IK
-        DO J = 0_IK, K - 1_IK
-          J1 = 2_IK * J + IP(K)
-          K1 = 2_IK * K + IP(J)
-          XR = A(J1)
-          XI = A(J1 + 1_IK)
-          YR = A(K1)
-          YI = A(K1 + 1_IK)
-          A(J1) = YR
-          A(J1 + 1_IK) = YI
-          A(K1) = XR
-          A(K1 + 1_IK) = XI
-          J1 = J1 + M2
-          K1 = K1 + 2_IK * M2
-          XR = A(J1)
-          XI = A(J1 + 1_IK)
-          YR = A(K1)
-          YI = A(K1 + 1_IK)
-          A(J1) = YR
-          A(J1 + 1_IK) = YI
-          A(K1) = XR
-          A(K1 + 1_IK) = XI
-          J1 = J1 + M2
-          K1 = K1 - M2
-          XR = A(J1)
-          XI = A(J1 + 1_IK)
-          YR = A(K1)
-          YI = A(K1 + 1_IK)
-          A(J1) = YR
-          A(J1 + 1_IK) = YI
-          A(K1) = XR
-          A(K1 + 1_IK) = XI
-          J1 = J1 + M2
-          K1 = K1 + 2_IK * M2
-          XR = A(J1)
-          XI = A(J1 + 1_IK)
-          YR = A(K1)
-          YI = A(K1 + 1_IK)
-          A(J1) = YR
-          A(J1 + 1_IK) = YI
-          A(K1) = XR
-          A(K1 + 1_IK) = XI
-        END DO
-        J1 = 2_IK * K + M2 + IP(K)
-        K1 = J1 + M2
-        XR = A(J1)
-        XI = A(J1 + 1_IK)
-        YR = A(K1)
-        YI = A(K1 + 1_IK)
-        A(J1) = YR
-        A(J1 + 1_IK) = YI
-        A(K1) = XR
-        A(K1 + 1_IK) = XI
-      END DO
-    ELSE
-      DO K = 1_IK, M - 1_IK
-        DO J = 0_IK, K - 1_IK
-          J1 = 2_IK * J + IP(K)
-          K1 = 2_IK * K + IP(J)
-          XR = A(J1)
-          XI = A(J1 + 1_IK)
-          YR = A(K1)
-          YI = A(K1 + 1_IK)
-          A(J1) = YR
-          A(J1 + 1_IK) = YI
-          A(K1) = XR
-          A(K1 + 1_IK) = XI
-          J1 = J1 + M2
-          K1 = K1 + M2
-          XR = A(J1)
-          XI = A(J1 + 1_IK)
-          YR = A(K1)
-          YI = A(K1 + 1_IK)
-          A(J1) = YR
-          A(J1 + 1_IK) = YI
-          A(K1) = XR
-          A(K1 + 1_IK) = XI
-        END DO
-      END DO
-    END IF
-  END SUBROUTINE BIT_REVERSE_
+  ! bit_reverse_
+  module subroutine bit_reverse_(n, ip, a)
+    integer(ik), intent(in) :: n
+    integer(ik), intent(inout) :: ip(0_ik : *)
+    real(rk), intent(inout) :: a(0_ik : n - 1_ik)
+    integer(ik) :: j, j1, k, k1, l, m, m2
+    real(rk) :: xr, xi, yr, yi
+    ip(0_ik) = 0_ik
+    l = n
+    m = 1_ik
+    do while (8_ik * m < l)
+      l = l / 2_ik
+      do j = 0_ik, m - 1_ik
+        ip(m + j) = ip(j) + l
+      end do
+      m = m * 2_ik
+    end do
+    m2 = 2_ik * m
+    if (8_ik * m == l) then
+      do k = 0_ik, m - 1_ik
+        do j = 0_ik, k - 1_ik
+          j1 = 2_ik * j + ip(k)
+          k1 = 2_ik * k + ip(j)
+          xr = a(j1)
+          xi = a(j1 + 1_ik)
+          yr = a(k1)
+          yi = a(k1 + 1_ik)
+          a(j1) = yr
+          a(j1 + 1_ik) = yi
+          a(k1) = xr
+          a(k1 + 1_ik) = xi
+          j1 = j1 + m2
+          k1 = k1 + 2_ik * m2
+          xr = a(j1)
+          xi = a(j1 + 1_ik)
+          yr = a(k1)
+          yi = a(k1 + 1_ik)
+          a(j1) = yr
+          a(j1 + 1_ik) = yi
+          a(k1) = xr
+          a(k1 + 1_ik) = xi
+          j1 = j1 + m2
+          k1 = k1 - m2
+          xr = a(j1)
+          xi = a(j1 + 1_ik)
+          yr = a(k1)
+          yi = a(k1 + 1_ik)
+          a(j1) = yr
+          a(j1 + 1_ik) = yi
+          a(k1) = xr
+          a(k1 + 1_ik) = xi
+          j1 = j1 + m2
+          k1 = k1 + 2_ik * m2
+          xr = a(j1)
+          xi = a(j1 + 1_ik)
+          yr = a(k1)
+          yi = a(k1 + 1_ik)
+          a(j1) = yr
+          a(j1 + 1_ik) = yi
+          a(k1) = xr
+          a(k1 + 1_ik) = xi
+        end do
+        j1 = 2_ik * k + m2 + ip(k)
+        k1 = j1 + m2
+        xr = a(j1)
+        xi = a(j1 + 1_ik)
+        yr = a(k1)
+        yi = a(k1 + 1_ik)
+        a(j1) = yr
+        a(j1 + 1_ik) = yi
+        a(k1) = xr
+        a(k1 + 1_ik) = xi
+      end do
+    else
+      do k = 1_ik, m - 1_ik
+        do j = 0_ik, k - 1_ik
+          j1 = 2_ik * j + ip(k)
+          k1 = 2_ik * k + ip(j)
+          xr = a(j1)
+          xi = a(j1 + 1_ik)
+          yr = a(k1)
+          yi = a(k1 + 1_ik)
+          a(j1) = yr
+          a(j1 + 1_ik) = yi
+          a(k1) = xr
+          a(k1 + 1_ik) = xi
+          j1 = j1 + m2
+          k1 = k1 + m2
+          xr = a(j1)
+          xi = a(j1 + 1_ik)
+          yr = a(k1)
+          yi = a(k1 + 1_ik)
+          a(j1) = yr
+          a(j1 + 1_ik) = yi
+          a(k1) = xr
+          a(k1 + 1_ik) = xi
+        end do
+      end do
+    end if
+  end subroutine bit_reverse_
   ! ############################################################################################################################# !
-  ! BIT_REVERSE_CONJUGATE_
-  MODULE SUBROUTINE BIT_REVERSE_CONJUGATE_(N, IP, A)
-    INTEGER(IK), INTENT(IN) :: N
-    INTEGER(IK), INTENT(INOUT) :: IP(0_IK : *)
-    REAL(RK), INTENT(INOUT) :: A(0_IK : N - 1_IK)
-    INTEGER(IK) :: J, J1, K, K1, L, M, M2
-    REAL(RK) :: XR, XI, YR, YI
-    IP(0_IK) = 0_IK
-    L = N
-    M = 1_IK
-    DO WHILE (8_IK * M < L)
-      L = L / 2_IK
-      DO J = 0_IK, M - 1_IK
-        IP(M + J) = IP(J) + L
-      END DO
-      M = M * 2_IK
-    END DO
-    M2 = 2_IK * M
-    IF (8_IK * M == L) THEN
-      DO K = 0_IK, M - 1_IK
-        DO J = 0_IK, K - 1_IK
-          J1 = 2_IK * J + IP(K)
-          K1 = 2_IK * K + IP(J)
-          XR = A(J1)
-          XI = -A(J1 + 1_IK)
-          YR = A(K1)
-          YI = -A(K1 + 1_IK)
-          A(J1) = YR
-          A(J1 + 1_IK) = YI
-          A(K1) = XR
-          A(K1 + 1_IK) = XI
-          J1 = J1 + M2
-          K1 = K1 + 2_IK * M2
-          XR = A(J1)
-          XI = -A(J1 + 1_IK)
-          YR = A(K1)
-          YI = -A(K1 + 1_IK)
-          A(J1) = YR
-          A(J1 + 1_IK) = YI
-          A(K1) = XR
-          A(K1 + 1_IK) = XI
-          J1 = J1 + M2
-          K1 = K1 - M2
-          XR = A(J1)
-          XI = -A(J1 + 1_IK)
-          YR = A(K1)
-          YI = -A(K1 + 1_IK)
-          A(J1) = YR
-          A(J1 + 1_IK) = YI
-          A(K1) = XR
-          A(K1 + 1_IK) = XI
-          J1 = J1 + M2
-          K1 = K1 + 2_IK * M2
-          XR = A(J1)
-          XI = -A(J1 + 1_IK)
-          YR = A(K1)
-          YI = -A(K1 + 1_IK)
-          A(J1) = YR
-          A(J1 + 1_IK) = YI
-          A(K1) = XR
-          A(K1 + 1_IK) = XI
-        END DO
-        K1 = 2_IK * K + IP(K)
-        A(K1 + 1_IK) = -A(K1 + 1_IK)
-        J1 = K1 + M2
-        K1 = J1 + M2
-        XR = A(J1)
-        XI = -A(J1 + 1_IK)
-        YR = A(K1)
-        YI = -A(K1 + 1_IK)
-        A(J1) = YR
-        A(J1 + 1_IK) = YI
-        A(K1) = XR
-        A(K1 + 1_IK) = XI
-        K1 = K1 + M2
-        A(K1 + 1_IK) = -A(K1 + 1_IK)
-      END DO
-    ELSE
-      A(1_IK) = -A(1_IK)
-      A(M2 + 1_IK) = -A(M2 + 1_IK)
-      DO K = 1_IK, M - 1_IK
-        DO J = 0_IK, K - 1_IK
-          J1 = 2_IK * J + IP(K)
-          K1 = 2_IK * K + IP(J)
-          XR = A(J1)
-          XI = -A(J1 + 1_IK)
-          YR = A(K1)
-          YI = -A(K1 + 1_IK)
-          A(J1) = YR
-          A(J1 + 1_IK) = YI
-          A(K1) = XR
-          A(K1 + 1_IK) = XI
-          J1 = J1 + M2
-          K1 = K1 + M2
-          XR = A(J1)
-          XI = -A(J1 + 1_IK)
-          YR = A(K1)
-          YI = -A(K1 + 1_IK)
-          A(J1) = YR
-          A(J1 + 1_IK) = YI
-          A(K1) = XR
-          A(K1 + 1_IK) = XI
-        END DO
-        K1 = 2_IK * K + IP(K)
-        A(K1 + 1_IK) = -A(K1 + 1_IK)
-        A(K1 + M2 + 1_IK) = -A(K1 + M2 + 1_IK)
-      END DO
-    END IF
-  END SUBROUTINE BIT_REVERSE_CONJUGATE_
+  ! bit_reverse_conjugate_
+  module subroutine bit_reverse_conjugate_(n, ip, a)
+    integer(ik), intent(in) :: n
+    integer(ik), intent(inout) :: ip(0_ik : *)
+    real(rk), intent(inout) :: a(0_ik : n - 1_ik)
+    integer(ik) :: j, j1, k, k1, l, m, m2
+    real(rk) :: xr, xi, yr, yi
+    ip(0_ik) = 0_ik
+    l = n
+    m = 1_ik
+    do while (8_ik * m < l)
+      l = l / 2_ik
+      do j = 0_ik, m - 1_ik
+        ip(m + j) = ip(j) + l
+      end do
+      m = m * 2_ik
+    end do
+    m2 = 2_ik * m
+    if (8_ik * m == l) then
+      do k = 0_ik, m - 1_ik
+        do j = 0_ik, k - 1_ik
+          j1 = 2_ik * j + ip(k)
+          k1 = 2_ik * k + ip(j)
+          xr = a(j1)
+          xi = -a(j1 + 1_ik)
+          yr = a(k1)
+          yi = -a(k1 + 1_ik)
+          a(j1) = yr
+          a(j1 + 1_ik) = yi
+          a(k1) = xr
+          a(k1 + 1_ik) = xi
+          j1 = j1 + m2
+          k1 = k1 + 2_ik * m2
+          xr = a(j1)
+          xi = -a(j1 + 1_ik)
+          yr = a(k1)
+          yi = -a(k1 + 1_ik)
+          a(j1) = yr
+          a(j1 + 1_ik) = yi
+          a(k1) = xr
+          a(k1 + 1_ik) = xi
+          j1 = j1 + m2
+          k1 = k1 - m2
+          xr = a(j1)
+          xi = -a(j1 + 1_ik)
+          yr = a(k1)
+          yi = -a(k1 + 1_ik)
+          a(j1) = yr
+          a(j1 + 1_ik) = yi
+          a(k1) = xr
+          a(k1 + 1_ik) = xi
+          j1 = j1 + m2
+          k1 = k1 + 2_ik * m2
+          xr = a(j1)
+          xi = -a(j1 + 1_ik)
+          yr = a(k1)
+          yi = -a(k1 + 1_ik)
+          a(j1) = yr
+          a(j1 + 1_ik) = yi
+          a(k1) = xr
+          a(k1 + 1_ik) = xi
+        end do
+        k1 = 2_ik * k + ip(k)
+        a(k1 + 1_ik) = -a(k1 + 1_ik)
+        j1 = k1 + m2
+        k1 = j1 + m2
+        xr = a(j1)
+        xi = -a(j1 + 1_ik)
+        yr = a(k1)
+        yi = -a(k1 + 1_ik)
+        a(j1) = yr
+        a(j1 + 1_ik) = yi
+        a(k1) = xr
+        a(k1 + 1_ik) = xi
+        k1 = k1 + m2
+        a(k1 + 1_ik) = -a(k1 + 1_ik)
+      end do
+    else
+      a(1_ik) = -a(1_ik)
+      a(m2 + 1_ik) = -a(m2 + 1_ik)
+      do k = 1_ik, m - 1_ik
+        do j = 0_ik, k - 1_ik
+          j1 = 2_ik * j + ip(k)
+          k1 = 2_ik * k + ip(j)
+          xr = a(j1)
+          xi = -a(j1 + 1_ik)
+          yr = a(k1)
+          yi = -a(k1 + 1_ik)
+          a(j1) = yr
+          a(j1 + 1_ik) = yi
+          a(k1) = xr
+          a(k1 + 1_ik) = xi
+          j1 = j1 + m2
+          k1 = k1 + m2
+          xr = a(j1)
+          xi = -a(j1 + 1_ik)
+          yr = a(k1)
+          yi = -a(k1 + 1_ik)
+          a(j1) = yr
+          a(j1 + 1_ik) = yi
+          a(k1) = xr
+          a(k1 + 1_ik) = xi
+        end do
+        k1 = 2_ik * k + ip(k)
+        a(k1 + 1_ik) = -a(k1 + 1_ik)
+        a(k1 + m2 + 1_ik) = -a(k1 + m2 + 1_ik)
+      end do
+    end if
+  end subroutine bit_reverse_conjugate_
   ! ############################################################################################################################# !
-  ! MAKE_FFT_TABLE_
-  MODULE SUBROUTINE MAKE_FFT_TABLE_(NW, IP, W)
-    INTEGER(IK), INTENT(IN) :: NW
-    INTEGER(IK), INTENT(INOUT) :: IP(0_IK : *)
-    REAL(RK), INTENT(INOUT) :: W(0_IK : NW - 1_IK)
-    INTEGER(IK) :: J, NWH
-    REAL(RK) :: DELTA, X, Y
-    NWH = NW / 2_IK
-    DELTA = ONE_PI / (4.0_RK * REAL(NWH, RK))
-    W(0_IK) = 1_IK
-    W(1_IK) = 0_IK
-    W(NWH) = COS(DELTA * REAL(NWH, RK))
-    W(NWH + 1_IK) = W(NWH)
-    IF (NWH > 2_IK) THEN
-      DO J = 2_IK, NWH - 2_IK, 2_IK
-        X = COS(DELTA * REAL(J,RK))
-        Y = SIN(DELTA * REAL(J,RK))
-        W(J) = X
-        W(J + 1) = Y
-        W(NW - J) = Y
-        W(NW - J + 1_IK) = X
-      END DO
-      DO J = NWH - 2_IK, 2_IK, -2_IK
-        X = W(2_IK * J)
-        Y = W(2_IK * J + 1_IK)
-        W(NWH + J) = X
-        W(NWH + J + 1_IK) = Y
-      END DO
-      IP(0_IK) = NW
-      IP(1_IK) = 1_IK
-      CALL BIT_REVERSE_(NW, IP(2_IK), W)
-    END IF
-  END SUBROUTINE MAKE_FFT_TABLE_
+  ! make_fft_table_
+  module subroutine make_fft_table_(nw, ip, w)
+    integer(ik), intent(in) :: nw
+    integer(ik), intent(inout) :: ip(0_ik : *)
+    real(rk), intent(inout) :: w(0_ik : nw - 1_ik)
+    integer(ik) :: j, nwh
+    real(rk) :: delta, x, y
+    nwh = nw / 2_ik
+    delta = one_pi / (4.0_rk * real(nwh, rk))
+    w(0_ik) = 1_ik
+    w(1_ik) = 0_ik
+    w(nwh) = cos(delta * real(nwh, rk))
+    w(nwh + 1_ik) = w(nwh)
+    if (nwh > 2_ik) then
+      do j = 2_ik, nwh - 2_ik, 2_ik
+        x = cos(delta * real(j,rk))
+        y = sin(delta * real(j,rk))
+        w(j) = x
+        w(j + 1) = y
+        w(nw - j) = y
+        w(nw - j + 1_ik) = x
+      end do
+      do j = nwh - 2_ik, 2_ik, -2_ik
+        x = w(2_ik * j)
+        y = w(2_ik * j + 1_ik)
+        w(nwh + j) = x
+        w(nwh + j + 1_ik) = y
+      end do
+      ip(0_ik) = nw
+      ip(1_ik) = 1_ik
+      call bit_reverse_(nw, ip(2_ik), w)
+    end if
+  end subroutine make_fft_table_
   ! ############################################################################################################################# !
-  ! CFT_FORWARD_
-  MODULE SUBROUTINE CFT_FORWARD_(N, A, W)
-    INTEGER(IK), INTENT(IN) :: N
-    REAL(RK), INTENT(INOUT) :: A(0_IK : N - 1_IK)
-    REAL(RK), INTENT(IN) :: W(0_IK : *)
-    INTEGER(IK) :: J, J1, J2, J3, L
-    REAL(RK) :: X0R, X0I, X1R, X1I, X2R, X2I, X3R, X3I
-    L = 2_IK
-    IF (N >= 16_IK) THEN
-      CALL CFT_1ST_(N, A, W)
-      L = 16_IK
-      DO WHILE (8_IK * L <= N)
-        CALL CFT_MDL_(N, L, A, W)
-        L = 8_IK * L
-      END DO
-    END IF
-    IF (2_IK * L < N) THEN
-      DO J = 0_IK, L - 2_IK, 2_IK
-        J1 = J + L
-        J2 = J1 + L
-        J3 = J2 + L
-        X0R = A(J) + A(J1)
-        X0I = A(J + 1_IK) + A(J1 + 1_IK)
-        X1R = A(J) - A(J1)
-        X1I = A(J + 1_IK) - A(J1 + 1_IK)
-        X2R = A(J2) + A(J3)
-        X2I = A(J2 + 1_IK) + A(J3 + 1_IK)
-        X3R = A(J2) - A(J3)
-        X3I = A(J2 + 1_IK) - A(J3 + 1_IK)
-        A(J) = X0R + X2R
-        A(J + 1_IK) = X0I + X2I
-        A(J2) = X0R - X2R
-        A(J2 + 1_IK) = X0I - X2I
-        A(J1) = X1R - X3I
-        A(J1 + 1_IK) = X1I + X3R
-        A(J3) = X1R + X3I
-        A(J3 + 1_IK) = X1I - X3R
-      END DO
-    ELSE IF (2_IK * L == N) THEN
-      DO J = 0_IK, L - 2_IK, 2_IK
-        J1 = J + L
-        X0R = A(J) - A(J1)
-        X0I = A(J + 1_IK) - A(J1 + 1_IK)
-        A(J) = A(J) + A(J1)
-        A(J + 1_IK) = A(J + 1_IK) + A(J1 + 1_IK)
-        A(J1) = X0R
-        A(J1 + 1_IK) = X0I
-      END DO
-    END IF
-  END SUBROUTINE CFT_FORWARD_
+  ! cft_forward_
+  module subroutine cft_forward_(n, a, w)
+    integer(ik), intent(in) :: n
+    real(rk), intent(inout) :: a(0_ik : n - 1_ik)
+    real(rk), intent(in) :: w(0_ik : *)
+    integer(ik) :: j, j1, j2, j3, l
+    real(rk) :: x0r, x0i, x1r, x1i, x2r, x2i, x3r, x3i
+    l = 2_ik
+    if (n >= 16_ik) then
+      call cft_1st_(n, a, w)
+      l = 16_ik
+      do while (8_ik * l <= n)
+        call cft_mdl_(n, l, a, w)
+        l = 8_ik * l
+      end do
+    end if
+    if (2_ik * l < n) then
+      do j = 0_ik, l - 2_ik, 2_ik
+        j1 = j + l
+        j2 = j1 + l
+        j3 = j2 + l
+        x0r = a(j) + a(j1)
+        x0i = a(j + 1_ik) + a(j1 + 1_ik)
+        x1r = a(j) - a(j1)
+        x1i = a(j + 1_ik) - a(j1 + 1_ik)
+        x2r = a(j2) + a(j3)
+        x2i = a(j2 + 1_ik) + a(j3 + 1_ik)
+        x3r = a(j2) - a(j3)
+        x3i = a(j2 + 1_ik) - a(j3 + 1_ik)
+        a(j) = x0r + x2r
+        a(j + 1_ik) = x0i + x2i
+        a(j2) = x0r - x2r
+        a(j2 + 1_ik) = x0i - x2i
+        a(j1) = x1r - x3i
+        a(j1 + 1_ik) = x1i + x3r
+        a(j3) = x1r + x3i
+        a(j3 + 1_ik) = x1i - x3r
+      end do
+    else if (2_ik * l == n) then
+      do j = 0_ik, l - 2_ik, 2_ik
+        j1 = j + l
+        x0r = a(j) - a(j1)
+        x0i = a(j + 1_ik) - a(j1 + 1_ik)
+        a(j) = a(j) + a(j1)
+        a(j + 1_ik) = a(j + 1_ik) + a(j1 + 1_ik)
+        a(j1) = x0r
+        a(j1 + 1_ik) = x0i
+      end do
+    end if
+  end subroutine cft_forward_
   ! ############################################################################################################################# !
-  ! CFT_INVERSE_
-  MODULE SUBROUTINE CFT_INVERSE_(N, A, W)
-    INTEGER(IK), INTENT(IN) :: N
-    REAL(RK), INTENT(INOUT) :: A(0_IK : N - 1_IK)
-    REAL(RK), INTENT(IN) :: W(0_IK : *)
-    INTEGER(IK) :: J, J1, J2, J3, J4, J5, J6, J7, L
-    REAL(RK) ::  WN4R, X0R, X0I, X1R, X1I, X2R, X2I, X3R, X3I
-    REAL(RK) :: Y0R, Y0I, Y1R, Y1I, Y2R, Y2I, Y3R, Y3I
-    REAL(RK) :: Y4R, Y4I, Y5R, Y5I, Y6R, Y6I, Y7R, Y7I
-    L = 2_IK
-    IF (N > 16_IK) THEN
-      CALL CFT_1ST_(N, A, W)
-      L = 16_IK
-      DO WHILE (8_IK * L < N)
-        CALL CFT_MDL_(N, L, A, W)
-        L = 8_IK * L
-      END DO
-    END IF
-    IF (4_IK * L < N) THEN
-      WN4R = W(2_IK)
-      DO J = 0_IK, L - 2_IK, 2_IK
-        J1 = J + L
-        J2 = J1 + L
-        J3 = J2 + L
-        J4 = J3 + L
-        J5 = J4 + L
-        J6 = J5 + L
-        J7 = J6 + L
-        X0R = A(J) + A(J1)
-        X0I = -A(J + 1_IK) - A(J1 + 1_IK)
-        X1R = A(J) - A(J1)
-        X1I = -A(J + 1_IK) + A(J1 + 1_IK)
-        X2R = A(J2) + A(J3)
-        X2I = A(J2 + 1_IK) + A(J3 + 1_IK)
-        X3R = A(J2) - A(J3)
-        X3I = A(J2 + 1_IK) - A(J3 + 1_IK)
-        Y0R = X0R + X2R
-        Y0I = X0I - X2I
-        Y2R = X0R - X2R
-        Y2I = X0I + X2I
-        Y1R = X1R - X3I
-        Y1I = X1I - X3R
-        Y3R = X1R + X3I
-        Y3I = X1I + X3R
-        X0R = A(J4) + A(J5)
-        X0I = A(J4 + 1_IK) + A(J5 + 1_IK)
-        X1R = A(J4) - A(J5)
-        X1I = A(J4 + 1_IK) - A(J5 + 1_IK)
-        X2R = A(J6) + A(J7)
-        X2I = A(J6 + 1_IK) + A(J7 + 1_IK)
-        X3R = A(J6) - A(J7)
-        X3I = A(J6 + 1_IK) - A(J7 + 1_IK)
-        Y4R = X0R + X2R
-        Y4I = X0I + X2I
-        Y6R = X0R - X2R
-        Y6I = X0I - X2I
-        X0R = X1R - X3I
-        X0I = X1I + X3R
-        X2R = X1R + X3I
-        X2I = X1I - X3R
-        Y5R = WN4R * (X0R - X0I)
-        Y5I = WN4R * (X0R + X0I)
-        Y7R = WN4R * (X2R - X2I)
-        Y7I = WN4R * (X2R + X2I)
-        A(J1) = Y1R + Y5R
-        A(J1 + 1_IK) = Y1I - Y5I
-        A(J5) = Y1R - Y5R
-        A(J5 + 1_IK) = Y1I + Y5I
-        A(J3) = Y3R - Y7I
-        A(J3 + 1_IK) = Y3I - Y7R
-        A(J7) = Y3R + Y7I
-        A(J7 + 1_IK) = Y3I + Y7R
-        A(J) = Y0R + Y4R
-        A(J + 1_IK) = Y0I - Y4I
-        A(J4) = Y0R - Y4R
-        A(J4 + 1_IK) = Y0I + Y4I
-        A(J2) = Y2R - Y6I
-        A(J2 + 1_IK) = Y2I - Y6R
-        A(J6) = Y2R + Y6I
-        A(J6 + 1_IK) = Y2I + Y6R
-      END DO
-    ELSE IF (4_IK * L == N) THEN
-      DO J = 0_IK, L - 2_IK, 2_IK
-        J1 = J + L
-        J2 = J1 + L
-        J3 = J2 + L
-        X0R = A(J) + A(J1)
-        X0I = -A(J + 1_IK) - A(J1 + 1_IK)
-        X1R = A(J) - A(J1)
-        X1I = -A(J + 1_IK) + A(J1 + 1_IK)
-        X2R = A(J2) + A(J3)
-        X2I = A(J2 + 1_IK) + A(J3 + 1_IK)
-        X3R = A(J2) - A(J3)
-        X3I = A(J2 + 1_IK) - A(J3 + 1_IK)
-        A(J) = X0R + X2R
-        A(J + 1_IK) = X0I - X2I
-        A(J2) = X0R - X2R
-        A(J2 + 1_IK) = X0I + X2I
-        A(J1) = X1R - X3I
-        A(J1 + 1_IK) = X1I - X3R
-        A(J3) = X1R + X3I
-        A(J3 + 1_IK) = X1I + X3R
-      END DO
-    ELSE
-      DO J = 0_IK, L - 2_IK, 2_IK
-        J1 = J + L
-        X0R = A(J) - A(J1)
-        X0I = -A(J + 1_IK) + A(J1 + 1_IK)
-        A(J) = A(J) + A(J1)
-        A(J + 1_IK) = -A(J + 1_IK) - A(J1 + 1_IK)
-        A(J1) = X0R
-        A(J1 + 1_IK) = X0I
-      END DO
-    END IF
-  END SUBROUTINE CFT_INVERSE_
+  ! cft_inverse_
+  module subroutine cft_inverse_(n, a, w)
+    integer(ik), intent(in) :: n
+    real(rk), intent(inout) :: a(0_ik : n - 1_ik)
+    real(rk), intent(in) :: w(0_ik : *)
+    integer(ik) :: j, j1, j2, j3, j4, j5, j6, j7, l
+    real(rk) ::  wn4r, x0r, x0i, x1r, x1i, x2r, x2i, x3r, x3i
+    real(rk) :: y0r, y0i, y1r, y1i, y2r, y2i, y3r, y3i
+    real(rk) :: y4r, y4i, y5r, y5i, y6r, y6i, y7r, y7i
+    l = 2_ik
+    if (n > 16_ik) then
+      call cft_1st_(n, a, w)
+      l = 16_ik
+      do while (8_ik * l < n)
+        call cft_mdl_(n, l, a, w)
+        l = 8_ik * l
+      end do
+    end if
+    if (4_ik * l < n) then
+      wn4r = w(2_ik)
+      do j = 0_ik, l - 2_ik, 2_ik
+        j1 = j + l
+        j2 = j1 + l
+        j3 = j2 + l
+        j4 = j3 + l
+        j5 = j4 + l
+        j6 = j5 + l
+        j7 = j6 + l
+        x0r = a(j) + a(j1)
+        x0i = -a(j + 1_ik) - a(j1 + 1_ik)
+        x1r = a(j) - a(j1)
+        x1i = -a(j + 1_ik) + a(j1 + 1_ik)
+        x2r = a(j2) + a(j3)
+        x2i = a(j2 + 1_ik) + a(j3 + 1_ik)
+        x3r = a(j2) - a(j3)
+        x3i = a(j2 + 1_ik) - a(j3 + 1_ik)
+        y0r = x0r + x2r
+        y0i = x0i - x2i
+        y2r = x0r - x2r
+        y2i = x0i + x2i
+        y1r = x1r - x3i
+        y1i = x1i - x3r
+        y3r = x1r + x3i
+        y3i = x1i + x3r
+        x0r = a(j4) + a(j5)
+        x0i = a(j4 + 1_ik) + a(j5 + 1_ik)
+        x1r = a(j4) - a(j5)
+        x1i = a(j4 + 1_ik) - a(j5 + 1_ik)
+        x2r = a(j6) + a(j7)
+        x2i = a(j6 + 1_ik) + a(j7 + 1_ik)
+        x3r = a(j6) - a(j7)
+        x3i = a(j6 + 1_ik) - a(j7 + 1_ik)
+        y4r = x0r + x2r
+        y4i = x0i + x2i
+        y6r = x0r - x2r
+        y6i = x0i - x2i
+        x0r = x1r - x3i
+        x0i = x1i + x3r
+        x2r = x1r + x3i
+        x2i = x1i - x3r
+        y5r = wn4r * (x0r - x0i)
+        y5i = wn4r * (x0r + x0i)
+        y7r = wn4r * (x2r - x2i)
+        y7i = wn4r * (x2r + x2i)
+        a(j1) = y1r + y5r
+        a(j1 + 1_ik) = y1i - y5i
+        a(j5) = y1r - y5r
+        a(j5 + 1_ik) = y1i + y5i
+        a(j3) = y3r - y7i
+        a(j3 + 1_ik) = y3i - y7r
+        a(j7) = y3r + y7i
+        a(j7 + 1_ik) = y3i + y7r
+        a(j) = y0r + y4r
+        a(j + 1_ik) = y0i - y4i
+        a(j4) = y0r - y4r
+        a(j4 + 1_ik) = y0i + y4i
+        a(j2) = y2r - y6i
+        a(j2 + 1_ik) = y2i - y6r
+        a(j6) = y2r + y6i
+        a(j6 + 1_ik) = y2i + y6r
+      end do
+    else if (4_ik * l == n) then
+      do j = 0_ik, l - 2_ik, 2_ik
+        j1 = j + l
+        j2 = j1 + l
+        j3 = j2 + l
+        x0r = a(j) + a(j1)
+        x0i = -a(j + 1_ik) - a(j1 + 1_ik)
+        x1r = a(j) - a(j1)
+        x1i = -a(j + 1_ik) + a(j1 + 1_ik)
+        x2r = a(j2) + a(j3)
+        x2i = a(j2 + 1_ik) + a(j3 + 1_ik)
+        x3r = a(j2) - a(j3)
+        x3i = a(j2 + 1_ik) - a(j3 + 1_ik)
+        a(j) = x0r + x2r
+        a(j + 1_ik) = x0i - x2i
+        a(j2) = x0r - x2r
+        a(j2 + 1_ik) = x0i + x2i
+        a(j1) = x1r - x3i
+        a(j1 + 1_ik) = x1i - x3r
+        a(j3) = x1r + x3i
+        a(j3 + 1_ik) = x1i + x3r
+      end do
+    else
+      do j = 0_ik, l - 2_ik, 2_ik
+        j1 = j + l
+        x0r = a(j) - a(j1)
+        x0i = -a(j + 1_ik) + a(j1 + 1_ik)
+        a(j) = a(j) + a(j1)
+        a(j + 1_ik) = -a(j + 1_ik) - a(j1 + 1_ik)
+        a(j1) = x0r
+        a(j1 + 1_ik) = x0i
+      end do
+    end if
+  end subroutine cft_inverse_
   ! ############################################################################################################################# !
-  ! CFT_1ST_
-  MODULE SUBROUTINE CFT_1ST_(N, A, W)
-    INTEGER(IK), INTENT(IN) :: N
-    REAL(RK), INTENT(INOUT) :: A(0_IK : N - 1_IK)
-    REAL(RK), INTENT(IN) :: W(0_IK : *)
-    INTEGER(IK) :: J, K1
-    REAL(RK) ::  WN4R, WTMP, WK1R, WK1I, WK2R, WK2I, WK3R, WK3I
-    REAL(RK) ::  WK4R, WK4I, WK5R, WK5I, WK6R, WK6I, WK7R, WK7I
-    REAL(RK) ::  X0R, X0I, X1R, X1I, X2R, X2I, X3R, X3I
-    REAL(RK) ::  Y0R, Y0I, Y1R, Y1I, Y2R, Y2I, Y3R, Y3I
-    REAL(RK) :: Y4R, Y4I, Y5R, Y5I, Y6R, Y6I, Y7R, Y7I
-    WN4R = W(2_IK)
-    X0R = A(0_IK) + A(2_IK)
-    X0I = A(1_IK) + A(3_IK)
-    X1R = A(0_IK) - A(2_IK)
-    X1I = A(1_IK) - A(3_IK)
-    X2R = A(4_IK) + A(6_IK)
-    X2I = A(5_IK) + A(7_IK)
-    X3R = A(4_IK) - A(6_IK)
-    X3I = A(5_IK) - A(7_IK)
-    Y0R = X0R + X2R
-    Y0I = X0I + X2I
-    Y2R = X0R - X2R
-    Y2I = X0I - X2I
-    Y1R = X1R - X3I
-    Y1I = X1I + X3R
-    Y3R = X1R + X3I
-    Y3I = X1I - X3R
-    X0R = A(8_IK) + A(10_IK)
-    X0I = A(9_IK) + A(11_IK)
-    X1R = A(8_IK) - A(10_IK)
-    X1I = A(9_IK) - A(11_IK)
-    X2R = A(12_IK) + A(14_IK)
-    X2I = A(13_IK) + A(15_IK)
-    X3R = A(12_IK) - A(14_IK)
-    X3I = A(13_IK) - A(15_IK)
-    Y4R = X0R + X2R
-    Y4I = X0I + X2I
-    Y6R = X0R - X2R
-    Y6I = X0I - X2I
-    X0R = X1R - X3I
-    X0I = X1I + X3R
-    X2R = X1R + X3I
-    X2I = X1I - X3R
-    Y5R = WN4R * (X0R - X0I)
-    Y5I = WN4R * (X0R + X0I)
-    Y7R = WN4R * (X2R - X2I)
-    Y7I = WN4R * (X2R + X2I)
-    A(2_IK) = Y1R + Y5R
-    A(3_IK) = Y1I + Y5I
-    A(10_IK) = Y1R - Y5R
-    A(11_IK) = Y1I - Y5I
-    A(6_IK) = Y3R - Y7I
-    A(7_IK) = Y3I + Y7R
-    A(14_IK) = Y3R + Y7I
-    A(15_IK) = Y3I - Y7R
-    A(0_IK) = Y0R + Y4R
-    A(1_IK) = Y0I + Y4I
-    A(8_IK) = Y0R - Y4R
-    A(9_IK) = Y0I - Y4I
-    A(4_IK) = Y2R - Y6I
-    A(5_IK) = Y2I + Y6R
-    A(12_IK) = Y2R + Y6I
-    A(13_IK) = Y2I - Y6R
-    IF (N > 16_IK) THEN
-      WK1R = W(4_IK)
-      WK1I = W(5_IK)
-      X0R = A(16_IK) + A(18_IK)
-      X0I = A(17_IK) + A(19_IK)
-      X1R = A(16_IK) - A(18_IK)
-      X1I = A(17_IK) - A(19_IK)
-      X2R = A(20_IK) + A(22_IK)
-      X2I = A(21_IK) + A(23_IK)
-      X3R = A(20_IK) - A(22_IK)
-      X3I = A(21_IK) - A(23_IK)
-      Y0R = X0R + X2R
-      Y0I = X0I + X2I
-      Y2R = X0R - X2R
-      Y2I = X0I - X2I
-      Y1R = X1R - X3I
-      Y1I = X1I + X3R
-      Y3R = X1R + X3I
-      Y3I = X1I - X3R
-      X0R = A(24_IK) + A(26_IK)
-      X0I = A(25_IK) + A(27_IK)
-      X1R = A(24_IK) - A(26_IK)
-      X1I = A(25_IK) - A(27_IK)
-      X2R = A(28_IK) + A(30_IK)
-      X2I = A(29_IK) + A(31_IK)
-      X3R = A(28_IK) - A(30_IK)
-      X3I = A(29_IK) - A(31_IK)
-      Y4R = X0R + X2R
-      Y4I = X0I + X2I
-      Y6R = X0R - X2R
-      Y6I = X0I - X2I
-      X0R = X1R - X3I
-      X0I = X1I + X3R
-      X2R = X1R + X3I
-      X2I = X3R - X1I
-      Y5R = WK1I * X0R - WK1R * X0I
-      Y5I = WK1I * X0I + WK1R * X0R
-      Y7R = WK1R * X2R + WK1I * X2I
-      Y7I = WK1R * X2I - WK1I * X2R
-      X0R = WK1R * Y1R - WK1I * Y1I
-      X0I = WK1R * Y1I + WK1I * Y1R
-      A(18_IK) = X0R + Y5R
-      A(19_IK) = X0I + Y5I
-      A(26_IK) = Y5I - X0I
-      A(27_IK) = X0R - Y5R
-      X0R = WK1I * Y3R - WK1R * Y3I
-      X0I = WK1I * Y3I + WK1R * Y3R
-      A(22_IK) = X0R - Y7R
-      A(23_IK) = X0I + Y7I
-      A(30_IK) = Y7I - X0I
-      A(31_IK) = X0R + Y7R
-      A(16_IK) = Y0R + Y4R
-      A(17_IK) = Y0I + Y4I
-      A(24_IK) = Y4I - Y0I
-      A(25_IK) = Y0R - Y4R
-      X0R = Y2R - Y6I
-      X0I = Y2I + Y6R
-      A(20_IK) = WN4R * (X0R - X0I)
-      A(21_IK) = WN4R * (X0I + X0R)
-      X0R = Y6R - Y2I
-      X0I = Y2R + Y6I
-      A(28_IK) = WN4R * (X0R - X0I)
-      A(29_IK) = WN4R * (X0I + X0R)
-      K1 = 4_IK
-      DO J = 32_IK, N - 16_IK, 16_IK
-        K1 = K1 + 4_IK
-        WK1R = W(K1)
-        WK1I = W(K1 + 1_IK)
-        WK2R = W(K1 + 2_IK)
-        WK2I = W(K1 + 3_IK)
-        WTMP = 2_IK * WK2I
-        WK3R = WK1R - WTMP * WK1I
-        WK3I = WTMP * WK1R - WK1I
-        WK4R = 1_IK - WTMP * WK2I
-        WK4I = WTMP * WK2R
-        WTMP = 2_IK * WK4I
-        WK5R = WK3R - WTMP * WK1I
-        WK5I = WTMP * WK1R - WK3I
-        WK6R = WK2R - WTMP * WK2I
-        WK6I = WTMP * WK2R - WK2I
-        WK7R = WK1R - WTMP * WK3I
-        WK7I = WTMP * WK3R - WK1I
-        X0R = A(J) + A(J + 2_IK)
-        X0I = A(J + 1_IK) + A(J + 3_IK)
-        X1R = A(J) - A(J + 2_IK)
-        X1I = A(J + 1_IK) - A(J + 3_IK)
-        X2R = A(J + 4_IK) + A(J + 6_IK)
-        X2I = A(J + 5_IK) + A(J + 7_IK)
-        X3R = A(J + 4_IK) - A(J + 6_IK)
-        X3I = A(J + 5_IK) - A(J + 7_IK)
-        Y0R = X0R + X2R
-        Y0I = X0I + X2I
-        Y2R = X0R - X2R
-        Y2I = X0I - X2I
-        Y1R = X1R - X3I
-        Y1I = X1I + X3R
-        Y3R = X1R + X3I
-        Y3I = X1I - X3R
-        X0R = A(J + 8_IK) + A(J + 10_IK)
-        X0I = A(J + 9_IK) + A(J + 11_IK)
-        X1R = A(J + 8_IK) - A(J + 10_IK)
-        X1I = A(J + 9_IK) - A(J + 11_IK)
-        X2R = A(J + 12_IK) + A(J + 14_IK)
-        X2I = A(J + 13_IK) + A(J + 15_IK)
-        X3R = A(J + 12_IK) - A(J + 14_IK)
-        X3I = A(J + 13_IK) - A(J + 15_IK)
-        Y4R = X0R + X2R
-        Y4I = X0I + X2I
-        Y6R = X0R - X2R
-        Y6I = X0I - X2I
-        X0R = X1R - X3I
-        X0I = X1I + X3R
-        X2R = X1R + X3I
-        X2I = X1I - X3R
-        Y5R = WN4R * (X0R - X0I)
-        Y5I = WN4R * (X0R + X0I)
-        Y7R = WN4R * (X2R - X2I)
-        Y7I = WN4R * (X2R + X2I)
-        X0R = Y1R + Y5R
-        X0I = Y1I + Y5I
-        A(J + 2_IK) = WK1R * X0R - WK1I * X0I
-        A(J + 3_IK) = WK1R * X0I + WK1I * X0R
-        X0R = Y1R - Y5R
-        X0I = Y1I - Y5I
-        A(J + 10_IK) = WK5R * X0R - WK5I * X0I
-        A(J + 11_IK) = WK5R * X0I + WK5I * X0R
-        X0R = Y3R - Y7I
-        X0I = Y3I + Y7R
-        A(J + 6_IK) = WK3R * X0R - WK3I * X0I
-        A(J + 7_IK) = WK3R * X0I + WK3I * X0R
-        X0R = Y3R + Y7I
-        X0I = Y3I - Y7R
-        A(J + 14_IK) = WK7R * X0R - WK7I * X0I
-        A(J + 15_IK) = WK7R * X0I + WK7I * X0R
-        A(J) = Y0R + Y4R
-        A(J + 1_IK) = Y0I + Y4I
-        X0R = Y0R - Y4R
-        X0I = Y0I - Y4I
-        A(J + 8_IK) = WK4R * X0R - WK4I * X0I
-        A(J + 9_IK) = WK4R * X0I + WK4I * X0R
-        X0R = Y2R - Y6I
-        X0I = Y2I + Y6R
-        A(J + 4_IK) = WK2R * X0R - WK2I * X0I
-        A(J + 5_IK) = WK2R * X0I + WK2I * X0R
-        X0R = Y2R + Y6I
-        X0I = Y2I - Y6R
-        A(J + 12_IK) = WK6R * X0R - WK6I * X0I
-        A(J + 13_IK) = WK6R * X0I + WK6I * X0R
-      END DO
-    END IF
-  END SUBROUTINE CFT_1ST_
+  ! cft_1st_
+  module subroutine cft_1st_(n, a, w)
+    integer(ik), intent(in) :: n
+    real(rk), intent(inout) :: a(0_ik : n - 1_ik)
+    real(rk), intent(in) :: w(0_ik : *)
+    integer(ik) :: j, k1
+    real(rk) ::  wn4r, wtmp, wk1r, wk1i, wk2r, wk2i, wk3r, wk3i
+    real(rk) ::  wk4r, wk4i, wk5r, wk5i, wk6r, wk6i, wk7r, wk7i
+    real(rk) ::  x0r, x0i, x1r, x1i, x2r, x2i, x3r, x3i
+    real(rk) ::  y0r, y0i, y1r, y1i, y2r, y2i, y3r, y3i
+    real(rk) :: y4r, y4i, y5r, y5i, y6r, y6i, y7r, y7i
+    wn4r = w(2_ik)
+    x0r = a(0_ik) + a(2_ik)
+    x0i = a(1_ik) + a(3_ik)
+    x1r = a(0_ik) - a(2_ik)
+    x1i = a(1_ik) - a(3_ik)
+    x2r = a(4_ik) + a(6_ik)
+    x2i = a(5_ik) + a(7_ik)
+    x3r = a(4_ik) - a(6_ik)
+    x3i = a(5_ik) - a(7_ik)
+    y0r = x0r + x2r
+    y0i = x0i + x2i
+    y2r = x0r - x2r
+    y2i = x0i - x2i
+    y1r = x1r - x3i
+    y1i = x1i + x3r
+    y3r = x1r + x3i
+    y3i = x1i - x3r
+    x0r = a(8_ik) + a(10_ik)
+    x0i = a(9_ik) + a(11_ik)
+    x1r = a(8_ik) - a(10_ik)
+    x1i = a(9_ik) - a(11_ik)
+    x2r = a(12_ik) + a(14_ik)
+    x2i = a(13_ik) + a(15_ik)
+    x3r = a(12_ik) - a(14_ik)
+    x3i = a(13_ik) - a(15_ik)
+    y4r = x0r + x2r
+    y4i = x0i + x2i
+    y6r = x0r - x2r
+    y6i = x0i - x2i
+    x0r = x1r - x3i
+    x0i = x1i + x3r
+    x2r = x1r + x3i
+    x2i = x1i - x3r
+    y5r = wn4r * (x0r - x0i)
+    y5i = wn4r * (x0r + x0i)
+    y7r = wn4r * (x2r - x2i)
+    y7i = wn4r * (x2r + x2i)
+    a(2_ik) = y1r + y5r
+    a(3_ik) = y1i + y5i
+    a(10_ik) = y1r - y5r
+    a(11_ik) = y1i - y5i
+    a(6_ik) = y3r - y7i
+    a(7_ik) = y3i + y7r
+    a(14_ik) = y3r + y7i
+    a(15_ik) = y3i - y7r
+    a(0_ik) = y0r + y4r
+    a(1_ik) = y0i + y4i
+    a(8_ik) = y0r - y4r
+    a(9_ik) = y0i - y4i
+    a(4_ik) = y2r - y6i
+    a(5_ik) = y2i + y6r
+    a(12_ik) = y2r + y6i
+    a(13_ik) = y2i - y6r
+    if (n > 16_ik) then
+      wk1r = w(4_ik)
+      wk1i = w(5_ik)
+      x0r = a(16_ik) + a(18_ik)
+      x0i = a(17_ik) + a(19_ik)
+      x1r = a(16_ik) - a(18_ik)
+      x1i = a(17_ik) - a(19_ik)
+      x2r = a(20_ik) + a(22_ik)
+      x2i = a(21_ik) + a(23_ik)
+      x3r = a(20_ik) - a(22_ik)
+      x3i = a(21_ik) - a(23_ik)
+      y0r = x0r + x2r
+      y0i = x0i + x2i
+      y2r = x0r - x2r
+      y2i = x0i - x2i
+      y1r = x1r - x3i
+      y1i = x1i + x3r
+      y3r = x1r + x3i
+      y3i = x1i - x3r
+      x0r = a(24_ik) + a(26_ik)
+      x0i = a(25_ik) + a(27_ik)
+      x1r = a(24_ik) - a(26_ik)
+      x1i = a(25_ik) - a(27_ik)
+      x2r = a(28_ik) + a(30_ik)
+      x2i = a(29_ik) + a(31_ik)
+      x3r = a(28_ik) - a(30_ik)
+      x3i = a(29_ik) - a(31_ik)
+      y4r = x0r + x2r
+      y4i = x0i + x2i
+      y6r = x0r - x2r
+      y6i = x0i - x2i
+      x0r = x1r - x3i
+      x0i = x1i + x3r
+      x2r = x1r + x3i
+      x2i = x3r - x1i
+      y5r = wk1i * x0r - wk1r * x0i
+      y5i = wk1i * x0i + wk1r * x0r
+      y7r = wk1r * x2r + wk1i * x2i
+      y7i = wk1r * x2i - wk1i * x2r
+      x0r = wk1r * y1r - wk1i * y1i
+      x0i = wk1r * y1i + wk1i * y1r
+      a(18_ik) = x0r + y5r
+      a(19_ik) = x0i + y5i
+      a(26_ik) = y5i - x0i
+      a(27_ik) = x0r - y5r
+      x0r = wk1i * y3r - wk1r * y3i
+      x0i = wk1i * y3i + wk1r * y3r
+      a(22_ik) = x0r - y7r
+      a(23_ik) = x0i + y7i
+      a(30_ik) = y7i - x0i
+      a(31_ik) = x0r + y7r
+      a(16_ik) = y0r + y4r
+      a(17_ik) = y0i + y4i
+      a(24_ik) = y4i - y0i
+      a(25_ik) = y0r - y4r
+      x0r = y2r - y6i
+      x0i = y2i + y6r
+      a(20_ik) = wn4r * (x0r - x0i)
+      a(21_ik) = wn4r * (x0i + x0r)
+      x0r = y6r - y2i
+      x0i = y2r + y6i
+      a(28_ik) = wn4r * (x0r - x0i)
+      a(29_ik) = wn4r * (x0i + x0r)
+      k1 = 4_ik
+      do j = 32_ik, n - 16_ik, 16_ik
+        k1 = k1 + 4_ik
+        wk1r = w(k1)
+        wk1i = w(k1 + 1_ik)
+        wk2r = w(k1 + 2_ik)
+        wk2i = w(k1 + 3_ik)
+        wtmp = 2_ik * wk2i
+        wk3r = wk1r - wtmp * wk1i
+        wk3i = wtmp * wk1r - wk1i
+        wk4r = 1_ik - wtmp * wk2i
+        wk4i = wtmp * wk2r
+        wtmp = 2_ik * wk4i
+        wk5r = wk3r - wtmp * wk1i
+        wk5i = wtmp * wk1r - wk3i
+        wk6r = wk2r - wtmp * wk2i
+        wk6i = wtmp * wk2r - wk2i
+        wk7r = wk1r - wtmp * wk3i
+        wk7i = wtmp * wk3r - wk1i
+        x0r = a(j) + a(j + 2_ik)
+        x0i = a(j + 1_ik) + a(j + 3_ik)
+        x1r = a(j) - a(j + 2_ik)
+        x1i = a(j + 1_ik) - a(j + 3_ik)
+        x2r = a(j + 4_ik) + a(j + 6_ik)
+        x2i = a(j + 5_ik) + a(j + 7_ik)
+        x3r = a(j + 4_ik) - a(j + 6_ik)
+        x3i = a(j + 5_ik) - a(j + 7_ik)
+        y0r = x0r + x2r
+        y0i = x0i + x2i
+        y2r = x0r - x2r
+        y2i = x0i - x2i
+        y1r = x1r - x3i
+        y1i = x1i + x3r
+        y3r = x1r + x3i
+        y3i = x1i - x3r
+        x0r = a(j + 8_ik) + a(j + 10_ik)
+        x0i = a(j + 9_ik) + a(j + 11_ik)
+        x1r = a(j + 8_ik) - a(j + 10_ik)
+        x1i = a(j + 9_ik) - a(j + 11_ik)
+        x2r = a(j + 12_ik) + a(j + 14_ik)
+        x2i = a(j + 13_ik) + a(j + 15_ik)
+        x3r = a(j + 12_ik) - a(j + 14_ik)
+        x3i = a(j + 13_ik) - a(j + 15_ik)
+        y4r = x0r + x2r
+        y4i = x0i + x2i
+        y6r = x0r - x2r
+        y6i = x0i - x2i
+        x0r = x1r - x3i
+        x0i = x1i + x3r
+        x2r = x1r + x3i
+        x2i = x1i - x3r
+        y5r = wn4r * (x0r - x0i)
+        y5i = wn4r * (x0r + x0i)
+        y7r = wn4r * (x2r - x2i)
+        y7i = wn4r * (x2r + x2i)
+        x0r = y1r + y5r
+        x0i = y1i + y5i
+        a(j + 2_ik) = wk1r * x0r - wk1i * x0i
+        a(j + 3_ik) = wk1r * x0i + wk1i * x0r
+        x0r = y1r - y5r
+        x0i = y1i - y5i
+        a(j + 10_ik) = wk5r * x0r - wk5i * x0i
+        a(j + 11_ik) = wk5r * x0i + wk5i * x0r
+        x0r = y3r - y7i
+        x0i = y3i + y7r
+        a(j + 6_ik) = wk3r * x0r - wk3i * x0i
+        a(j + 7_ik) = wk3r * x0i + wk3i * x0r
+        x0r = y3r + y7i
+        x0i = y3i - y7r
+        a(j + 14_ik) = wk7r * x0r - wk7i * x0i
+        a(j + 15_ik) = wk7r * x0i + wk7i * x0r
+        a(j) = y0r + y4r
+        a(j + 1_ik) = y0i + y4i
+        x0r = y0r - y4r
+        x0i = y0i - y4i
+        a(j + 8_ik) = wk4r * x0r - wk4i * x0i
+        a(j + 9_ik) = wk4r * x0i + wk4i * x0r
+        x0r = y2r - y6i
+        x0i = y2i + y6r
+        a(j + 4_ik) = wk2r * x0r - wk2i * x0i
+        a(j + 5_ik) = wk2r * x0i + wk2i * x0r
+        x0r = y2r + y6i
+        x0i = y2i - y6r
+        a(j + 12_ik) = wk6r * x0r - wk6i * x0i
+        a(j + 13_ik) = wk6r * x0i + wk6i * x0r
+      end do
+    end if
+  end subroutine cft_1st_
   ! ############################################################################################################################# !
-  ! CFT_MDL_
-  MODULE SUBROUTINE CFT_MDL_(N, L, A, W)
-    INTEGER(IK), INTENT(IN) :: N
-    INTEGER(IK), INTENT(IN) :: L
-    REAL(RK), INTENT(INOUT) :: A(0_IK : N - 1_IK)
-    REAL(RK), INTENT(IN) :: W(0_IK : *)
-    INTEGER(IK) :: J, J1, J2, J3, J4, J5, J6, J7, K, K1, M
-    REAL(RK) :: WN4R, WTMP, WK1R, WK1I, WK2R, WK2I, WK3R, WK3I
-    REAL(RK) :: WK4R, WK4I, WK5R, WK5I, WK6R, WK6I, WK7R, WK7I
-    REAL(RK) :: X0R, X0I, X1R, X1I, X2R, X2I, X3R, X3I
-    REAL(RK) :: Y0R, Y0I, Y1R, Y1I, Y2R, Y2I, Y3R, Y3I
-    REAL(RK) :: Y4R, Y4I, Y5R, Y5I, Y6R, Y6I, Y7R, Y7I
-    M = 8_IK * L
-    WN4R = W(2_IK)
-    DO J = 0_IK, L - 2_IK, 2_IK
-      J1 = J + L
-      J2 = J1 + L
-      J3 = J2 + L
-      J4 = J3 + L
-      J5 = J4 + L
-      J6 = J5 + L
-      J7 = J6 + L
-      X0R = A(J) + A(J1)
-      X0I = A(J + 1_IK) + A(J1 + 1_IK)
-      X1R = A(J) - A(J1)
-      X1I = A(J + 1_IK) - A(J1 + 1_IK)
-      X2R = A(J2) + A(J3)
-      X2I = A(J2 + 1_IK) + A(J3 + 1_IK)
-      X3R = A(J2) - A(J3)
-      X3I = A(J2 + 1_IK) - A(J3 + 1_IK)
-      Y0R = X0R + X2R
-      Y0I = X0I + X2I
-      Y2R = X0R - X2R
-      Y2I = X0I - X2I
-      Y1R = X1R - X3I
-      Y1I = X1I + X3R
-      Y3R = X1R + X3I
-      Y3I = X1I - X3R
-      X0R = A(J4) + A(J5)
-      X0I = A(J4 + 1_IK) + A(J5 + 1_IK)
-      X1R = A(J4) - A(J5)
-      X1I = A(J4 + 1_IK) - A(J5 + 1_IK)
-      X2R = A(J6) + A(J7)
-      X2I = A(J6 + 1_IK) + A(J7 + 1_IK)
-      X3R = A(J6) - A(J7)
-      X3I = A(J6 + 1_IK) - A(J7 + 1_IK)
-      Y4R = X0R + X2R
-      Y4I = X0I + X2I
-      Y6R = X0R - X2R
-      Y6I = X0I - X2I
-      X0R = X1R - X3I
-      X0I = X1I + X3R
-      X2R = X1R + X3I
-      X2I = X1I - X3R
-      Y5R = WN4R * (X0R - X0I)
-      Y5I = WN4R * (X0R + X0I)
-      Y7R = WN4R * (X2R - X2I)
-      Y7I = WN4R * (X2R + X2I)
-      A(J1) = Y1R + Y5R
-      A(J1 + 1_IK) = Y1I + Y5I
-      A(J5) = Y1R - Y5R
-      A(J5 + 1_IK) = Y1I - Y5I
-      A(J3) = Y3R - Y7I
-      A(J3 + 1_IK) = Y3I + Y7R
-      A(J7) = Y3R + Y7I
-      A(J7 + 1_IK) = Y3I - Y7R
-      A(J) = Y0R + Y4R
-      A(J + 1_IK) = Y0I + Y4I
-      A(J4) = Y0R - Y4R
-      A(J4 + 1_IK) = Y0I - Y4I
-      A(J2) = Y2R - Y6I
-      A(J2 + 1_IK) = Y2I + Y6R
-      A(J6) = Y2R + Y6I
-      A(J6 + 1_IK) = Y2I - Y6R
-    END DO
-    IF (M < N) THEN
-      WK1R = W(4_IK)
-      WK1I = W(5_IK)
-      DO J = M, L + M - 2_IK, 2_IK
-        J1 = J + L
-        J2 = J1 + L
-        J3 = J2 + L
-        J4 = J3 + L
-        J5 = J4 + L
-        J6 = J5 + L
-        J7 = J6 + L
-        X0R = A(J) + A(J1)
-        X0I = A(J + 1_IK) + A(J1 + 1_IK)
-        X1R = A(J) - A(J1)
-        X1I = A(J + 1_IK) - A(J1 + 1_IK)
-        X2R = A(J2) + A(J3)
-        X2I = A(J2 + 1_IK) + A(J3 + 1_IK)
-        X3R = A(J2) - A(J3)
-        X3I = A(J2 + 1_IK) - A(J3 + 1_IK)
-        Y0R = X0R + X2R
-        Y0I = X0I + X2I
-        Y2R = X0R - X2R
-        Y2I = X0I - X2I
-        Y1R = X1R - X3I
-        Y1I = X1I + X3R
-        Y3R = X1R + X3I
-        Y3I = X1I - X3R
-        X0R = A(J4) + A(J5)
-        X0I = A(J4 + 1_IK) + A(J5 + 1_IK)
-        X1R = A(J4) - A(J5)
-        X1I = A(J4 + 1_IK) - A(J5 + 1_IK)
-        X2R = A(J6) + A(J7)
-        X2I = A(J6 + 1_IK) + A(J7 + 1_IK)
-        X3R = A(J6) - A(J7)
-        X3I = A(J6 + 1_IK) - A(J7 + 1_IK)
-        Y4R = X0R + X2R
-        Y4I = X0I + X2I
-        Y6R = X0R - X2R
-        Y6I = X0I - X2I
-        X0R = X1R - X3I
-        X0I = X1I + X3R
-        X2R = X1R + X3I
-        X2I = X3R - X1I
-        Y5R = WK1I * X0R - WK1R * X0I
-        Y5I = WK1I * X0I + WK1R * X0R
-        Y7R = WK1R * X2R + WK1I * X2I
-        Y7I = WK1R * X2I - WK1I * X2R
-        X0R = WK1R * Y1R - WK1I * Y1I
-        X0I = WK1R * Y1I + WK1I * Y1R
-        A(J1) = X0R + Y5R
-        A(J1 + 1_IK) = X0I + Y5I
-        A(J5) = Y5I - X0I
-        A(J5 + 1_IK) = X0R - Y5R
-        X0R = WK1I * Y3R - WK1R * Y3I
-        X0I = WK1I * Y3I + WK1R * Y3R
-        A(J3) = X0R - Y7R
-        A(J3 + 1_IK) = X0I + Y7I
-        A(J7) = Y7I - X0I
-        A(J7 + 1_IK) = X0R + Y7R
-        A(J) = Y0R + Y4R
-        A(J + 1_IK) = Y0I + Y4I
-        A(J4) = Y4I - Y0I
-        A(J4 + 1_IK) = Y0R - Y4R
-        X0R = Y2R - Y6I
-        X0I = Y2I + Y6R
-        A(J2) = WN4R * (X0R - X0I)
-        A(J2 + 1_IK) = WN4R * (X0I + X0R)
-        X0R = Y6R - Y2I
-        X0I = Y2R + Y6I
-        A(J6) = WN4R * (X0R - X0I)
-        A(J6 + 1_IK) = WN4R * (X0I + X0R)
-      END DO
-      K1 = 4_IK
-      DO K = 2_IK * M, N - M, M
-        K1 = K1 + 4_IK
-        WK1R = W(K1)
-        WK1I = W(K1 + 1_IK)
-        WK2R = W(K1 + 2_IK)
-        WK2I = W(K1 + 3_IK)
-        WTMP = 2_IK * WK2I
-        WK3R = WK1R - WTMP * WK1I
-        WK3I = WTMP * WK1R - WK1I
-        WK4R = 1_IK - WTMP * WK2I
-        WK4I = WTMP * WK2R
-        WTMP = 2_IK * WK4I
-        WK5R = WK3R - WTMP * WK1I
-        WK5I = WTMP * WK1R - WK3I
-        WK6R = WK2R - WTMP * WK2I
-        WK6I = WTMP * WK2R - WK2I
-        WK7R = WK1R - WTMP * WK3I
-        WK7I = WTMP * WK3R - WK1I
-        DO J = K, L + K - 2_IK, 2_IK
-          J1 = J + L
-          J2 = J1 + L
-          J3 = J2 + L
-          J4 = J3 + L
-          J5 = J4 + L
-          J6 = J5 + L
-          J7 = J6 + L
-          X0R = A(J) + A(J1)
-          X0I = A(J + 1_IK) + A(J1 + 1_IK)
-          X1R = A(J) - A(J1)
-          X1I = A(J + 1_IK) - A(J1 + 1_IK)
-          X2R = A(J2) + A(J3)
-          X2I = A(J2 + 1_IK) + A(J3 + 1_IK)
-          X3R = A(J2) - A(J3)
-          X3I = A(J2 + 1_IK) - A(J3 + 1_IK)
-          Y0R = X0R + X2R
-          Y0I = X0I + X2I
-          Y2R = X0R - X2R
-          Y2I = X0I - X2I
-          Y1R = X1R - X3I
-          Y1I = X1I + X3R
-          Y3R = X1R + X3I
-          Y3I = X1I - X3R
-          X0R = A(J4) + A(J5)
-          X0I = A(J4 + 1_IK) + A(J5 + 1_IK)
-          X1R = A(J4) - A(J5)
-          X1I = A(J4 + 1_IK) - A(J5 + 1_IK)
-          X2R = A(J6) + A(J7)
-          X2I = A(J6 + 1_IK) + A(J7 + 1)
-          X3R = A(J6) - A(J7)
-          X3I = A(J6 + 1_IK) - A(J7 + 1_IK)
-          Y4R = X0R + X2R
-          Y4I = X0I + X2I
-          Y6R = X0R - X2R
-          Y6I = X0I - X2I
-          X0R = X1R - X3I
-          X0I = X1I + X3R
-          X2R = X1R + X3I
-          X2I = X1I - X3R
-          Y5R = WN4R * (X0R - X0I)
-          Y5I = WN4R * (X0R + X0I)
-          Y7R = WN4R * (X2R - X2I)
-          Y7I = WN4R * (X2R + X2I)
-          X0R = Y1R + Y5R
-          X0I = Y1I + Y5I
-          A(J1) = WK1R * X0R - WK1I * X0I
-          A(J1 + 1_IK) = WK1R * X0I + WK1I * X0R
-          X0R = Y1R - Y5R
-          X0I = Y1I - Y5I
-          A(J5) = WK5R * X0R - WK5I * X0I
-          A(J5 + 1_IK) = WK5R * X0I + WK5I * X0R
-          X0R = Y3R - Y7I
-          X0I = Y3I + Y7R
-          A(J3) = WK3R * X0R - WK3I * X0I
-          A(J3 + 1_IK) = WK3R * X0I + WK3I * X0R
-          X0R = Y3R + Y7I
-          X0I = Y3I - Y7R
-          A(J7) = WK7R * X0R - WK7I * X0I
-          A(J7 + 1_IK) = WK7R * X0I + WK7I * X0R
-          A(J) = Y0R + Y4R
-          A(J + 1_IK) = Y0I + Y4I
-          X0R = Y0R - Y4R
-          X0I = Y0I - Y4I
-          A(J4) = WK4R * X0R - WK4I * X0I
-          A(J4 + 1_IK) = WK4R * X0I + WK4I * X0R
-          X0R = Y2R - Y6I
-          X0I = Y2I + Y6R
-          A(J2) = WK2R * X0R - WK2I * X0I
-          A(J2 + 1_IK) = WK2R * X0I + WK2I * X0R
-          X0R = Y2R + Y6I
-          X0I = Y2I - Y6R
-          A(J6) = WK6R * X0R - WK6I * X0I
-          A(J6 + 1_IK) = WK6R * X0I + WK6I * X0R
-        END DO
-      END DO
-    END IF
-  END SUBROUTINE CFT_MDL_
+  ! cft_mdl_
+  module subroutine cft_mdl_(n, l, a, w)
+    integer(ik), intent(in) :: n
+    integer(ik), intent(in) :: l
+    real(rk), intent(inout) :: a(0_ik : n - 1_ik)
+    real(rk), intent(in) :: w(0_ik : *)
+    integer(ik) :: j, j1, j2, j3, j4, j5, j6, j7, k, k1, m
+    real(rk) :: wn4r, wtmp, wk1r, wk1i, wk2r, wk2i, wk3r, wk3i
+    real(rk) :: wk4r, wk4i, wk5r, wk5i, wk6r, wk6i, wk7r, wk7i
+    real(rk) :: x0r, x0i, x1r, x1i, x2r, x2i, x3r, x3i
+    real(rk) :: y0r, y0i, y1r, y1i, y2r, y2i, y3r, y3i
+    real(rk) :: y4r, y4i, y5r, y5i, y6r, y6i, y7r, y7i
+    m = 8_ik * l
+    wn4r = w(2_ik)
+    do j = 0_ik, l - 2_ik, 2_ik
+      j1 = j + l
+      j2 = j1 + l
+      j3 = j2 + l
+      j4 = j3 + l
+      j5 = j4 + l
+      j6 = j5 + l
+      j7 = j6 + l
+      x0r = a(j) + a(j1)
+      x0i = a(j + 1_ik) + a(j1 + 1_ik)
+      x1r = a(j) - a(j1)
+      x1i = a(j + 1_ik) - a(j1 + 1_ik)
+      x2r = a(j2) + a(j3)
+      x2i = a(j2 + 1_ik) + a(j3 + 1_ik)
+      x3r = a(j2) - a(j3)
+      x3i = a(j2 + 1_ik) - a(j3 + 1_ik)
+      y0r = x0r + x2r
+      y0i = x0i + x2i
+      y2r = x0r - x2r
+      y2i = x0i - x2i
+      y1r = x1r - x3i
+      y1i = x1i + x3r
+      y3r = x1r + x3i
+      y3i = x1i - x3r
+      x0r = a(j4) + a(j5)
+      x0i = a(j4 + 1_ik) + a(j5 + 1_ik)
+      x1r = a(j4) - a(j5)
+      x1i = a(j4 + 1_ik) - a(j5 + 1_ik)
+      x2r = a(j6) + a(j7)
+      x2i = a(j6 + 1_ik) + a(j7 + 1_ik)
+      x3r = a(j6) - a(j7)
+      x3i = a(j6 + 1_ik) - a(j7 + 1_ik)
+      y4r = x0r + x2r
+      y4i = x0i + x2i
+      y6r = x0r - x2r
+      y6i = x0i - x2i
+      x0r = x1r - x3i
+      x0i = x1i + x3r
+      x2r = x1r + x3i
+      x2i = x1i - x3r
+      y5r = wn4r * (x0r - x0i)
+      y5i = wn4r * (x0r + x0i)
+      y7r = wn4r * (x2r - x2i)
+      y7i = wn4r * (x2r + x2i)
+      a(j1) = y1r + y5r
+      a(j1 + 1_ik) = y1i + y5i
+      a(j5) = y1r - y5r
+      a(j5 + 1_ik) = y1i - y5i
+      a(j3) = y3r - y7i
+      a(j3 + 1_ik) = y3i + y7r
+      a(j7) = y3r + y7i
+      a(j7 + 1_ik) = y3i - y7r
+      a(j) = y0r + y4r
+      a(j + 1_ik) = y0i + y4i
+      a(j4) = y0r - y4r
+      a(j4 + 1_ik) = y0i - y4i
+      a(j2) = y2r - y6i
+      a(j2 + 1_ik) = y2i + y6r
+      a(j6) = y2r + y6i
+      a(j6 + 1_ik) = y2i - y6r
+    end do
+    if (m < n) then
+      wk1r = w(4_ik)
+      wk1i = w(5_ik)
+      do j = m, l + m - 2_ik, 2_ik
+        j1 = j + l
+        j2 = j1 + l
+        j3 = j2 + l
+        j4 = j3 + l
+        j5 = j4 + l
+        j6 = j5 + l
+        j7 = j6 + l
+        x0r = a(j) + a(j1)
+        x0i = a(j + 1_ik) + a(j1 + 1_ik)
+        x1r = a(j) - a(j1)
+        x1i = a(j + 1_ik) - a(j1 + 1_ik)
+        x2r = a(j2) + a(j3)
+        x2i = a(j2 + 1_ik) + a(j3 + 1_ik)
+        x3r = a(j2) - a(j3)
+        x3i = a(j2 + 1_ik) - a(j3 + 1_ik)
+        y0r = x0r + x2r
+        y0i = x0i + x2i
+        y2r = x0r - x2r
+        y2i = x0i - x2i
+        y1r = x1r - x3i
+        y1i = x1i + x3r
+        y3r = x1r + x3i
+        y3i = x1i - x3r
+        x0r = a(j4) + a(j5)
+        x0i = a(j4 + 1_ik) + a(j5 + 1_ik)
+        x1r = a(j4) - a(j5)
+        x1i = a(j4 + 1_ik) - a(j5 + 1_ik)
+        x2r = a(j6) + a(j7)
+        x2i = a(j6 + 1_ik) + a(j7 + 1_ik)
+        x3r = a(j6) - a(j7)
+        x3i = a(j6 + 1_ik) - a(j7 + 1_ik)
+        y4r = x0r + x2r
+        y4i = x0i + x2i
+        y6r = x0r - x2r
+        y6i = x0i - x2i
+        x0r = x1r - x3i
+        x0i = x1i + x3r
+        x2r = x1r + x3i
+        x2i = x3r - x1i
+        y5r = wk1i * x0r - wk1r * x0i
+        y5i = wk1i * x0i + wk1r * x0r
+        y7r = wk1r * x2r + wk1i * x2i
+        y7i = wk1r * x2i - wk1i * x2r
+        x0r = wk1r * y1r - wk1i * y1i
+        x0i = wk1r * y1i + wk1i * y1r
+        a(j1) = x0r + y5r
+        a(j1 + 1_ik) = x0i + y5i
+        a(j5) = y5i - x0i
+        a(j5 + 1_ik) = x0r - y5r
+        x0r = wk1i * y3r - wk1r * y3i
+        x0i = wk1i * y3i + wk1r * y3r
+        a(j3) = x0r - y7r
+        a(j3 + 1_ik) = x0i + y7i
+        a(j7) = y7i - x0i
+        a(j7 + 1_ik) = x0r + y7r
+        a(j) = y0r + y4r
+        a(j + 1_ik) = y0i + y4i
+        a(j4) = y4i - y0i
+        a(j4 + 1_ik) = y0r - y4r
+        x0r = y2r - y6i
+        x0i = y2i + y6r
+        a(j2) = wn4r * (x0r - x0i)
+        a(j2 + 1_ik) = wn4r * (x0i + x0r)
+        x0r = y6r - y2i
+        x0i = y2r + y6i
+        a(j6) = wn4r * (x0r - x0i)
+        a(j6 + 1_ik) = wn4r * (x0i + x0r)
+      end do
+      k1 = 4_ik
+      do k = 2_ik * m, n - m, m
+        k1 = k1 + 4_ik
+        wk1r = w(k1)
+        wk1i = w(k1 + 1_ik)
+        wk2r = w(k1 + 2_ik)
+        wk2i = w(k1 + 3_ik)
+        wtmp = 2_ik * wk2i
+        wk3r = wk1r - wtmp * wk1i
+        wk3i = wtmp * wk1r - wk1i
+        wk4r = 1_ik - wtmp * wk2i
+        wk4i = wtmp * wk2r
+        wtmp = 2_ik * wk4i
+        wk5r = wk3r - wtmp * wk1i
+        wk5i = wtmp * wk1r - wk3i
+        wk6r = wk2r - wtmp * wk2i
+        wk6i = wtmp * wk2r - wk2i
+        wk7r = wk1r - wtmp * wk3i
+        wk7i = wtmp * wk3r - wk1i
+        do j = k, l + k - 2_ik, 2_ik
+          j1 = j + l
+          j2 = j1 + l
+          j3 = j2 + l
+          j4 = j3 + l
+          j5 = j4 + l
+          j6 = j5 + l
+          j7 = j6 + l
+          x0r = a(j) + a(j1)
+          x0i = a(j + 1_ik) + a(j1 + 1_ik)
+          x1r = a(j) - a(j1)
+          x1i = a(j + 1_ik) - a(j1 + 1_ik)
+          x2r = a(j2) + a(j3)
+          x2i = a(j2 + 1_ik) + a(j3 + 1_ik)
+          x3r = a(j2) - a(j3)
+          x3i = a(j2 + 1_ik) - a(j3 + 1_ik)
+          y0r = x0r + x2r
+          y0i = x0i + x2i
+          y2r = x0r - x2r
+          y2i = x0i - x2i
+          y1r = x1r - x3i
+          y1i = x1i + x3r
+          y3r = x1r + x3i
+          y3i = x1i - x3r
+          x0r = a(j4) + a(j5)
+          x0i = a(j4 + 1_ik) + a(j5 + 1_ik)
+          x1r = a(j4) - a(j5)
+          x1i = a(j4 + 1_ik) - a(j5 + 1_ik)
+          x2r = a(j6) + a(j7)
+          x2i = a(j6 + 1_ik) + a(j7 + 1)
+          x3r = a(j6) - a(j7)
+          x3i = a(j6 + 1_ik) - a(j7 + 1_ik)
+          y4r = x0r + x2r
+          y4i = x0i + x2i
+          y6r = x0r - x2r
+          y6i = x0i - x2i
+          x0r = x1r - x3i
+          x0i = x1i + x3r
+          x2r = x1r + x3i
+          x2i = x1i - x3r
+          y5r = wn4r * (x0r - x0i)
+          y5i = wn4r * (x0r + x0i)
+          y7r = wn4r * (x2r - x2i)
+          y7i = wn4r * (x2r + x2i)
+          x0r = y1r + y5r
+          x0i = y1i + y5i
+          a(j1) = wk1r * x0r - wk1i * x0i
+          a(j1 + 1_ik) = wk1r * x0i + wk1i * x0r
+          x0r = y1r - y5r
+          x0i = y1i - y5i
+          a(j5) = wk5r * x0r - wk5i * x0i
+          a(j5 + 1_ik) = wk5r * x0i + wk5i * x0r
+          x0r = y3r - y7i
+          x0i = y3i + y7r
+          a(j3) = wk3r * x0r - wk3i * x0i
+          a(j3 + 1_ik) = wk3r * x0i + wk3i * x0r
+          x0r = y3r + y7i
+          x0i = y3i - y7r
+          a(j7) = wk7r * x0r - wk7i * x0i
+          a(j7 + 1_ik) = wk7r * x0i + wk7i * x0r
+          a(j) = y0r + y4r
+          a(j + 1_ik) = y0i + y4i
+          x0r = y0r - y4r
+          x0i = y0i - y4i
+          a(j4) = wk4r * x0r - wk4i * x0i
+          a(j4 + 1_ik) = wk4r * x0i + wk4i * x0r
+          x0r = y2r - y6i
+          x0i = y2i + y6r
+          a(j2) = wk2r * x0r - wk2i * x0i
+          a(j2 + 1_ik) = wk2r * x0i + wk2i * x0r
+          x0r = y2r + y6i
+          x0i = y2i - y6r
+          a(j6) = wk6r * x0r - wk6i * x0i
+          a(j6 + 1_ik) = wk6r * x0i + wk6i * x0r
+        end do
+      end do
+    end if
+  end subroutine cft_mdl_
   ! ############################################################################################################################# !
-END SUBMODULE TRANSFORMATION
+end submodule transformation

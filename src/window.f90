@@ -1,63 +1,63 @@
 
 #include "signal.inc"
 
-SUBMODULE (SIGNAL) WINDOW
-  IMPLICIT NONE
-  CONTAINS
+submodule (signal) window
+  implicit none
+  contains
   ! ############################################################################################################################# !
-  ! WINDOW (COSINE)
-  ! (SUBROUTINE) WINDOW_COS_(<LENGTH>, <ORDER>, <SEQUENCE>)
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
-  ! <ORDER>                -- (IN)     WINDOW ORDER (IK)
-  ! <WINDOW>               -- (OUT)    WINDOW (RK ARRAY OF LENGTH = <LENGTH>)
+  ! window (cosine)
+  ! (subroutine) window_cos_(<length>, <order>, <sequence>)
+  ! <length>               -- (in)     sequence length (ik)
+  ! <order>                -- (in)     window order (ik)
+  ! <window>               -- (out)    window (rk array of length = <length>)
   ! void    window_cos_(int* length, int* order, double* window) ;
-  MODULE SUBROUTINE WINDOW_COS_(LENGTH, ORDER, WINDOW) &
-    BIND(C, NAME = "window_cos_")
-    INTEGER(IK), INTENT(IN) :: LENGTH
-    INTEGER(IK), INTENT(IN) :: ORDER
-    REAL(RK), INTENT(OUT), DIMENSION(LENGTH) :: WINDOW
-    INTEGER(IK) :: I
-    REAL(RK) :: FACTOR
-    FACTOR = 2.0_RK**ORDER*FACTORIAL_(ORDER)**2_IK/FACTORIAL_(2_IK*ORDER)
-    WINDOW = FACTOR*(1.0_RK+COS(TWO_PI*(1.0_RK/REAL(LENGTH,RK)*REAL([(I, I = 0_IK, LENGTH-1_IK, 1_IK)], RK)-0.5_RK)))**ORDER
-  END SUBROUTINE WINDOW_COS_
+  module subroutine window_cos_(length, order, window) &
+    bind(c, name = "window_cos_")
+    integer(ik), intent(in) :: length
+    integer(ik), intent(in) :: order
+    real(rk), intent(out), dimension(length) :: window
+    integer(ik) :: i
+    real(rk) :: factor
+    factor = 2.0_rk**order*factorial_(order)**2_ik/factorial_(2_ik*order)
+    window = factor*(1.0_rk+cos(two_pi*(1.0_rk/real(length,rk)*real([(i, i = 0_ik, length-1_ik, 1_ik)], rk)-0.5_rk)))**order
+  end subroutine window_cos_
   ! ############################################################################################################################# !
-  ! WINDOW (COSINE) (GENERIC, FRACTIONAL ORDER)
-  ! (SUBROUTINE) WINDOW_COS_GENERIC_(<LENGTH>, <ORDER>, <SEQUENCE>)
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
-  ! <ORDER>                -- (IN)     WINDOW ORDER (RK)
-  ! <WINDOW>               -- (OUT)    WINDOW (RK ARRAY OF LENGTH = <LENGTH>)
+  ! window (cosine) (generic, fractional order)
+  ! (subroutine) window_cos_generic_(<length>, <order>, <sequence>)
+  ! <length>               -- (in)     sequence length (ik)
+  ! <order>                -- (in)     window order (rk)
+  ! <window>               -- (out)    window (rk array of length = <length>)
   ! void    window_cos_generic_(int* length, double* order, double* window) ;
-  MODULE SUBROUTINE WINDOW_COS_GENERIC_(LENGTH, ORDER, WINDOW) &
-    BIND(C, NAME = "window_cos_generic_")
-    INTEGER(IK), INTENT(IN) :: LENGTH
-    REAL(RK), INTENT(IN) :: ORDER
-    REAL(RK), INTENT(OUT), DIMENSION(LENGTH) :: WINDOW
-    INTEGER(IK) :: I
-    REAL(RK) :: FACTOR
-    FACTOR = 2.0_RK**ORDER*GAMMA_(ORDER+1.0_RK)**2_IK/GAMMA_(2.0_RK*ORDER+1.0_RK)
-    WINDOW = FACTOR*(1.0_RK+COS(TWO_PI*(1.0_RK/REAL(LENGTH,RK)*REAL([(I, I = 0_IK, LENGTH-1_IK, 1_IK)], RK)-0.5_RK)))**ORDER
-  END SUBROUTINE WINDOW_COS_GENERIC_
+  module subroutine window_cos_generic_(length, order, window) &
+    bind(c, name = "window_cos_generic_")
+    integer(ik), intent(in) :: length
+    real(rk), intent(in) :: order
+    real(rk), intent(out), dimension(length) :: window
+    integer(ik) :: i
+    real(rk) :: factor
+    factor = 2.0_rk**order*gamma_(order+1.0_rk)**2_ik/gamma_(2.0_rk*order+1.0_rk)
+    window = factor*(1.0_rk+cos(two_pi*(1.0_rk/real(length,rk)*real([(i, i = 0_ik, length-1_ik, 1_ik)], rk)-0.5_rk)))**order
+  end subroutine window_cos_generic_
   ! ############################################################################################################################# !
-  ! WINDOW (KAISER)
-  ! (SUBROUTINE) WINDOW_KAISER_(<LENGTH>, <ORDER>, <SEQUENCE>)
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
-  ! <PARAMETER>            -- (IN)     WINDOW ORDER (RK)
-  ! <WINDOW>               -- (OUT)    WINDOW (RK ARRAY OF LENGTH = <LENGTH>)
+  ! window (kaiser)
+  ! (subroutine) window_kaiser_(<length>, <order>, <sequence>)
+  ! <length>               -- (in)     sequence length (ik)
+  ! <parameter>            -- (in)     window order (rk)
+  ! <window>               -- (out)    window (rk array of length = <length>)
   ! void    window_kaiser_(int* length, double* order, double* window) ;
-  MODULE SUBROUTINE WINDOW_KAISER_(LENGTH, ORDER, WINDOW) &
-    BIND(C, NAME = "window_kaiser_")
-    INTEGER(IK), INTENT(IN) :: LENGTH
-    REAL(RK), INTENT(IN) :: ORDER
-    REAL(RK), INTENT(OUT), DIMENSION(LENGTH) :: WINDOW
-    INTEGER(IK) :: I
-    REAL(RK) :: FACTOR
-    FACTOR = 1.0_RK/BESSEL_(ONE_PI*ORDER)
-    WINDOW = 1.0_RK/REAL(LENGTH, RK)*REAL([(I-1_IK, I = 1_IK, LENGTH, 1_IK)], RK)-0.5_RK
-    DO I = 1_IK, LENGTH, 1_IK
-      WINDOW(I) = BESSEL_(ONE_PI*ORDER*SQRT(1.0_RK-2.0_RK*WINDOW(I))*SQRT(1.0_RK+2.0_RK*WINDOW(I)))
-    END DO
-    WINDOW = FACTOR*WINDOW
-  END SUBROUTINE WINDOW_KAISER_
+  module subroutine window_kaiser_(length, order, window) &
+    bind(c, name = "window_kaiser_")
+    integer(ik), intent(in) :: length
+    real(rk), intent(in) :: order
+    real(rk), intent(out), dimension(length) :: window
+    integer(ik) :: i
+    real(rk) :: factor
+    factor = 1.0_rk/bessel_(one_pi*order)
+    window = 1.0_rk/real(length, rk)*real([(i-1_ik, i = 1_ik, length, 1_ik)], rk)-0.5_rk
+    do i = 1_ik, length, 1_ik
+      window(i) = bessel_(one_pi*order*sqrt(1.0_rk-2.0_rk*window(i))*sqrt(1.0_rk+2.0_rk*window(i)))
+    end do
+    window = factor*window
+  end subroutine window_kaiser_
   ! ############################################################################################################################# !
-END SUBMODULE WINDOW
+end submodule window

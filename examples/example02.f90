@@ -1,70 +1,70 @@
 ! ulimit -s unlimited
-! EXAMPLE-02: FREQUENCY ESTIMATION (OPENMP, __FFT__ DIRECTIVE SHOULD BE FFT_RADIX_*)
-PROGRAM EXAMPLE
+! example-02: frequency estimation (openmp, __fft__ directive should be fft_radix_*)
+program example
 
-  USE SIGNAL
+  use signal
 
-  IMPLICIT NONE
+  implicit none
 
-  INTEGER(IK), PARAMETER                 :: LENGTH = 2_IK**10_IK  ! INPUT SIGNAL LENGTH
-  INTEGER(IK)                            :: FLAG                  ! COMPLEX FLAG (0/1)
-  REAL(RK)                               :: RANGE_MIN             ! (MIN) FREQUENCY RANGE
-  REAL(RK)                               :: RANGE_MAX             ! (MAX) FREQUENCY RANGE
-  INTEGER(IK)                            :: PEAK                  ! FOURIE SPECTRA PEAK ID
-  INTEGER(IK)                            :: METHOD                ! FREQUENCY ESTIMATION METHOD
-  INTEGER(IK)                            :: ORDER                 ! COSINE WINDOW ORDER
-  REAL(RK), DIMENSION(LENGTH)            :: WINDOW                ! COSINE WINDOW DATA
-  REAL(RK)                               :: TOTAL                 ! SUM OF WINDOW ELEMENTS
-  REAL(RK)                               :: FREQUENCY             ! EXACT SIGNAL FREQUENCY
-  REAL(RK), DIMENSION(LENGTH)            :: SIGNAL_R, SIGNAL_I    ! SIGNAL REAL AND COMPLEX PARTS
-  REAL(RK), DIMENSION(2_IK*LENGTH)       :: SIGNAL                ! INPUT SIGNAL, [..., SR_I, SI_I, ...]
-  INTEGER(IK), PARAMETER                 :: LIMIT = 128_IK        ! NUMBER OF SIGNALS
-  REAL(RK), DIMENSION(LIMIT,2_IK*LENGTH) :: DATA                  ! MATRIX OF SIGNALS
-  REAL(RK), DIMENSION(LIMIT)             :: LIST                  ! LIST OF EXACT FREQUENCIES
-  REAL(RK), DIMENSION(LIMIT)             :: OUTPUT                ! ESTIMATED FREQUENCIES
+  integer(ik), parameter                 :: length = 2_ik**10_ik  ! input signal length
+  integer(ik)                            :: flag                  ! complex flag (0/1)
+  real(rk)                               :: range_min             ! (min) frequency range
+  real(rk)                               :: range_max             ! (max) frequency range
+  integer(ik)                            :: peak                  ! fourie spectra peak id
+  integer(ik)                            :: method                ! frequency estimation method
+  integer(ik)                            :: order                 ! cosine window order
+  real(rk), dimension(length)            :: window                ! cosine window data
+  real(rk)                               :: total                 ! sum of window elements
+  real(rk)                               :: frequency             ! exact signal frequency
+  real(rk), dimension(length)            :: signal_r, signal_i    ! signal real and complex parts
+  real(rk), dimension(2_ik*length)       :: signal                ! input signal, [..., sr_i, si_i, ...]
+  integer(ik), parameter                 :: limit = 128_ik        ! number of signals
+  real(rk), dimension(limit,2_ik*length) :: data                  ! matrix of signals
+  real(rk), dimension(limit)             :: list                  ! list of exact frequencies
+  real(rk), dimension(limit)             :: output                ! estimated frequencies
 
-  INTEGER(IK)                            :: I, J
+  integer(ik)                            :: i, j
 
-  ! SET COMPLEX FLAG (0/1 FOR REAL/COMPLEX SIGNAL)
-  FLAG = 1_IK
-  RANGE_MIN = 0.00_RK
-  RANGE_MAX = 0.99_RK
+  ! set complex flag (0/1 for real/complex signal)
+  flag = 1_ik
+  range_min = 0.00_rk
+  range_max = 0.99_rk
 
-  ! SET TEST DATA
-  DO I = 1_IK, LIMIT, 1_IK
-    ! SET SIGNAL EXACT FREQUENCY, REAL AND IMAGINARY PARTS
-    FREQUENCY = 0.623456789_RK + REAL(I, RK)/REAL(LIMIT, RK)/10.0_RK
-    LIST(I) = FREQUENCY
-    DO J = 1_IK, LENGTH, 1_IK
-      SIGNAL_R(J) = +COS(TWO_PI*FREQUENCY*REAL(J, RK))
-      SIGNAL_I(J) = -SIN(TWO_PI*FREQUENCY*REAL(J, RK))
-    END DO
-    ! FORMAT TEST SIGNAL
-    IF(FLAG == 0_IK) THEN
-      CALL CONVERT_(LENGTH, SIGNAL_R, SIGNAL)
-    ELSE
-      CALL CONVERT_(LENGTH, SIGNAL_R, SIGNAL_I, SIGNAL)
-    END IF
-    DATA(I,:) = SIGNAL
-  END DO
+  ! set test data
+  do i = 1_ik, limit, 1_ik
+    ! set signal exact frequency, real and imaginary parts
+    frequency = 0.623456789_rk + real(i, rk)/real(limit, rk)/10.0_rk
+    list(i) = frequency
+    do j = 1_ik, length, 1_ik
+      signal_r(j) = +cos(two_pi*frequency*real(j, rk))
+      signal_i(j) = -sin(two_pi*frequency*real(j, rk))
+    end do
+    ! format test signal
+    if(flag == 0_ik) then
+      call convert_(length, signal_r, signal)
+    else
+      call convert_(length, signal_r, signal_i, signal)
+    end if
+    data(i,:) = signal
+  end do
 
-  ! SET WINDOW AND WINDOW SUM
-  ORDER = 2_IK
-  CALL WINDOW_(LENGTH, ORDER, WINDOW)
-  TOTAL = SUM(WINDOW)
+  ! set window and window sum
+  order = 2_ik
+  call window_(length, order, window)
+  total = sum(window)
 
-  ! ESTIMATE FREQUENCY
-  PEAK = 0_IK
-  METHOD = FREQUENCY_PARABOLA
-  !$OMP PARALLEL DO PRIVATE(SIGNAL)
-  DO I = 1_IK, LIMIT, 1_IK
-    OUTPUT(I) = FREQUENCY_(FLAG, RANGE_MIN, RANGE_MAX, PEAK, METHOD, LENGTH, LENGTH, TOTAL, WINDOW, DATA(I,:))
-  END DO
-  !$OMP END PARALLEL DO
+  ! estimate frequency
+  peak = 0_ik
+  method = frequency_parabola
+  !$omp parallel do private(signal)
+  do i = 1_ik, limit, 1_ik
+    output(i) = frequency_(flag, range_min, range_max, peak, method, length, length, total, window, data(i,:))
+  end do
+  !$omp end parallel do
 
-  ! RESULT
-  DO I = 1_IK, LIMIT, 1_IK
-    WRITE(*, '(3E32.16)') LIST(I), OUTPUT(I), ABS(LIST(I)-OUTPUT(I))
-  END DO
+  ! result
+  do i = 1_ik, limit, 1_ik
+    write(*, '(3e32.16)') list(i), output(i), abs(list(i)-output(i))
+  end do
 
-END PROGRAM EXAMPLE
+end program example

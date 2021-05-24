@@ -1,143 +1,143 @@
-! EXAMPLE-01: FREQUENCY ESTIMATION (SIGNAL WITH ONE HARMONIC)
-PROGRAM EXAMPLE
+! example-01: frequency estimation (signal with one harmonic)
+program example
 
-  USE SIGNAL
+  use signal
 
-  IMPLICIT NONE
+  implicit none
 
-  INTEGER(IK), PARAMETER           :: LENGTH = 2_IK**10_IK  ! INPUT SIGNAL LENGTH
-  INTEGER(IK)                      :: FLAG                  ! COMPLEX FLAG (0/1)
-  REAL(RK)                         :: RANGE_MIN             ! (MIN) FREQUENCY RANGE
-  REAL(RK)                         :: RANGE_MAX             ! (MAX) FREQUENCY RANGE
-  INTEGER(IK)                      :: PEAK                  ! FOURIE SPECTRA PEAK ID
-  INTEGER(IK)                      :: METHOD                ! FREQUENCY ESTIMATION METHOD
-  INTEGER(IK)                      :: ORDER                 ! COSINE WINDOW ORDER
-  REAL(RK), DIMENSION(LENGTH)      :: WINDOW                ! COSINE WINDOW DATA
-  REAL(RK)                         :: TOTAL                 ! SUM OF WINDOW ELEMENTS
-  REAL(RK)                         :: FREQUENCY             ! EXACT SIGNAL FREQUENCY
-  REAL(RK), DIMENSION(LENGTH)      :: SIGNAL_R, SIGNAL_I    ! SIGNAL REAL AND COMPLEX PARTS
-  REAL(RK), DIMENSION(2_IK*LENGTH) :: SIGNAL                ! INPUT SIGNAL, [..., SR_I, SI_I, ...]
-  REAL(RK)                         :: RESULT                ! FREQUENCY ESTIMATION
+  integer(ik), parameter           :: length = 2_ik**10_ik  ! input signal length
+  integer(ik)                      :: flag                  ! complex flag (0/1)
+  real(rk)                         :: range_min             ! (min) frequency range
+  real(rk)                         :: range_max             ! (max) frequency range
+  integer(ik)                      :: peak                  ! fourie spectra peak id
+  integer(ik)                      :: method                ! frequency estimation method
+  integer(ik)                      :: order                 ! cosine window order
+  real(rk), dimension(length)      :: window                ! cosine window data
+  real(rk)                         :: total                 ! sum of window elements
+  real(rk)                         :: frequency             ! exact signal frequency
+  real(rk), dimension(length)      :: signal_r, signal_i    ! signal real and complex parts
+  real(rk), dimension(2_ik*length) :: signal                ! input signal, [..., sr_i, si_i, ...]
+  real(rk)                         :: result                ! frequency estimation
 
-  INTEGER(IK)                      :: I
+  integer(ik)                      :: i
 
-  ! SET COMPLEX FLAG (0/1 FOR REAL/COMPLEX SIGNAL)
-  ! FLAG IS USED BY FREQUENCY_ FUNCTION
-  ! FOR REAL SIGNALS (FLAG = 0) 1ST HALF OF FOURIE AMPLITUDE SPETRUM IS USED FOR FREQUENCY ESTIMATION
-  ! FREQUENCY RESOLUTION IS [0.0,0.5]
-  ! FOR COMPLEX SIGNALS (FLAG = 1) FULL FOURIE AMPLITUDE SPECTRA IS USED FOR FREQUENCY ESTIMATION
-  ! FREQUENCY RESOLUTION IS [0.0,1.0]
-  FLAG = 1_IK
+  ! set complex flag (0/1 for real/complex signal)
+  ! flag is used by frequency_ function
+  ! for real signals (flag = 0) 1st half of fourie amplitude spetrum is used for frequency estimation
+  ! frequency resolution is [0.0,0.5]
+  ! for complex signals (flag = 1) full fourie amplitude spectra is used for frequency estimation
+  ! frequency resolution is [0.0,1.0]
+  flag = 1_ik
 
-  ! SET FREQUENCY RANGE (0.0 <= RANGE_MIN <= RANGE_MAX <= 1.0)
-  ! FREQUENCY RANGE CAN BE USED TO TARGET SELECTED RANGE OF FREQUENCIES
-  ! MAX RANGE SHOULD MATCH <FLAG>, I.E. SHOULD BE LESS OR EQUAL TO LARGEST FREQUENCY DEFINED BY <FLAG>
-  RANGE_MIN = 0.0_RK
-  RANGE_MAX = 1.0_RK/(2.0_RK-REAL(FLAG, RK))
+  ! set frequency range (0.0 <= range_min <= range_max <= 1.0)
+  ! frequency range can be used to target selected range of frequencies
+  ! max range should match <flag>, i.e. should be less or equal to largest frequency defined by <flag>
+  range_min = 0.0_rk
+  range_max = 1.0_rk/(2.0_rk-real(flag, rk))
 
-  ! SET SIGNAL EXACT FREQUENCY, REAL AND IMAGINARY PARTS
-  FREQUENCY = 0.2143658791_RK
-  DO I = 1_IK, LENGTH, 1_IK
-    SIGNAL_R(I) = +COS(TWO_PI*FREQUENCY*REAL(I, RK))
-    SIGNAL_I(I) = -SIN(TWO_PI*FREQUENCY*REAL(I, RK))
-  END DO
+  ! set signal exact frequency, real and imaginary parts
+  frequency = 0.2143658791_rk
+  do i = 1_ik, length, 1_ik
+    signal_r(i) = +cos(two_pi*frequency*real(i, rk))
+    signal_i(i) = -sin(two_pi*frequency*real(i, rk))
+  end do
 
-  ! ADD CONSTANT COMPONENT
-  SIGNAL_R = SIGNAL_R + 0.1_RK
+  ! add constant component
+  signal_r = signal_r + 0.1_rk
 
-  ! FORMAT TEST SIGNAL
-  ! SIGNAL_R = [..., SR_I, ...]
-  ! SIGNAL_I = [..., SI_I, ...]
-  ! SIGNAL = [..., SR_I, SI_I, ...]
-  SIGNAL = 0.0_RK
-  IF(FLAG == 0_IK) THEN
-    CALL CONVERT_(LENGTH, SIGNAL_R, SIGNAL)
-  ELSE
-    CALL CONVERT_(LENGTH, SIGNAL_R, SIGNAL_I, SIGNAL)
-  END IF
+  ! format test signal
+  ! signal_r = [..., sr_i, ...]
+  ! signal_i = [..., si_i, ...]
+  ! signal = [..., sr_i, si_i, ...]
+  signal = 0.0_rk
+  if(flag == 0_ik) then
+    call convert_(length, signal_r, signal)
+  else
+    call convert_(length, signal_r, signal_i, signal)
+  end if
 
-  ! SET WINDOW AND WINDOW SUM
-  ORDER = 2_IK
-  CALL WINDOW_(LENGTH, ORDER, WINDOW)
-  TOTAL = SUM(WINDOW)
+  ! set window and window sum
+  order = 2_ik
+  call window_(length, order, window)
+  total = sum(window)
 
-  ! IF SIGNAL LENGTH IS NOT EQUAL TO POWER OF TWO
-  ! SIGNAL CAN BE PADDED WITH ZEROS TO THE NEAREST POWER OF TWO LENGTH
-  ! IN THIS EXAMPLE SIGNAL HAS CORRECT LENGTH
+  ! if signal length is not equal to power of two
+  ! signal can be padded with zeros to the nearest power of two length
+  ! in this example signal has correct length
 
-  ! ROUND_UP_(LENGTH) RETURNS NEXT POWER OF TWO LENGTH
-  WRITE(*, '(1A,1I10)') "LENGTH         : ", LENGTH
-  WRITE(*, '(1A,1I10)') "NEXT LENGTH    : ", ROUND_UP_(LENGTH)
+  ! round_up_(length) returns next power of two length
+  write(*, '(1a,1i10)') "length         : ", length
+  write(*, '(1a,1i10)') "next length    : ", round_up_(length)
 
-  ! ESTIMATE FREQUENCY
-  ! SIGNAL SHOULD HAVE POWER OF TWO LENGTH (REAL AND IMAGINARY PART)
+  ! estimate frequency
+  ! signal should have power of two length (real and imaginary part)
 
-  ! PEAK = 0 USES LARGEST FOURIER AMPLITUDE SPECTRA BIN
-  ! PEAK = N USES N'TH FOURIER AMPLITUDE SPECTRA PEAK
-  ! FFT IS DEFINED BY __FFT__ DIRECTIVE
-  ! FFT_RADIX_TWO_    -- RADIX-TWO FFT (NRF77), THREADSAFE
-  ! FFT_RADIX_EIGHT_  -- RADIX-EIGHT FFT (TAKUYA OOURA), DEFAULT, THREADSAFE
-  ! FFT_EXTERNAL_     -- FFTW, NOT THREADSAFE
+  ! peak = 0 uses largest fourier amplitude spectra bin
+  ! peak = n uses n'th fourier amplitude spectra peak
+  ! fft is defined by __fft__ directive
+  ! fft_radix_two_    -- radix-two fft (nrf77), threadsafe
+  ! fft_radix_eight_  -- radix-eight fft (takuya ooura), default, threadsafe
+  ! fft_external_     -- fftw, not threadsafe
 
-  WRITE(*, '(1A,1I10)') "FLAG           : ", FLAG
-  WRITE(*, '(1A,1I10)') "ORDER          : ", ORDER
+  write(*, '(1a,1i10)') "flag           : ", flag
+  write(*, '(1a,1i10)') "order          : ", order
 
-  ! ESTIMATE FREQUENCY (MAXIMUM BIN)
-  WRITE(*, '(1A)') "(MAXIMUM BIN)"
-  PEAK = 0_IK
-  ! FFT MAX BIN OR SELECTED PEAK
-  METHOD = FREQUENCY_FFT
-  RESULT = FREQUENCY_(FLAG, RANGE_MIN, RANGE_MAX, PEAK, METHOD, LENGTH, LENGTH, TOTAL, WINDOW, SIGNAL)
-  WRITE(*, '(1A,2E32.16)') "FFT            : ", RESULT, ABS(RESULT-FREQUENCY)
-  ! FFT MAX BIN OR SELECTED PEAK AND ZERO PADDING
-  METHOD = FREQUENCY_FFT
-  RESULT = FREQUENCY_(FLAG, RANGE_MIN, RANGE_MAX, PEAK, METHOD, LENGTH, 2_IK*LENGTH, TOTAL, WINDOW, SIGNAL)
-  WRITE(*, '(1A,2E32.16)') "FFT (PADDED)   : ", RESULT, ABS(RESULT-FREQUENCY)
-  ! FFRFT REFINED SPECTRA
-  METHOD = FREQUENCY_FFRFT
-  RESULT = FREQUENCY_(FLAG, RANGE_MIN, RANGE_MAX, PEAK, METHOD, LENGTH, LENGTH, TOTAL, WINDOW, SIGNAL)
-  WRITE(*, '(1A,2E32.16)') "FFRFT          : ", RESULT, ABS(RESULT-FREQUENCY)
-  ! PARABOLA INTERPOLATION OF FFRFT REFINED SPECTRA
-  METHOD = FREQUENCY_PARABOLA
-  RESULT = FREQUENCY_(FLAG, RANGE_MIN, RANGE_MAX, PEAK, METHOD, LENGTH, LENGTH, TOTAL, WINDOW, SIGNAL)
-  WRITE(*, '(1A,2E32.16)') "PARABOLA       : ", RESULT, ABS(RESULT-FREQUENCY)
-  ! PARABOLA FIT OF FFRFT REFINED SPECTRA
-  ! NUMBER OF FIT POINTS IS GIVEN BY <PARABOLA_FIT_LENGTH> PARAMETER
-  METHOD = FREQUENCY_PARABOLA_FIT
-  RESULT = FREQUENCY_(FLAG, RANGE_MIN, RANGE_MAX, PEAK, METHOD, LENGTH, LENGTH, TOTAL, WINDOW, SIGNAL)
-  WRITE(*, '(1A,2E32.16)') "PARABOLA (FIT) : ", RESULT, ABS(RESULT-FREQUENCY)
-  ! MAXIMUM SEARCH OF DTFT SPECTRA
-  ! SEARCH FUNCTION IS DEFINED BY __SEARCH__ DIRECTIVE
-  ! MAXIMUM NUMBER OF ITERATIONS IS CONTROLLED BY <SEARCH_LIMIT> PARAMETER
-  ! SEARCH TOLERANCE IS CONTROLLED BY <SEARCH_TOLERANCE> PARAMETER
-  METHOD = FREQUENCY_SEARCH
-  RESULT = FREQUENCY_(FLAG, RANGE_MIN, RANGE_MAX, PEAK, METHOD, LENGTH, LENGTH, TOTAL, WINDOW, SIGNAL)
-  WRITE(*, '(1A,2E32.16)') "SEARCH         : ", RESULT, ABS(RESULT-FREQUENCY)
+  ! estimate frequency (maximum bin)
+  write(*, '(1a)') "(maximum bin)"
+  peak = 0_ik
+  ! fft max bin or selected peak
+  method = frequency_fft
+  result = frequency_(flag, range_min, range_max, peak, method, length, length, total, window, signal)
+  write(*, '(1a,2e32.16)') "fft            : ", result, abs(result-frequency)
+  ! fft max bin or selected peak and zero padding
+  method = frequency_fft
+  result = frequency_(flag, range_min, range_max, peak, method, length, 2_ik*length, total, window, signal)
+  write(*, '(1a,2e32.16)') "fft (padded)   : ", result, abs(result-frequency)
+  ! ffrft refined spectra
+  method = frequency_ffrft
+  result = frequency_(flag, range_min, range_max, peak, method, length, length, total, window, signal)
+  write(*, '(1a,2e32.16)') "ffrft          : ", result, abs(result-frequency)
+  ! parabola interpolation of ffrft refined spectra
+  method = frequency_parabola
+  result = frequency_(flag, range_min, range_max, peak, method, length, length, total, window, signal)
+  write(*, '(1a,2e32.16)') "parabola       : ", result, abs(result-frequency)
+  ! parabola fit of ffrft refined spectra
+  ! number of fit points is given by <parabola_fit_length> parameter
+  method = frequency_parabola_fit
+  result = frequency_(flag, range_min, range_max, peak, method, length, length, total, window, signal)
+  write(*, '(1a,2e32.16)') "parabola (fit) : ", result, abs(result-frequency)
+  ! maximum search of dtft spectra
+  ! search function is defined by __search__ directive
+  ! maximum number of iterations is controlled by <search_limit> parameter
+  ! search tolerance is controlled by <search_tolerance> parameter
+  method = frequency_search
+  result = frequency_(flag, range_min, range_max, peak, method, length, length, total, window, signal)
+  write(*, '(1a,2e32.16)') "search         : ", result, abs(result-frequency)
 
-  ! IF PEAK \= 0, PEAK DETECTION IS USED TO LOCATE SELECTED PEAK
-  ! PEAKS ARE SORTED BY __SORT__
-  ! SORT_BUBBLE_      -- BUBBLE SORT
-  ! SORT_QUICK_       -- QUICK SORT, DEFAULT
-  ! ESTIMATE FREQUENCY (1ST PEAK)
-  WRITE(*, '(1A)') "(1ST PEAK)"
-  PEAK = 1_IK
-  METHOD = FREQUENCY_FFT
-  RESULT = FREQUENCY_(FLAG, RANGE_MIN, RANGE_MAX, PEAK, METHOD, LENGTH, LENGTH, TOTAL, WINDOW, SIGNAL)
-  WRITE(*, '(1A,2E32.16)') "FFT            : ", RESULT, ABS(RESULT-FREQUENCY)
-  METHOD = FREQUENCY_FFT
-  RESULT = FREQUENCY_(FLAG, RANGE_MIN, RANGE_MAX, PEAK, METHOD, LENGTH, 2_IK*LENGTH, TOTAL, WINDOW, SIGNAL)
-  WRITE(*, '(1A,2E32.16)') "FFT (PADDED)   : ", RESULT, ABS(RESULT-FREQUENCY)
-  METHOD = FREQUENCY_FFRFT
-  RESULT = FREQUENCY_(FLAG, RANGE_MIN, RANGE_MAX, PEAK, METHOD, LENGTH, LENGTH, TOTAL, WINDOW, SIGNAL)
-  WRITE(*, '(1A,2E32.16)') "FFRFT          : ", RESULT, ABS(RESULT-FREQUENCY)
-  METHOD = FREQUENCY_PARABOLA
-  RESULT = FREQUENCY_(FLAG, RANGE_MIN, RANGE_MAX, PEAK, METHOD, LENGTH, LENGTH, TOTAL, WINDOW, SIGNAL)
-  WRITE(*, '(1A,2E32.16)') "PARABOLA       : ", RESULT, ABS(RESULT-FREQUENCY)
-  METHOD = FREQUENCY_PARABOLA_FIT
-  RESULT = FREQUENCY_(FLAG, RANGE_MIN, RANGE_MAX, PEAK, METHOD, LENGTH, LENGTH, TOTAL, WINDOW, SIGNAL)
-  WRITE(*, '(1A,2E32.16)') "PARABOLA (FIT) : ", RESULT, ABS(RESULT-FREQUENCY)
-  METHOD = FREQUENCY_SEARCH
-  RESULT = FREQUENCY_(FLAG, RANGE_MIN, RANGE_MAX, PEAK, METHOD, LENGTH, LENGTH, TOTAL, WINDOW, SIGNAL)
-  WRITE(*, '(1A,2E32.16)') "SEARCH         : ", RESULT, ABS(RESULT-FREQUENCY)
+  ! if peak \= 0, peak detection is used to locate selected peak
+  ! peaks are sorted by __sort__
+  ! sort_bubble_      -- bubble sort
+  ! sort_quick_       -- quick sort, default
+  ! estimate frequency (1st peak)
+  write(*, '(1a)') "(1st peak)"
+  peak = 1_ik
+  method = frequency_fft
+  result = frequency_(flag, range_min, range_max, peak, method, length, length, total, window, signal)
+  write(*, '(1a,2e32.16)') "fft            : ", result, abs(result-frequency)
+  method = frequency_fft
+  result = frequency_(flag, range_min, range_max, peak, method, length, 2_ik*length, total, window, signal)
+  write(*, '(1a,2e32.16)') "fft (padded)   : ", result, abs(result-frequency)
+  method = frequency_ffrft
+  result = frequency_(flag, range_min, range_max, peak, method, length, length, total, window, signal)
+  write(*, '(1a,2e32.16)') "ffrft          : ", result, abs(result-frequency)
+  method = frequency_parabola
+  result = frequency_(flag, range_min, range_max, peak, method, length, length, total, window, signal)
+  write(*, '(1a,2e32.16)') "parabola       : ", result, abs(result-frequency)
+  method = frequency_parabola_fit
+  result = frequency_(flag, range_min, range_max, peak, method, length, length, total, window, signal)
+  write(*, '(1a,2e32.16)') "parabola (fit) : ", result, abs(result-frequency)
+  method = frequency_search
+  result = frequency_(flag, range_min, range_max, peak, method, length, length, total, window, signal)
+  write(*, '(1a,2e32.16)') "search         : ", result, abs(result-frequency)
 
-END PROGRAM EXAMPLE
+end program example

@@ -1,332 +1,332 @@
 
 #include "signal.inc"
 
-SUBMODULE (SIGNAL) FREQUENCY
-  IMPLICIT NONE
-  CONTAINS
+submodule (signal) frequency
+  implicit none
+  contains
   ! ############################################################################################################################# !
-  ! INITIAL FREQUENCY ESTIMATION
-  ! (FUNCTION) FREQUENCY_INITIAL_(<RANGE_MIN>, <RANGE_MAX>, <PEAK>, <LENGTH>, <PAD>, <SEQUENCE>)
-  ! <RANGE_MIN>            -- (IN)     (MIN) FREQUENCY RANGE (RK)
-  ! <RANGE_MAX>            -- (IN)     (MAX) FREQUENCY RANGE (RK)
-  ! <PEAK>                 -- (IN)     PEAK NUMBER TO USE (IK), <PEAK> = 0 USE MAXIMUM BIN, <PEAK> = N > 0 USE N'TH PEAK WITHIN GIVEN FREQUENCY RANGE
-  ! <LENGTH>               -- (IN)     INPUT SEQUENCE LENGTH (IK)
-  ! <PAD>                  -- (IN)     PADDED SEQUENCE LENGTH (IK), IF PAD > LENGTH, INPUT SEQUENCE IS PADDED WITH ZEROS
-  ! <SEQUENCE>             -- (IN)     INPUT (PROCESSED) SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <FREQUENCY_>           -- (OUT)    INITIAL FREQUENCY ESTIMATION (RK)
+  ! initial frequency estimation
+  ! (function) frequency_initial_(<range_min>, <range_max>, <peak>, <length>, <pad>, <sequence>)
+  ! <range_min>            -- (in)     (min) frequency range (rk)
+  ! <range_max>            -- (in)     (max) frequency range (rk)
+  ! <peak>                 -- (in)     peak number to use (ik), <peak> = 0 use maximum bin, <peak> = n > 0 use n'th peak within given frequency range
+  ! <length>               -- (in)     input sequence length (ik)
+  ! <pad>                  -- (in)     padded sequence length (ik), if pad > length, input sequence is padded with zeros
+  ! <sequence>             -- (in)     input (processed) sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
+  ! <frequency_>           -- (out)    initial frequency estimation (rk)
   ! double  frequency_initial_(double* range_min, double* range_max, int* peak, int* length, int* pad, double* sequence) ;
-  MODULE REAL(RK) FUNCTION FREQUENCY_INITIAL_(RANGE_MIN, RANGE_MAX, PEAK, LENGTH, PAD, SEQUENCE) &
-    BIND(C, NAME = "frequency_initial_")
-    REAL(RK), INTENT(IN) :: RANGE_MIN
-    REAL(RK), INTENT(IN) :: RANGE_MAX
-    INTEGER(IK), INTENT(IN) :: PEAK
-    INTEGER(IK), INTENT(IN):: LENGTH
-    INTEGER(IK), INTENT(IN):: PAD
-    REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
-    INTEGER(IK) :: BIN_MIN
-    INTEGER(IK) :: BIN_MAX
-    REAL(RK), DIMENSION(2_IK*PAD) :: FOURIER
-    INTEGER(IK) :: BIN
-    REAL(RK), DIMENSION(PAD) :: AMPLITUDE
-    CALL PAD_(LENGTH, PAD, SEQUENCE, FOURIER)
-    CALL __FFT__(PAD, FFT_FORWARD, FOURIER)
-    AMPLITUDE = LOG10(EPSILON+SQRT(FOURIER(1_IK::2_IK)**2_IK+FOURIER(2_IK::2_IK)**2_IK))
-    BIN_MIN = INT(RANGE_MIN*REAL(PAD, RK), IK) + 1_IK
-    BIN_MAX = INT(RANGE_MAX*REAL(PAD, RK), IK) + 0_IK
-    IF (PEAK == 0_IK) THEN
-      BIN = BIN_MIN-1_IK+INT(__MAXLOC__(AMPLITUDE(BIN_MIN:BIN_MAX:1_IK), 1_IK), IK)
-    ELSE
-      BIN = BIN_MIN-1_IK+PEAK_(BIN_MAX-BIN_MIN, AMPLITUDE(BIN_MIN:BIN_MAX:1_IK), PEAK)
-    END IF
-    FREQUENCY_INITIAL_ = REAL(BIN-1_IK, RK)/REAL(PAD, RK)
-  END FUNCTION FREQUENCY_INITIAL_
+  module real(rk) function frequency_initial_(range_min, range_max, peak, length, pad, sequence) &
+    bind(c, name = "frequency_initial_")
+    real(rk), intent(in) :: range_min
+    real(rk), intent(in) :: range_max
+    integer(ik), intent(in) :: peak
+    integer(ik), intent(in):: length
+    integer(ik), intent(in):: pad
+    real(rk), intent(in), dimension(2_ik*length) :: sequence
+    integer(ik) :: bin_min
+    integer(ik) :: bin_max
+    real(rk), dimension(2_ik*pad) :: fourier
+    integer(ik) :: bin
+    real(rk), dimension(pad) :: amplitude
+    call pad_(length, pad, sequence, fourier)
+    call __fft__(pad, fft_forward, fourier)
+    amplitude = log10(epsilon+sqrt(fourier(1_ik::2_ik)**2_ik+fourier(2_ik::2_ik)**2_ik))
+    bin_min = int(range_min*real(pad, rk), ik) + 1_ik
+    bin_max = int(range_max*real(pad, rk), ik) + 0_ik
+    if (peak == 0_ik) then
+      bin = bin_min-1_ik+int(__maxloc__(amplitude(bin_min:bin_max:1_ik), 1_ik), ik)
+    else
+      bin = bin_min-1_ik+peak_(bin_max-bin_min, amplitude(bin_min:bin_max:1_ik), peak)
+    end if
+    frequency_initial_ = real(bin-1_ik, rk)/real(pad, rk)
+  end function frequency_initial_
   ! ############################################################################################################################# !
-  ! INITIAL FREQUENCY ESTIMATION (MEMORIZATION)
-  ! (FUNCTION) FREQUENCY_INITIAL__(<RANGE_MIN>, <RANGE_MAX>, <PEAK>, <LENGTH>, <PAD>, <SEQUENCE>)
-  ! <RANGE_MIN>            -- (IN)     (MIN) FREQUENCY RANGE (RK)
-  ! <RANGE_MAX>            -- (IN)     (MAX) FREQUENCY RANGE (RK)
-  ! <PEAK>                 -- (IN)     PEAK NUMBER TO USE (IK), <PEAK> = 0 USE MAXIMUM BIN, <PEAK> = N > 0 USE N'TH PEAK WITHIN GIVEN FREQUENCY RANGE
-  ! <LENGTH>               -- (IN)     INPUT SEQUENCE LENGTH (IK)
-  ! <PAD>                  -- (IN)     PADDED SEQUENCE LENGTH (IK), IF PAD > LENGTH, INPUT SEQUENCE IS PADDED WITH ZEROS
-  ! <SEQUENCE>             -- (IN)     INPUT (PROCESSED) SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <FREQUENCY_>           -- (OUT)    INITIAL FREQUENCY ESTIMATION (RK)
+  ! initial frequency estimation (memorization)
+  ! (function) frequency_initial__(<range_min>, <range_max>, <peak>, <length>, <pad>, <sequence>)
+  ! <range_min>            -- (in)     (min) frequency range (rk)
+  ! <range_max>            -- (in)     (max) frequency range (rk)
+  ! <peak>                 -- (in)     peak number to use (ik), <peak> = 0 use maximum bin, <peak> = n > 0 use n'th peak within given frequency range
+  ! <length>               -- (in)     input sequence length (ik)
+  ! <pad>                  -- (in)     padded sequence length (ik), if pad > length, input sequence is padded with zeros
+  ! <sequence>             -- (in)     input (processed) sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
+  ! <frequency_>           -- (out)    initial frequency estimation (rk)
   ! double  frequency_initial__(double* range_min, double* range_max, int* peak, int* length, int* pad, double* sequence) ;
-  MODULE REAL(RK) FUNCTION FREQUENCY_INITIAL__(RANGE_MIN, RANGE_MAX, PEAK, LENGTH, PAD, SEQUENCE) &
-    BIND(C, NAME = "frequency_initial__")
-    REAL(RK), INTENT(IN) :: RANGE_MIN
-    REAL(RK), INTENT(IN) :: RANGE_MAX
-    INTEGER(IK), INTENT(IN) :: PEAK
-    INTEGER(IK), INTENT(IN):: LENGTH
-    INTEGER(IK), INTENT(IN):: PAD
-    REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
-    INTEGER(IK) :: BIN_MIN
-    INTEGER(IK) :: BIN_MAX
-    REAL(RK), DIMENSION(2_IK*PAD) :: FOURIER
-    INTEGER(IK) :: BIN
-    REAL(RK), DIMENSION(PAD) :: AMPLITUDE
-    CALL PAD_(LENGTH, PAD, SEQUENCE, FOURIER)
-    CALL FFT_RADIX_EIGHT__(PAD, FFT_FORWARD, FOURIER, BANK%BIT_FFT, BANK%TRIG_FFT)
-    AMPLITUDE = LOG10(EPSILON+SQRT(FOURIER(1_IK::2_IK)**2_IK+FOURIER(2_IK::2_IK)**2_IK))
-    BIN_MIN = INT(RANGE_MIN*REAL(PAD, RK), IK) + 1_IK
-    BIN_MAX = INT(RANGE_MAX*REAL(PAD, RK), IK) + 0_IK
-    IF (PEAK == 0_IK) THEN
-      BIN = BIN_MIN-1_IK+INT(__MAXLOC__(AMPLITUDE(BIN_MIN:BIN_MAX:1_IK), 1_IK), IK)
-    ELSE
-      BIN = BIN_MIN-1_IK+PEAK_(BIN_MAX-BIN_MIN, AMPLITUDE(BIN_MIN:BIN_MAX:1_IK), PEAK)
-    END IF
-    FREQUENCY_INITIAL__ = REAL(BIN-1_IK, RK)/REAL(PAD, RK)
-  END FUNCTION FREQUENCY_INITIAL__
+  module real(rk) function frequency_initial__(range_min, range_max, peak, length, pad, sequence) &
+    bind(c, name = "frequency_initial__")
+    real(rk), intent(in) :: range_min
+    real(rk), intent(in) :: range_max
+    integer(ik), intent(in) :: peak
+    integer(ik), intent(in):: length
+    integer(ik), intent(in):: pad
+    real(rk), intent(in), dimension(2_ik*length) :: sequence
+    integer(ik) :: bin_min
+    integer(ik) :: bin_max
+    real(rk), dimension(2_ik*pad) :: fourier
+    integer(ik) :: bin
+    real(rk), dimension(pad) :: amplitude
+    call pad_(length, pad, sequence, fourier)
+    call fft_radix_eight__(pad, fft_forward, fourier, bank%bit_fft, bank%trig_fft)
+    amplitude = log10(epsilon+sqrt(fourier(1_ik::2_ik)**2_ik+fourier(2_ik::2_ik)**2_ik))
+    bin_min = int(range_min*real(pad, rk), ik) + 1_ik
+    bin_max = int(range_max*real(pad, rk), ik) + 0_ik
+    if (peak == 0_ik) then
+      bin = bin_min-1_ik+int(__maxloc__(amplitude(bin_min:bin_max:1_ik), 1_ik), ik)
+    else
+      bin = bin_min-1_ik+peak_(bin_max-bin_min, amplitude(bin_min:bin_max:1_ik), peak)
+    end if
+    frequency_initial__ = real(bin-1_ik, rk)/real(pad, rk)
+  end function frequency_initial__
   ! ############################################################################################################################# !
-  ! REFINE FREQUENCY ESTIMATION (FFRFT)
-  ! (FUNCTION) FREQUENCY_REFINE_(<METHOD>, <LENGTH>, <SEQUENCE>, <INITIAL>)
-  ! <METHOD>               -- (IN)     METHOD
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
-  ! <SEQUENCE>             -- (IN)     INPUT (PROCESSED) SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <INITIAL>              -- (IN)     INITIAL FREQUENCY GUESS (RK)
-  ! <FREQUENCY_REFINE_>    -- (OUT)    REFINED FREQUENCY ESTIMATION (RK)
+  ! refine frequency estimation (ffrft)
+  ! (function) frequency_refine_(<method>, <length>, <sequence>, <initial>)
+  ! <method>               -- (in)     method
+  ! <length>               -- (in)     sequence length (ik)
+  ! <sequence>             -- (in)     input (processed) sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
+  ! <initial>              -- (in)     initial frequency guess (rk)
+  ! <frequency_refine_>    -- (out)    refined frequency estimation (rk)
   ! double  frequency_refine_(int* method, int* length, double* sequence, double* initial) ;
-  MODULE REAL(RK) FUNCTION FREQUENCY_REFINE_(METHOD, LENGTH, SEQUENCE, INITIAL) &
-    BIND(C, NAME = "frequency_refine_")
-    INTEGER(IK), INTENT(IN):: METHOD
-    INTEGER(IK), INTENT(IN):: LENGTH
-    REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
-    REAL(RK), INTENT(IN) :: INITIAL
-    REAL(RK), DIMENSION(2_IK*LENGTH) :: FOURIER
-    INTEGER(IK) :: FST, CND
-    REAL(RK) :: FACTOR
-    REAL(RK), DIMENSION(LENGTH) :: MUL, COS_MUL, SIN_MUL
-    INTEGER :: I
-    FREQUENCY_REFINE_ = 0.0_RK
-    FST = INT(REAL(LENGTH, RK)*INITIAL, IK)+1_IK
-    FACTOR = TWO_PI*REAL(FST-2_IK, RK)/REAL(LENGTH, RK)
-    MUL = FACTOR*REAL([(I, I = 0_IK, LENGTH-1_IK, 1_IK)], RK)
-    COS_MUL = COS(MUL)
-    SIN_MUL = SIN(MUL)
-    FOURIER(1_IK::2_IK) = SEQUENCE(1_IK::2_IK)*COS_MUL-SEQUENCE(2_IK::2_IK)*SIN_MUL
-    FOURIER(2_IK::2_IK) = SEQUENCE(1_IK::2_IK)*SIN_MUL+SEQUENCE(2_IK::2_IK)*COS_MUL
-    CALL FFRFT_(LENGTH, 2.0_RK/REAL(LENGTH, RK), FOURIER)
-    MUL = LOG10(SQRT(FOURIER(1_IK::2_IK)**2_IK+FOURIER(2_IK::2_IK)**2_IK)+EPSILON)
-    CND = INT(__MAXLOC__(MUL, 1_IK), IK)
-    IF (METHOD == FREQUENCY_FFRFT) THEN
-      FREQUENCY_REFINE_ = (REAL(FST, RK)-2.0_RK+2.0_RK*(REAL(CND, RK)-1.0_RK)/REAL(LENGTH, RK))/REAL(LENGTH, RK)
-      RETURN
-    END IF
-    IF (METHOD == FREQUENCY_PARABOLA) THEN
-      FREQUENCY_REFINE_ = REAL(CND, RK)-0.5_RK+(MUL(-1_IK+CND)-MUL(CND))/(MUL(-1_IK+CND)-2.0_RK*MUL(CND)+MUL(1_IK+CND))
-      FREQUENCY_REFINE_ = (REAL(FST, RK)-2.0_RK+2.0_RK*(FREQUENCY_REFINE_-1.0_RK)/REAL(LENGTH, RK))/REAL(LENGTH, RK)
-      RETURN
-    END IF
-    IF (METHOD == FREQUENCY_PARABOLA_FIT) THEN
-      BLOCK
-        REAL(RK), DIMENSION(2_IK*PARABOLA_FIT_LENGTH+1_IK) :: X
-        REAL(RK), DIMENSION(2_IK*PARABOLA_FIT_LENGTH+1_IK) :: Y
-        REAL(RK) :: A, B, C
-        INTEGER(IK), DIMENSION(2_IK*PARABOLA_FIT_LENGTH+1_IK) :: INDEX
-        INDEX = CND + [(I, I = -PARABOLA_FIT_LENGTH, +PARABOLA_FIT_LENGTH, 1_IK)]
-        X = REAL(INDEX, RK)
-        Y = MUL([INDEX])
-        CALL FIT_PARABOLA_(2_IK*PARABOLA_FIT_LENGTH+1_IK, X, Y, A, B, C, FREQUENCY_REFINE_)
-        FREQUENCY_REFINE_ = (REAL(FST, RK)-2.0_RK+2.0_RK*(FREQUENCY_REFINE_-1.0_RK)/REAL(LENGTH, RK))/REAL(LENGTH, RK)
-      END BLOCK
-    END IF
-  END FUNCTION FREQUENCY_REFINE_
+  module real(rk) function frequency_refine_(method, length, sequence, initial) &
+    bind(c, name = "frequency_refine_")
+    integer(ik), intent(in):: method
+    integer(ik), intent(in):: length
+    real(rk), intent(in), dimension(2_ik*length) :: sequence
+    real(rk), intent(in) :: initial
+    real(rk), dimension(2_ik*length) :: fourier
+    integer(ik) :: fst, cnd
+    real(rk) :: factor
+    real(rk), dimension(length) :: mul, cos_mul, sin_mul
+    integer :: i
+    frequency_refine_ = 0.0_rk
+    fst = int(real(length, rk)*initial, ik)+1_ik
+    factor = two_pi*real(fst-2_ik, rk)/real(length, rk)
+    mul = factor*real([(i, i = 0_ik, length-1_ik, 1_ik)], rk)
+    cos_mul = cos(mul)
+    sin_mul = sin(mul)
+    fourier(1_ik::2_ik) = sequence(1_ik::2_ik)*cos_mul-sequence(2_ik::2_ik)*sin_mul
+    fourier(2_ik::2_ik) = sequence(1_ik::2_ik)*sin_mul+sequence(2_ik::2_ik)*cos_mul
+    call ffrft_(length, 2.0_rk/real(length, rk), fourier)
+    mul = log10(sqrt(fourier(1_ik::2_ik)**2_ik+fourier(2_ik::2_ik)**2_ik)+epsilon)
+    cnd = int(__maxloc__(mul, 1_ik), ik)
+    if (method == frequency_ffrft) then
+      frequency_refine_ = (real(fst, rk)-2.0_rk+2.0_rk*(real(cnd, rk)-1.0_rk)/real(length, rk))/real(length, rk)
+      return
+    end if
+    if (method == frequency_parabola) then
+      frequency_refine_ = real(cnd, rk)-0.5_rk+(mul(-1_ik+cnd)-mul(cnd))/(mul(-1_ik+cnd)-2.0_rk*mul(cnd)+mul(1_ik+cnd))
+      frequency_refine_ = (real(fst, rk)-2.0_rk+2.0_rk*(frequency_refine_-1.0_rk)/real(length, rk))/real(length, rk)
+      return
+    end if
+    if (method == frequency_parabola_fit) then
+      block
+        real(rk), dimension(2_ik*parabola_fit_length+1_ik) :: x
+        real(rk), dimension(2_ik*parabola_fit_length+1_ik) :: y
+        real(rk) :: a, b, c
+        integer(ik), dimension(2_ik*parabola_fit_length+1_ik) :: index
+        index = cnd + [(i, i = -parabola_fit_length, +parabola_fit_length, 1_ik)]
+        x = real(index, rk)
+        y = mul([index])
+        call fit_parabola_(2_ik*parabola_fit_length+1_ik, x, y, a, b, c, frequency_refine_)
+        frequency_refine_ = (real(fst, rk)-2.0_rk+2.0_rk*(frequency_refine_-1.0_rk)/real(length, rk))/real(length, rk)
+      end block
+    end if
+  end function frequency_refine_
   ! ############################################################################################################################# !
-  ! REFINE FREQUENCY ESTIMATION (FFRFT) (MEMORIZATION)
-  ! (FUNCTION) FREQUENCY_REFINE__(<METHOD>, <LENGTH>, <SEQUENCE>, <INITIAL>)
-  ! <METHOD>               -- (IN)     METHOD
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
-  ! <SEQUENCE>             -- (IN)     INPUT (PROCESSED) SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <INITIAL>              -- (IN)     INITIAL FREQUENCY GUESS (RK)
-  ! <FREQUENCY_REFINE_>    -- (OUT)    REFINED FREQUENCY ESTIMATION (RK)
+  ! refine frequency estimation (ffrft) (memorization)
+  ! (function) frequency_refine__(<method>, <length>, <sequence>, <initial>)
+  ! <method>               -- (in)     method
+  ! <length>               -- (in)     sequence length (ik)
+  ! <sequence>             -- (in)     input (processed) sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
+  ! <initial>              -- (in)     initial frequency guess (rk)
+  ! <frequency_refine_>    -- (out)    refined frequency estimation (rk)
   ! double  frequency_refine__(int* method, int* length, double* sequence, double* initial) ;
-  MODULE REAL(RK) FUNCTION FREQUENCY_REFINE__(METHOD, LENGTH, SEQUENCE, INITIAL) &
-    BIND(C, NAME = "frequency_refine__")
-    INTEGER(IK), INTENT(IN):: METHOD
-    INTEGER(IK), INTENT(IN):: LENGTH
-    REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
-    REAL(RK), INTENT(IN) :: INITIAL
-    REAL(RK), DIMENSION(2_IK*LENGTH) :: FOURIER
-    INTEGER(IK) :: FST, CND
-    REAL(RK) :: FACTOR
-    REAL(RK), DIMENSION(LENGTH) :: MUL, COS_MUL, SIN_MUL
-    INTEGER :: I
-    FREQUENCY_REFINE__ = 0.0_RK
-    FST = INT(REAL(LENGTH, RK)*INITIAL, IK)+1_IK
-    FACTOR = TWO_PI*REAL(FST-2_IK, RK)/REAL(LENGTH, RK)
-    MUL = FACTOR*REAL([(I, I = 0_IK, LENGTH-1_IK, 1_IK)], RK)
-    COS_MUL = COS(MUL)
-    SIN_MUL = SIN(MUL)
-    FOURIER(1_IK::2_IK) = SEQUENCE(1_IK::2_IK)*COS_MUL-SEQUENCE(2_IK::2_IK)*SIN_MUL
-    FOURIER(2_IK::2_IK) = SEQUENCE(1_IK::2_IK)*SIN_MUL+SEQUENCE(2_IK::2_IK)*COS_MUL
-    CALL FFRFT__(LENGTH, FOURIER, BANK%BIT_FFRFT, BANK%TRIG_FFRFT, BANK%COS_FST, BANK%SIN_FST, BANK%COS_LST, BANK%SIN_LST)
-    MUL = LOG10(SQRT(FOURIER(1_IK::2_IK)**2_IK+FOURIER(2_IK::2_IK)**2_IK)+EPSILON)
-    CND = INT(__MAXLOC__(MUL, 1_IK), IK)
-    IF (METHOD == FREQUENCY_FFRFT) THEN
-      FREQUENCY_REFINE__ = (REAL(FST, RK)-2.0_RK+2.0_RK*(REAL(CND, RK)-1.0_RK)/REAL(LENGTH, RK))/REAL(LENGTH, RK)
-      RETURN
-    END IF
-    IF (METHOD == FREQUENCY_PARABOLA) THEN
-      FREQUENCY_REFINE__ = REAL(CND, RK)-0.5_RK+(MUL(-1_IK+CND)-MUL(CND))/(MUL(-1_IK+CND)-2.0_RK*MUL(CND)+MUL(1_IK+CND))
-      FREQUENCY_REFINE__ = (REAL(FST, RK)-2.0_RK+2.0_RK*(FREQUENCY_REFINE__-1.0_RK)/REAL(LENGTH, RK))/REAL(LENGTH, RK)
-      RETURN
-    END IF
-    IF (METHOD == FREQUENCY_PARABOLA_FIT) THEN
-      BLOCK
-        REAL(RK), DIMENSION(2_IK*PARABOLA_FIT_LENGTH+1_IK) :: X
-        REAL(RK), DIMENSION(2_IK*PARABOLA_FIT_LENGTH+1_IK) :: Y
-        REAL(RK) :: A, B, C
-        INTEGER(IK), DIMENSION(2_IK*PARABOLA_FIT_LENGTH+1_IK) :: INDEX
-        INDEX = CND + [(I, I = -PARABOLA_FIT_LENGTH, +PARABOLA_FIT_LENGTH, 1_IK)]
-        X = REAL(INDEX, RK)
-        Y = MUL([INDEX])
-        CALL FIT_PARABOLA_(2_IK*PARABOLA_FIT_LENGTH+1_IK, X, Y, A, B, C, FREQUENCY_REFINE__)
-        FREQUENCY_REFINE__ = (REAL(FST, RK)-2.0_RK+2.0_RK*(FREQUENCY_REFINE__-1.0_RK)/REAL(LENGTH, RK))/REAL(LENGTH, RK)
-      END BLOCK
-    END IF
-  END FUNCTION FREQUENCY_REFINE__
+  module real(rk) function frequency_refine__(method, length, sequence, initial) &
+    bind(c, name = "frequency_refine__")
+    integer(ik), intent(in):: method
+    integer(ik), intent(in):: length
+    real(rk), intent(in), dimension(2_ik*length) :: sequence
+    real(rk), intent(in) :: initial
+    real(rk), dimension(2_ik*length) :: fourier
+    integer(ik) :: fst, cnd
+    real(rk) :: factor
+    real(rk), dimension(length) :: mul, cos_mul, sin_mul
+    integer :: i
+    frequency_refine__ = 0.0_rk
+    fst = int(real(length, rk)*initial, ik)+1_ik
+    factor = two_pi*real(fst-2_ik, rk)/real(length, rk)
+    mul = factor*real([(i, i = 0_ik, length-1_ik, 1_ik)], rk)
+    cos_mul = cos(mul)
+    sin_mul = sin(mul)
+    fourier(1_ik::2_ik) = sequence(1_ik::2_ik)*cos_mul-sequence(2_ik::2_ik)*sin_mul
+    fourier(2_ik::2_ik) = sequence(1_ik::2_ik)*sin_mul+sequence(2_ik::2_ik)*cos_mul
+    call ffrft__(length, fourier, bank%bit_ffrft, bank%trig_ffrft, bank%cos_fst, bank%sin_fst, bank%cos_lst, bank%sin_lst)
+    mul = log10(sqrt(fourier(1_ik::2_ik)**2_ik+fourier(2_ik::2_ik)**2_ik)+epsilon)
+    cnd = int(__maxloc__(mul, 1_ik), ik)
+    if (method == frequency_ffrft) then
+      frequency_refine__ = (real(fst, rk)-2.0_rk+2.0_rk*(real(cnd, rk)-1.0_rk)/real(length, rk))/real(length, rk)
+      return
+    end if
+    if (method == frequency_parabola) then
+      frequency_refine__ = real(cnd, rk)-0.5_rk+(mul(-1_ik+cnd)-mul(cnd))/(mul(-1_ik+cnd)-2.0_rk*mul(cnd)+mul(1_ik+cnd))
+      frequency_refine__ = (real(fst, rk)-2.0_rk+2.0_rk*(frequency_refine__-1.0_rk)/real(length, rk))/real(length, rk)
+      return
+    end if
+    if (method == frequency_parabola_fit) then
+      block
+        real(rk), dimension(2_ik*parabola_fit_length+1_ik) :: x
+        real(rk), dimension(2_ik*parabola_fit_length+1_ik) :: y
+        real(rk) :: a, b, c
+        integer(ik), dimension(2_ik*parabola_fit_length+1_ik) :: index
+        index = cnd + [(i, i = -parabola_fit_length, +parabola_fit_length, 1_ik)]
+        x = real(index, rk)
+        y = mul([index])
+        call fit_parabola_(2_ik*parabola_fit_length+1_ik, x, y, a, b, c, frequency_refine__)
+        frequency_refine__ = (real(fst, rk)-2.0_rk+2.0_rk*(frequency_refine__-1.0_rk)/real(length, rk))/real(length, rk)
+      end block
+    end if
+  end function frequency_refine__
   ! ############################################################################################################################# !
-  ! REFINE FREQUENCY ESTIMATION (BINARY SEARCH)
-  ! (FUNCTION) BINARY_AMPLITUDE_(<FLAG>, <LENGTH>, <TOTAL>, <WINDOW>, <SEQUENCE>, <INITIAL>)
-  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
-  ! <TOTAL>                -- (IN)     SUM(WINDOW) (RK)
-  ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <SEQUENCE>             -- (IN)     INPUT (UNPROCESSED) SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <INITIAL>              -- (IN)     INITIAL FREQUENCY GUESS (RK)
-  ! <BINARY_AMPLITUDE_>    -- (OUT)    REFINED FREQUENCY (RK)
+  ! refine frequency estimation (binary search)
+  ! (function) binary_amplitude_(<flag>, <length>, <total>, <window>, <sequence>, <initial>)
+  ! <flag>                 -- (in)     complex flag (ik), 0/1 for real/complex input sequence
+  ! <length>               -- (in)     sequence length (ik)
+  ! <total>                -- (in)     sum(window) (rk)
+  ! <window>               -- (in)     window array (rk array of length = <length>)
+  ! <sequence>             -- (in)     input (unprocessed) sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
+  ! <initial>              -- (in)     initial frequency guess (rk)
+  ! <binary_amplitude_>    -- (out)    refined frequency (rk)
   ! double  binary_amplitude_(int* flag, int* length, double* total, double* window, double* sequence, double* initial) ;
-  MODULE REAL(RK) FUNCTION BINARY_AMPLITUDE_(FLAG, LENGTH, TOTAL, WINDOW, SEQUENCE, INITIAL) &
-    BIND(C, NAME = "binary_amplitude_")
-    INTEGER(IK), INTENT(IN):: FLAG
-    INTEGER(IK), INTENT(IN):: LENGTH
-    REAL(RK), INTENT(IN) :: TOTAL
-    REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: WINDOW
-    REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
-    REAL(RK), INTENT(IN) :: INITIAL
-    BINARY_AMPLITUDE_ = BINARY_(SEARCH_, INITIAL, 1.0_RK/REAL(LENGTH, RK), SEARCH_LIMIT, SEARCH_TOLERANCE)
-  CONTAINS
-    REAL(RK) FUNCTION SEARCH_(FREQUENCY)
-      REAL(RK), INTENT(IN) :: FREQUENCY
-      REAL(RK) :: COS_AMP
-      REAL(RK) :: SIN_AMP
-      REAL(RK) :: AMPLITUDE
-      CALL AMPLITUDE_(FLAG, LENGTH, TOTAL, WINDOW, SEQUENCE, FREQUENCY, COS_AMP, SIN_AMP, AMPLITUDE)
-      SEARCH_ = AMPLITUDE
-    END FUNCTION SEARCH_
-  END FUNCTION
+  module real(rk) function binary_amplitude_(flag, length, total, window, sequence, initial) &
+    bind(c, name = "binary_amplitude_")
+    integer(ik), intent(in):: flag
+    integer(ik), intent(in):: length
+    real(rk), intent(in) :: total
+    real(rk), intent(in), dimension(length) :: window
+    real(rk), intent(in), dimension(2_ik*length) :: sequence
+    real(rk), intent(in) :: initial
+    binary_amplitude_ = binary_(search_, initial, 1.0_rk/real(length, rk), search_limit, search_tolerance)
+  contains
+    real(rk) function search_(frequency)
+      real(rk), intent(in) :: frequency
+      real(rk) :: cos_amp
+      real(rk) :: sin_amp
+      real(rk) :: amplitude
+      call amplitude_(flag, length, total, window, sequence, frequency, cos_amp, sin_amp, amplitude)
+      search_ = amplitude
+    end function search_
+  end function
   ! ############################################################################################################################# !
-  ! REFINE FREQUENCY ESTIMATION (GOLDEN SEARCH)
-  ! (FUNCTION) GOLDEN_AMPLITUDE_(<FLAG>, <LENGTH>, <TOTAL>, <WINDOW>, <SEQUENCE>, <INITIAL>)
-  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
-  ! <TOTAL>                -- (IN)     SUM(WINDOW) (RK)
-  ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <SEQUENCE>             -- (IN)     INPUT (UNPROCESSED) SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <INITIAL>              -- (IN)     INITIAL FREQUENCY GUESS (RK)
-  ! <GOLDEN_AMPLITUDE_>    -- (OUT)    REFINED FREQUENCY (RK)
+  ! refine frequency estimation (golden search)
+  ! (function) golden_amplitude_(<flag>, <length>, <total>, <window>, <sequence>, <initial>)
+  ! <flag>                 -- (in)     complex flag (ik), 0/1 for real/complex input sequence
+  ! <length>               -- (in)     sequence length (ik)
+  ! <total>                -- (in)     sum(window) (rk)
+  ! <window>               -- (in)     window array (rk array of length = <length>)
+  ! <sequence>             -- (in)     input (unprocessed) sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
+  ! <initial>              -- (in)     initial frequency guess (rk)
+  ! <golden_amplitude_>    -- (out)    refined frequency (rk)
   ! double  golden_amplitude_(int* flag, int* length, double* total, double* window, double* sequence, double* initial) ;
-  MODULE REAL(RK) FUNCTION GOLDEN_AMPLITUDE_(FLAG, LENGTH, TOTAL, WINDOW, SEQUENCE, INITIAL) &
-    BIND(C, NAME = "golden_amplitude_")
-    INTEGER(IK), INTENT(IN):: FLAG
-    INTEGER(IK), INTENT(IN):: LENGTH
-    REAL(RK), INTENT(IN) :: TOTAL
-    REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: WINDOW
-    REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
-    REAL(RK), INTENT(IN) :: INITIAL
-    GOLDEN_AMPLITUDE_ = GOLDEN_(SEARCH_, INITIAL, 1.0_RK/REAL(LENGTH, RK), SEARCH_LIMIT, SEARCH_TOLERANCE)
-  CONTAINS
-    REAL(RK) FUNCTION SEARCH_(FREQUENCY)
-      REAL(RK), INTENT(IN) :: FREQUENCY
-      REAL(RK) :: COS_AMP
-      REAL(RK) :: SIN_AMP
-      REAL(RK) :: AMPLITUDE
-      CALL AMPLITUDE_(FLAG, LENGTH, TOTAL, WINDOW, SEQUENCE, FREQUENCY, COS_AMP, SIN_AMP, AMPLITUDE)
-      SEARCH_ = AMPLITUDE
-    END FUNCTION SEARCH_
-  END FUNCTION
+  module real(rk) function golden_amplitude_(flag, length, total, window, sequence, initial) &
+    bind(c, name = "golden_amplitude_")
+    integer(ik), intent(in):: flag
+    integer(ik), intent(in):: length
+    real(rk), intent(in) :: total
+    real(rk), intent(in), dimension(length) :: window
+    real(rk), intent(in), dimension(2_ik*length) :: sequence
+    real(rk), intent(in) :: initial
+    golden_amplitude_ = golden_(search_, initial, 1.0_rk/real(length, rk), search_limit, search_tolerance)
+  contains
+    real(rk) function search_(frequency)
+      real(rk), intent(in) :: frequency
+      real(rk) :: cos_amp
+      real(rk) :: sin_amp
+      real(rk) :: amplitude
+      call amplitude_(flag, length, total, window, sequence, frequency, cos_amp, sin_amp, amplitude)
+      search_ = amplitude
+    end function search_
+  end function
   ! ############################################################################################################################# !
-  ! FREQUENCY ESTIMATION (GERERIC)
-  ! (FUNCTION) FREQUENCY_(<FLAG>, <RANGE_MIN>, <RANGE_MAX>, <PEAK>, <METHOD>, <LENGTH>, <PAD>, <TOTAL>, <WINDOW>, <SEQUENCE>)
-  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
-  ! <RANGE_MIN>            -- (IN)     (MIN) FREQUENCY RANGE (RK)
-  ! <RANGE_MAX>            -- (IN)     (MAX) FREQUENCY RANGE (RK)
-  ! <PEAK>                 -- (IN)     PEAK NUMBER TO USE (IK), <PEAK> = 0 USE MAXIMUM BIN, <PEAK> = N > 0 USE N'TH PEAK WITHIN GIVEN FREQUENCY RANGE
-  ! <METHOD>               -- (IN)     FREQUENCY ESTIMATION METHOD (IK)
-  ! <LENGTH>               -- (IN)     INPUT SEQUENCE LENGTH (IK)
-  ! <PAD>                  -- (IN)     PADDED SEQUENCE LENGTH (IK), IF PAD > LENGTH, INPUT SEQUENCE IS PADDED WITH ZEROS
-  ! <TOTAL>                -- (IN)     SUM(WINDOW) (RK)
-  ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <SEQUENCE>             -- (IN)     INPUT (UNPROCESSED) SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <FREQUENCY_>           -- (OUT)    FREQUENCY ESTIMATION (RK)
+  ! frequency estimation (gereric)
+  ! (function) frequency_(<flag>, <range_min>, <range_max>, <peak>, <method>, <length>, <pad>, <total>, <window>, <sequence>)
+  ! <flag>                 -- (in)     complex flag (ik), 0/1 for real/complex input sequence
+  ! <range_min>            -- (in)     (min) frequency range (rk)
+  ! <range_max>            -- (in)     (max) frequency range (rk)
+  ! <peak>                 -- (in)     peak number to use (ik), <peak> = 0 use maximum bin, <peak> = n > 0 use n'th peak within given frequency range
+  ! <method>               -- (in)     frequency estimation method (ik)
+  ! <length>               -- (in)     input sequence length (ik)
+  ! <pad>                  -- (in)     padded sequence length (ik), if pad > length, input sequence is padded with zeros
+  ! <total>                -- (in)     sum(window) (rk)
+  ! <window>               -- (in)     window array (rk array of length = <length>)
+  ! <sequence>             -- (in)     input (unprocessed) sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
+  ! <frequency_>           -- (out)    frequency estimation (rk)
   ! double  frequency_(int* flag, double* range_min, double* range_max, int* peak, int* method, int* length, int* pad, double* total, double* window, double* sequence) ;
-  MODULE REAL(RK) FUNCTION FREQUENCY_(FLAG, RANGE_MIN, RANGE_MAX, PEAK, METHOD, LENGTH, PAD, TOTAL, WINDOW, SEQUENCE) &
-    BIND(C, NAME = "frequency_")
-    INTEGER(IK), INTENT(IN):: FLAG
-    REAL(RK), INTENT(IN) :: RANGE_MIN
-    REAL(RK), INTENT(IN) :: RANGE_MAX
-    INTEGER(IK), INTENT(IN) :: PEAK
-    INTEGER(IK), INTENT(IN) :: METHOD
-    INTEGER(IK), INTENT(IN):: LENGTH
-    INTEGER(IK), INTENT(IN):: PAD
-    REAL(RK), INTENT(IN) :: TOTAL
-    REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: WINDOW
-    REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
-    REAL(RK), DIMENSION(2_IK*LENGTH) :: COPY
-    REAL(RK), DIMENSION(2_IK*LENGTH) :: LOCAL
-    CALL REMOVE_WINDOW_MEAN_(LENGTH, TOTAL, WINDOW, SEQUENCE, COPY)
-    CALL APPLY_WINDOW_(LENGTH, WINDOW, COPY, LOCAL)
-    FREQUENCY_ = FREQUENCY_INITIAL_(RANGE_MIN, RANGE_MAX, PEAK, LENGTH, PAD, LOCAL)
-    IF (METHOD == FREQUENCY_FFT) RETURN
-    IF (METHOD == FREQUENCY_FFRFT .OR. METHOD == FREQUENCY_PARABOLA .OR. METHOD == FREQUENCY_PARABOLA_FIT) THEN
-      FREQUENCY_ = FREQUENCY_REFINE_(METHOD, LENGTH, LOCAL, FREQUENCY_)
-      RETURN
-    END IF
-    IF (METHOD == FREQUENCY_SEARCH) THEN
-      FREQUENCY_ = __SEARCH__(FLAG, LENGTH, TOTAL, WINDOW, SEQUENCE, FREQUENCY_)
-      RETURN
-    END IF
-  END FUNCTION FREQUENCY_
+  module real(rk) function frequency_(flag, range_min, range_max, peak, method, length, pad, total, window, sequence) &
+    bind(c, name = "frequency_")
+    integer(ik), intent(in):: flag
+    real(rk), intent(in) :: range_min
+    real(rk), intent(in) :: range_max
+    integer(ik), intent(in) :: peak
+    integer(ik), intent(in) :: method
+    integer(ik), intent(in):: length
+    integer(ik), intent(in):: pad
+    real(rk), intent(in) :: total
+    real(rk), intent(in), dimension(length) :: window
+    real(rk), intent(in), dimension(2_ik*length) :: sequence
+    real(rk), dimension(2_ik*length) :: copy
+    real(rk), dimension(2_ik*length) :: local
+    call remove_window_mean_(length, total, window, sequence, copy)
+    call apply_window_(length, window, copy, local)
+    frequency_ = frequency_initial_(range_min, range_max, peak, length, pad, local)
+    if (method == frequency_fft) return
+    if (method == frequency_ffrft .or. method == frequency_parabola .or. method == frequency_parabola_fit) then
+      frequency_ = frequency_refine_(method, length, local, frequency_)
+      return
+    end if
+    if (method == frequency_search) then
+      frequency_ = __search__(flag, length, total, window, sequence, frequency_)
+      return
+    end if
+  end function frequency_
   ! ############################################################################################################################# !
-  ! FREQUENCY ESTIMATION (GERERIC) (MEMORIZATION)
-  ! (FUNCTION) FREQUENCY__(<FLAG>, <RANGE_MIN>, <RANGE_MAX>, <PEAK>, <METHOD>, <LENGTH>, <PAD>, <TOTAL>, <WINDOW>, <SEQUENCE>)
-  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
-  ! <RANGE_MIN>            -- (IN)     (MIN) FREQUENCY RANGE (RK)
-  ! <RANGE_MAX>            -- (IN)     (MAX) FREQUENCY RANGE (RK)
-  ! <PEAK>                 -- (IN)     PEAK NUMBER TO USE (IK), <PEAK> = 0 USE MAXIMUM BIN, <PEAK> = N > 0 USE N'TH PEAK WITHIN GIVEN FREQUENCY RANGE
-  ! <METHOD>               -- (IN)     FREQUENCY ESTIMATION METHOD (IK)
-  ! <LENGTH>               -- (IN)     INPUT SEQUENCE LENGTH (IK)
-  ! <PAD>                  -- (IN)     PADDED SEQUENCE LENGTH (IK), IF PAD > LENGTH, INPUT SEQUENCE IS PADDED WITH ZEROS
-  ! <TOTAL>                -- (IN)     SUM(WINDOW) (RK)
-  ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <SEQUENCE>             -- (IN)     INPUT (UNPROCESSED) SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <FREQUENCY_>           -- (OUT)    FREQUENCY ESTIMATION (RK)
+  ! frequency estimation (gereric) (memorization)
+  ! (function) frequency__(<flag>, <range_min>, <range_max>, <peak>, <method>, <length>, <pad>, <total>, <window>, <sequence>)
+  ! <flag>                 -- (in)     complex flag (ik), 0/1 for real/complex input sequence
+  ! <range_min>            -- (in)     (min) frequency range (rk)
+  ! <range_max>            -- (in)     (max) frequency range (rk)
+  ! <peak>                 -- (in)     peak number to use (ik), <peak> = 0 use maximum bin, <peak> = n > 0 use n'th peak within given frequency range
+  ! <method>               -- (in)     frequency estimation method (ik)
+  ! <length>               -- (in)     input sequence length (ik)
+  ! <pad>                  -- (in)     padded sequence length (ik), if pad > length, input sequence is padded with zeros
+  ! <total>                -- (in)     sum(window) (rk)
+  ! <window>               -- (in)     window array (rk array of length = <length>)
+  ! <sequence>             -- (in)     input (unprocessed) sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
+  ! <frequency_>           -- (out)    frequency estimation (rk)
   ! double  frequency__(int* flag, double* range_min, double* range_max, int* peak, int* method, int* length, int* pad, double* total, double* window, double* sequence) ;
-  MODULE REAL(RK) FUNCTION FREQUENCY__(FLAG, RANGE_MIN, RANGE_MAX, PEAK, METHOD, LENGTH, PAD, TOTAL, WINDOW, SEQUENCE) &
-    BIND(C, NAME = "frequency__")
-    INTEGER(IK), INTENT(IN):: FLAG
-    REAL(RK), INTENT(IN) :: RANGE_MIN
-    REAL(RK), INTENT(IN) :: RANGE_MAX
-    INTEGER(IK), INTENT(IN) :: PEAK
-    INTEGER(IK), INTENT(IN) :: METHOD
-    INTEGER(IK), INTENT(IN):: LENGTH
-    INTEGER(IK), INTENT(IN):: PAD
-    REAL(RK), INTENT(IN) :: TOTAL
-    REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: WINDOW
-    REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
-    REAL(RK), DIMENSION(2_IK*LENGTH) :: COPY
-    REAL(RK), DIMENSION(2_IK*LENGTH) :: LOCAL
-    CALL REMOVE_WINDOW_MEAN_(LENGTH, TOTAL, WINDOW, SEQUENCE, COPY)
-    CALL APPLY_WINDOW_(LENGTH, WINDOW, COPY, LOCAL)
-    FREQUENCY__ = FREQUENCY_INITIAL__(RANGE_MIN, RANGE_MAX, PEAK, LENGTH, PAD, LOCAL)
-    IF (METHOD == FREQUENCY_FFT) RETURN
-    IF (METHOD == FREQUENCY_FFRFT .OR. METHOD == FREQUENCY_PARABOLA .OR. METHOD == FREQUENCY_PARABOLA_FIT) THEN
-      FREQUENCY__ = FREQUENCY_REFINE__(METHOD, LENGTH, LOCAL, FREQUENCY__)
-      RETURN
-    END IF
-    IF (METHOD == FREQUENCY_SEARCH) THEN
-      FREQUENCY__ = __SEARCH__(FLAG, LENGTH, TOTAL, WINDOW, SEQUENCE, FREQUENCY__)
-      RETURN
-    END IF
-  END FUNCTION FREQUENCY__
+  module real(rk) function frequency__(flag, range_min, range_max, peak, method, length, pad, total, window, sequence) &
+    bind(c, name = "frequency__")
+    integer(ik), intent(in):: flag
+    real(rk), intent(in) :: range_min
+    real(rk), intent(in) :: range_max
+    integer(ik), intent(in) :: peak
+    integer(ik), intent(in) :: method
+    integer(ik), intent(in):: length
+    integer(ik), intent(in):: pad
+    real(rk), intent(in) :: total
+    real(rk), intent(in), dimension(length) :: window
+    real(rk), intent(in), dimension(2_ik*length) :: sequence
+    real(rk), dimension(2_ik*length) :: copy
+    real(rk), dimension(2_ik*length) :: local
+    call remove_window_mean_(length, total, window, sequence, copy)
+    call apply_window_(length, window, copy, local)
+    frequency__ = frequency_initial__(range_min, range_max, peak, length, pad, local)
+    if (method == frequency_fft) return
+    if (method == frequency_ffrft .or. method == frequency_parabola .or. method == frequency_parabola_fit) then
+      frequency__ = frequency_refine__(method, length, local, frequency__)
+      return
+    end if
+    if (method == frequency_search) then
+      frequency__ = __search__(flag, length, total, window, sequence, frequency__)
+      return
+    end if
+  end function frequency__
   ! ############################################################################################################################# !
-END SUBMODULE FREQUENCY
+end submodule frequency

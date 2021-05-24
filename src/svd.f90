@@ -1,121 +1,121 @@
 #include "signal.inc"
 
-SUBMODULE (SIGNAL) SVD
-  IMPLICIT NONE
-  CONTAINS
+submodule (signal) svd
+  implicit none
+  contains
   ! ############################################################################################################################# !
-  ! SVD (DGESVD)
-  ! (SUBROUTINE) SVD_(<NR>, <NC>, <MATRIX>(<NR>, <NC>), <SVD_LIST>(MIN(<NR>, <NC>)), <U_MATRIX>(<NR>, <NR>), <V_MATRIX>(<NC>, <NC>))
-  ! <NR>                   -- (IN)     NUMBER OF ROWS (IK)
-  ! <NC>                   -- (IN)     NUMBER OF COLS (IK)
-  ! <MATRIX>               -- (IN)     INPUT MATRIX(<NR>, <NC>) (RK)
-  ! <SVD_LIST>             -- (OUT)    LIST OF SINGULAR VALUES WITH SIZE MIN(<NR>, <NC>) (RK)
-  ! <U_MATRIX>             -- (OUT)    L-SINGULAR VECTORS (<NR>, <NR>) (RK)
-  ! <V_MATRIX>             -- (OUT)    R-SINGULAR VECTORS (<NC>, <NC>) (RK)
-  MODULE SUBROUTINE SVD_(NR, NC, MATRIX, SVD_LIST, U_MATRIX, V_MATRIX)
-    INTEGER(IK), INTENT(IN) :: NR
-    INTEGER(IK), INTENT(IN) :: NC
-    REAL(RK), DIMENSION(NR, NC), INTENT(IN) :: MATRIX
-    REAL(RK), DIMENSION(MIN(NR, NC)), INTENT(OUT) :: SVD_LIST
-    REAL(RK), DIMENSION(NR, NR), INTENT(OUT) :: U_MATRIX
-    REAL(RK), DIMENSION(NC, NC), INTENT(OUT) :: V_MATRIX
-    REAL(RK), DIMENSION(2_IK*MAX(1_IK, 3_IK*MIN(INT(NR), INT(NC))+MAX(INT(NR), INT(NC)), 5_IK*MIN(INT(NR), INT(NC)))) :: WORK
-    INTEGER :: WORK_SIZE
-    INTEGER :: INFO
-    WORK_SIZE = SIZE(WORK)
-    CALL DGESVD('A','A',NR,NC,MATRIX,NR,SVD_LIST,U_MATRIX,NR,V_MATRIX,NC,WORK,WORK_SIZE,INFO)
-    V_MATRIX = TRANSPOSE(V_MATRIX)
-    WHERE (SVD_LIST < SVD_LEVEL) SVD_LIST = 0.0_RK
-  END SUBROUTINE SVD_
+  ! svd (dgesvd)
+  ! (subroutine) svd_(<nr>, <nc>, <matrix>(<nr>, <nc>), <svd_list>(min(<nr>, <nc>)), <u_matrix>(<nr>, <nr>), <v_matrix>(<nc>, <nc>))
+  ! <nr>                   -- (in)     number of rows (ik)
+  ! <nc>                   -- (in)     number of cols (ik)
+  ! <matrix>               -- (in)     input matrix(<nr>, <nc>) (rk)
+  ! <svd_list>             -- (out)    list of singular values with size min(<nr>, <nc>) (rk)
+  ! <u_matrix>             -- (out)    l-singular vectors (<nr>, <nr>) (rk)
+  ! <v_matrix>             -- (out)    r-singular vectors (<nc>, <nc>) (rk)
+  module subroutine svd_(nr, nc, matrix, svd_list, u_matrix, v_matrix)
+    integer(ik), intent(in) :: nr
+    integer(ik), intent(in) :: nc
+    real(rk), dimension(nr, nc), intent(in) :: matrix
+    real(rk), dimension(min(nr, nc)), intent(out) :: svd_list
+    real(rk), dimension(nr, nr), intent(out) :: u_matrix
+    real(rk), dimension(nc, nc), intent(out) :: v_matrix
+    real(rk), dimension(2_ik*max(1_ik, 3_ik*min(int(nr), int(nc))+max(int(nr), int(nc)), 5_ik*min(int(nr), int(nc)))) :: work
+    integer :: work_size
+    integer :: info
+    work_size = size(work)
+    call dgesvd('a','a',nr,nc,matrix,nr,svd_list,u_matrix,nr,v_matrix,nc,work,work_size,info)
+    v_matrix = transpose(v_matrix)
+    where (svd_list < svd_level) svd_list = 0.0_rk
+  end subroutine svd_
   ! ############################################################################################################################# !
-  ! SVD LIST (DGESVD)
-  ! (SUBROUTINE) SVD_LIST_(<NR>, <NC>, <MATRIX>(<NR>, <NC>), <SVD_LIST>(MIN(<NR>, <NC>)))
-  ! <NR>                   -- (IN)     NUMBER OF ROWS (IK)
-  ! <NC>                   -- (IN)     NUMBER OF COLS (IK)
-  ! <MATRIX>               -- (IN)     INPUT MATRIX(<NR>, <NC>) (RK)
-  ! <SVD_LIST>             -- (OUT)    LIST OF SINGULAR VALUES WITH SIZE MIN(<NR>, <NC>) (RK)
-  MODULE SUBROUTINE SVD_LIST_(NR, NC, MATRIX, SVD_LIST)
-    INTEGER(IK), INTENT(IN) :: NR
-    INTEGER(IK), INTENT(IN) :: NC
-    REAL(RK), DIMENSION(NR, NC), INTENT(IN) :: MATRIX
-    REAL(RK), DIMENSION(MIN(NR, NC)), INTENT(OUT) :: SVD_LIST
-    REAL(RK), DIMENSION(2*MAX(1, 3*MIN(INT(NR), INT(NC))+MAX(INT(NR), INT(NC)), 5*MIN(INT(NR), INT(NC)))) :: WORK
-    INTEGER :: WORK_SIZE
-    INTEGER :: INFO
-    REAL(RK), DIMENSION(NR, NR) :: U_MATRIX
-    REAL(RK), DIMENSION(NC, NC) :: V_MATRIX
-    WORK_SIZE = SIZE(WORK)
-    CALL DGESVD('N','N',NR,NC,MATRIX,NR,SVD_LIST,U_MATRIX,NR,V_MATRIX,NC,WORK,WORK_SIZE,INFO)
-    WHERE (SVD_LIST < SVD_LEVEL) SVD_LIST = 0.0_RK
-  END SUBROUTINE SVD_LIST_
+  ! svd list (dgesvd)
+  ! (subroutine) svd_list_(<nr>, <nc>, <matrix>(<nr>, <nc>), <svd_list>(min(<nr>, <nc>)))
+  ! <nr>                   -- (in)     number of rows (ik)
+  ! <nc>                   -- (in)     number of cols (ik)
+  ! <matrix>               -- (in)     input matrix(<nr>, <nc>) (rk)
+  ! <svd_list>             -- (out)    list of singular values with size min(<nr>, <nc>) (rk)
+  module subroutine svd_list_(nr, nc, matrix, svd_list)
+    integer(ik), intent(in) :: nr
+    integer(ik), intent(in) :: nc
+    real(rk), dimension(nr, nc), intent(in) :: matrix
+    real(rk), dimension(min(nr, nc)), intent(out) :: svd_list
+    real(rk), dimension(2*max(1, 3*min(int(nr), int(nc))+max(int(nr), int(nc)), 5*min(int(nr), int(nc)))) :: work
+    integer :: work_size
+    integer :: info
+    real(rk), dimension(nr, nr) :: u_matrix
+    real(rk), dimension(nc, nc) :: v_matrix
+    work_size = size(work)
+    call dgesvd('n','n',nr,nc,matrix,nr,svd_list,u_matrix,nr,v_matrix,nc,work,work_size,info)
+    where (svd_list < svd_level) svd_list = 0.0_rk
+  end subroutine svd_list_
   ! ############################################################################################################################# !
-  ! TRUNCATED SVD (ARPACK)
-  ! SVD_TRUNCATED_(<NR>, <NC>, <NS>, <MATRIX>(<NR>, <NC>), <LIST>(<NS>), <RVEC>(<NC>, <NS>), <LVEC>(<NR>, <NS>))
-  ! <NR>                   -- (IN)     NUMBER OF ROWS (IK)
-  ! <NC>                   -- (IN)     NUMBER OF COLS (IK)
-  ! <NS>                   -- (IN)     NUMBER OF SINGULAR VALUES TO KEEP
-  ! <MATRIX>               -- (IN)     INPUT MATRIX(<NR>, <NC>) (RK)
-  ! <LIST>                 -- (OUT)    LIST OF SINGULAR VALUES (<NS>) (RK)
-  ! <RVEC>                 -- (OUT)    L-SINGULAR VECTORS (<NC>, <NS>) (RK)
-  ! <LVEC>                 -- (OUT)    R-SINGULAR VECTORS (<NR>, <NS>) (RK)
-  MODULE SUBROUTINE SVD_TRUNCATED_(NR, NC, NS, MATRIX, LIST, RVEC, LVEC)
-    INTEGER(IK), INTENT(IN) :: NR
-    INTEGER(IK), INTENT(IN) :: NC
-    INTEGER(IK), INTENT(IN) :: NS
-    REAL(RK), DIMENSION(NR, NC), INTENT(IN) :: MATRIX
-    REAL(RK), DIMENSION(NS), INTENT(OUT) :: LIST
-    REAL(RK), DIMENSION(NC, NS), INTENT(OUT) :: RVEC
-    REAL(RK), DIMENSION(NR, NS), INTENT(OUT) :: LVEC
-    REAL(RK), DIMENSION(NS, NS) :: DIAG
-    REAL(RK), DIMENSION(NC, NS) :: COPY
-    INTEGER(IK) :: I
-    REAL(RK), DIMENSION(SVD_COL, SVD_BASIS) :: V = 0.0_RK
-    REAL(RK), DIMENSION(SVD_BASIS*(SVD_BASIS+8_IK)) :: WL
-    REAL(RK), DIMENSION(3_IK*SVD_COL) :: WD
-    REAL(RK), DIMENSION(SVD_BASIS,2_IK) :: S = 0.0_RK
-    REAL(RK), DIMENSION(SVD_COL) :: ID
-    REAL(RK), DIMENSION(SVD_ROW) :: AX
-    INTEGER(IK) :: PAR(11_IK), PNT(11_IK)
-    LOGICAL :: SELECT(SVD_BASIS)
-    CHARACTER(LEN=1) :: MAT
-    CHARACTER(LEN=2) :: MODE
-    INTEGER(IK) :: IDO, NEV, NCV, WORK, INFO, IERR, NCONV
-    REAL(RK) :: TOL, SIGMA
-    ! ARPACK
-    NEV    = NS                    ! # OF SINGULAR VALUES TO COMPUTE, NEV < N
-    NCV    = MIN(SVD_LENGTH, NC)    ! LENGTH OF ARNOLDI FACTORIZATION
-    MAT    = 'I'                   ! OP = A^T.A
-    MODE   = 'LM'                  ! COMPUTE LARGEST (MAGNITUDE) SINGULAR VALUES, ALSO LA
-    WORK   = NCV*(NCV+8_IK)        ! WORK ARRAY SIZE
-    TOL    = 0.0_RK                ! TOLERANCE
-    INFO   = 0_IK                  ! INITIAL ERROR CODE
-    IDO    = 0_IK                  ! REVERSE COMMUNICATION PARAMETER
-    PAR(1) = 1_IK                  ! SHIFT, 0/1
-    PAR(3) = SVD_LOOP              ! MAX NUMBER OF ITERAIONS
-    PAR(7) = 1_IK                  ! MODE
-    ! MAIN LOOP
-    MAIN : DO
-      CALL DSAUPD(IDO,MAT,NC,MODE,NEV,TOL,ID,NCV,V,SVD_COL,PAR,PNT,WD,WL,WORK,INFO)
-      IF (.NOT.(IDO .EQ. -1_IK .OR. IDO .EQ. 1_IK)) EXIT
-      CALL DGEMV('N',NR,NC,1.0_RK,MATRIX,NR,WD(PNT(1)),1_IK,0.0_RK,AX,1_IK)
-      CALL DGEMV('T',NR,NC,1.0_RK,MATRIX,NR,AX,1_IK,0.0_RK,WD(PNT(2)),1_IK)
-    END DO MAIN
-    ! RIGHT SINGULAR VERCTORS
-    CALL DSEUPD (.TRUE.,'ALL',SELECT,S,V,SVD_COL,SIGMA,MAT,NC,MODE,NEV,TOL,ID,NCV,V,SVD_COL,PAR,PNT,WD,WL,WORK,IERR)
-    ! SCALE, REVERSE AND SET SINGULAR VALUES
-    NCONV =  PAR(5)
-    LIST = SQRT(ABS(S(NEV:1_IK:-1_IK,1_IK)))
-    ! TRIM
-    WHERE (LIST < SVD_LEVEL) LIST = 0.0_RK
-    ! REVERSE AND SET RIGHT VECTORS
-    RVEC(:,1_IK:NEV:1_IK) = V(1_IK:NC,NEV:1_IK:-1_IK)
-    ! COMPUTE LEFT VECTOR, U = A.V.S^-1, DIRECT COMPUTATION
-    DIAG = 0.0_RK
-    DO I = 1_IK , NEV, 1_IK
-      IF(LIST(I) > SVD_LEVEL) DIAG(I, I) = 1.0_RK/LIST(I)
-    END DO
-    CALL DGEMM('N','N',NC,NS,NS,1.0_RK,RVEC,NC,DIAG,NS,0.0_RK,COPY,NC)
-    CALL DGEMM('N','N',NR,NS,NC,1.0_RK,MATRIX,NR,COPY,NC,0.0_RK,LVEC,NR)
-  END SUBROUTINE SVD_TRUNCATED_
+  ! truncated svd (arpack)
+  ! svd_truncated_(<nr>, <nc>, <ns>, <matrix>(<nr>, <nc>), <list>(<ns>), <rvec>(<nc>, <ns>), <lvec>(<nr>, <ns>))
+  ! <nr>                   -- (in)     number of rows (ik)
+  ! <nc>                   -- (in)     number of cols (ik)
+  ! <ns>                   -- (in)     number of singular values to keep
+  ! <matrix>               -- (in)     input matrix(<nr>, <nc>) (rk)
+  ! <list>                 -- (out)    list of singular values (<ns>) (rk)
+  ! <rvec>                 -- (out)    l-singular vectors (<nc>, <ns>) (rk)
+  ! <lvec>                 -- (out)    r-singular vectors (<nr>, <ns>) (rk)
+  module subroutine svd_truncated_(nr, nc, ns, matrix, list, rvec, lvec)
+    integer(ik), intent(in) :: nr
+    integer(ik), intent(in) :: nc
+    integer(ik), intent(in) :: ns
+    real(rk), dimension(nr, nc), intent(in) :: matrix
+    real(rk), dimension(ns), intent(out) :: list
+    real(rk), dimension(nc, ns), intent(out) :: rvec
+    real(rk), dimension(nr, ns), intent(out) :: lvec
+    real(rk), dimension(ns, ns) :: diag
+    real(rk), dimension(nc, ns) :: copy
+    integer(ik) :: i
+    real(rk), dimension(svd_col, svd_basis) :: v = 0.0_rk
+    real(rk), dimension(svd_basis*(svd_basis+8_ik)) :: wl
+    real(rk), dimension(3_ik*svd_col) :: wd
+    real(rk), dimension(svd_basis,2_ik) :: s = 0.0_rk
+    real(rk), dimension(svd_col) :: id
+    real(rk), dimension(svd_row) :: ax
+    integer(ik) :: par(11_ik), pnt(11_ik)
+    logical :: select(svd_basis)
+    character(len=1) :: mat
+    character(len=2) :: mode
+    integer(ik) :: ido, nev, ncv, work, info, ierr, nconv
+    real(rk) :: tol, sigma
+    ! arpack
+    nev    = ns                    ! # of singular values to compute, nev < n
+    ncv    = min(svd_length, nc)    ! length of arnoldi factorization
+    mat    = 'i'                   ! op = a^t.a
+    mode   = 'lm'                  ! compute largest (magnitude) singular values, also la
+    work   = ncv*(ncv+8_ik)        ! work array size
+    tol    = 0.0_rk                ! tolerance
+    info   = 0_ik                  ! initial error code
+    ido    = 0_ik                  ! reverse communication parameter
+    par(1) = 1_ik                  ! shift, 0/1
+    par(3) = svd_loop              ! max number of iteraions
+    par(7) = 1_ik                  ! mode
+    ! main loop
+    main : do
+      call dsaupd(ido,mat,nc,mode,nev,tol,id,ncv,v,svd_col,par,pnt,wd,wl,work,info)
+      if (.not.(ido .eq. -1_ik .or. ido .eq. 1_ik)) exit
+      call dgemv('n',nr,nc,1.0_rk,matrix,nr,wd(pnt(1)),1_ik,0.0_rk,ax,1_ik)
+      call dgemv('t',nr,nc,1.0_rk,matrix,nr,ax,1_ik,0.0_rk,wd(pnt(2)),1_ik)
+    end do main
+    ! right singular verctors
+    call dseupd (.true.,'all',select,s,v,svd_col,sigma,mat,nc,mode,nev,tol,id,ncv,v,svd_col,par,pnt,wd,wl,work,ierr)
+    ! scale, reverse and set singular values
+    nconv =  par(5)
+    list = sqrt(abs(s(nev:1_ik:-1_ik,1_ik)))
+    ! trim
+    where (list < svd_level) list = 0.0_rk
+    ! reverse and set right vectors
+    rvec(:,1_ik:nev:1_ik) = v(1_ik:nc,nev:1_ik:-1_ik)
+    ! compute left vector, u = a.v.s^-1, direct computation
+    diag = 0.0_rk
+    do i = 1_ik , nev, 1_ik
+      if(list(i) > svd_level) diag(i, i) = 1.0_rk/list(i)
+    end do
+    call dgemm('n','n',nc,ns,ns,1.0_rk,rvec,nc,diag,ns,0.0_rk,copy,nc)
+    call dgemm('n','n',nr,ns,nc,1.0_rk,matrix,nr,copy,nc,0.0_rk,lvec,nr)
+  end subroutine svd_truncated_
   ! ############################################################################################################################# !
-END SUBMODULE SVD
+end submodule svd

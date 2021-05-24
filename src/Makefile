@@ -30,34 +30,34 @@ all: libsignal.a
 libsignal.a: $(DEP)
 	ar rcs libsignal.a $(DEP)
 
-$(OBJ)/signal.o: signal.f90
+$(OBJ)/signal.o: signal.f90 signal.inc
 	$(FC) $(FCF) -c signal.f90 -o $(OBJ)/signal.o
 
-$(OBJ)/auxiliary.o: auxiliary.f90
+$(OBJ)/auxiliary.o: auxiliary.f90 signal.inc
 	$(FC) $(FCF) -c auxiliary.f90 -o $(OBJ)/auxiliary.o
 
-$(OBJ)/transformation.o: transformation.f90
+$(OBJ)/transformation.o: transformation.f90 signal.inc
 	$(FC) $(FCF) -c transformation.f90 -o $(OBJ)/transformation.o
 
-$(OBJ)/svd.o: svd.f90
+$(OBJ)/svd.o: svd.f90 signal.inc
 	$(FC) $(FCF) -c svd.f90 -o $(OBJ)/svd.o
 
-$(OBJ)/process.o: process.f90
+$(OBJ)/process.o: process.f90 signal.inc
 	$(FC) $(FCF) -c process.f90 -o $(OBJ)/process.o
 
-$(OBJ)/peakdetect.o: peakdetect.f90
+$(OBJ)/peakdetect.o: peakdetect.f90 signal.inc
 	$(FC) $(FCF) -c peakdetect.f90 -o $(OBJ)/peakdetect.o
 
-$(OBJ)/window.o: window.f90
+$(OBJ)/window.o: window.f90 signal.inc
 	$(FC) $(FCF) -c window.f90 -o $(OBJ)/window.o
 
-$(OBJ)/frequency.o: frequency.f90
+$(OBJ)/frequency.o: frequency.f90 signal.inc
 	$(FC) $(FCF) -c frequency.f90 -o $(OBJ)/frequency.o
 
-$(OBJ)/decomposition.o: decomposition.f90
+$(OBJ)/decomposition.o: decomposition.f90 signal.inc
 	$(FC) $(FCF) -c decomposition.f90 -o $(OBJ)/decomposition.o	
 
-$(OBJ)/optimization.o: optimization.f90
+$(OBJ)/optimization.o: optimization.f90 signal.inc
 	$(FC) $(FCF) -c optimization.f90 -o $(OBJ)/optimization.o
 
 clean:

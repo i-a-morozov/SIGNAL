@@ -1,98 +1,98 @@
-! EXAMPLE-08: FREQUENCY ESTIMATION (SIGNAL WITH NOISE)
-PROGRAM EXAMPLE
+! example-08: frequency estimation (signal with noise)
+program example
 
-  USE SIGNAL
+  use signal
 
-  IMPLICIT NONE
+  implicit none
 
-  INTEGER(IK), PARAMETER           :: LENGTH = 2_IK**10_IK  ! INPUT SIGNAL LENGTH
-  INTEGER(IK)                      :: FLAG                  ! COMPLEX FLAG (0/1)
-  REAL(RK)                         :: RANGE_MIN             ! (MIN) FREQUENCY RANGE
-  REAL(RK)                         :: RANGE_MAX             ! (MAX) FREQUENCY RANGE
-  INTEGER(IK)                      :: PEAK                  ! FOURIE SPECTRA PEAK ID
-  INTEGER(IK)                      :: METHOD                ! FREQUENCY ESTIMATION METHOD
-  INTEGER(IK)                      :: ORDER                 ! COSINE WINDOW ORDER
-  REAL(RK), DIMENSION(LENGTH)      :: WINDOW                ! COSINE WINDOW DATA
-  REAL(RK)                         :: TOTAL                 ! SUM OF WINDOW ELEMENTS
-  REAL(RK)                         :: FREQUENCY             ! EXACT SIGNAL FREQUENCY
-  REAL(RK), DIMENSION(LENGTH)      :: SIGNAL_R, SIGNAL_I    ! SIGNAL REAL AND COMPLEX PARTS
-  REAL(RK), DIMENSION(2_IK*LENGTH) :: SIGNAL                ! INPUT SIGNAL, [..., SR_I, SI_I, ...]
-  REAL(RK)                         :: RESULT                ! FREQUENCY ESTIMATION
-  REAL(RK), DIMENSION(LENGTH/2_IK) :: N, M                  ! NOISE
-  INTEGER(IK), PARAMETER           :: LIMIT = 4_IK          ! NUMBER OF SINGULAR VALUES TO KEEP
-  REAL(RK), DIMENSION(LIMIT)       :: LIST                  ! SVD LIST
-  REAL(RK)                         :: COS_AMP, SIN_AMP, AMP
+  integer(ik), parameter           :: length = 2_ik**10_ik  ! input signal length
+  integer(ik)                      :: flag                  ! complex flag (0/1)
+  real(rk)                         :: range_min             ! (min) frequency range
+  real(rk)                         :: range_max             ! (max) frequency range
+  integer(ik)                      :: peak                  ! fourie spectra peak id
+  integer(ik)                      :: method                ! frequency estimation method
+  integer(ik)                      :: order                 ! cosine window order
+  real(rk), dimension(length)      :: window                ! cosine window data
+  real(rk)                         :: total                 ! sum of window elements
+  real(rk)                         :: frequency             ! exact signal frequency
+  real(rk), dimension(length)      :: signal_r, signal_i    ! signal real and complex parts
+  real(rk), dimension(2_ik*length) :: signal                ! input signal, [..., sr_i, si_i, ...]
+  real(rk)                         :: result                ! frequency estimation
+  real(rk), dimension(length/2_ik) :: n, m                  ! noise
+  integer(ik), parameter           :: limit = 4_ik          ! number of singular values to keep
+  real(rk), dimension(limit)       :: list                  ! svd list
+  real(rk)                         :: cos_amp, sin_amp, amp
 
-  INTEGER(IK)                      :: I
+  integer(ik)                      :: i
 
-  FLAG = 0_IK
-  RANGE_MIN = 0.00_RK
-  RANGE_MAX = 0.49_RK
+  flag = 0_ik
+  range_min = 0.00_rk
+  range_max = 0.49_rk
 
-  ! SET SIGNAL EXACT FREQUENCY, REAL AND IMAGINARY PARTS
-  FREQUENCY = 0.123456789_RK
-  DO I = 1_IK, LENGTH, 1_IK
-    SIGNAL_R(I) = 1.0_RK*SIN(TWO_PI*FREQUENCY*I)+0.05*SIN(TWO_PI*2.0_RK*FREQUENCY*I)
-    SIGNAL_I(I) = 0.0_RK
-  END DO
+  ! set signal exact frequency, real and imaginary parts
+  frequency = 0.123456789_rk
+  do i = 1_ik, length, 1_ik
+    signal_r(i) = 1.0_rk*sin(two_pi*frequency*i)+0.05*sin(two_pi*2.0_rk*frequency*i)
+    signal_i(i) = 0.0_rk
+  end do
 
-  ! ADD NOISE
-  CALL RANDOM_NUMBER(N)
-  CALL RANDOM_NUMBER(M)
+  ! add noise
+  call random_number(n)
+  call random_number(m)
 
-  SIGNAL_R(1_IK:LENGTH:2_IK) = SIGNAL_R(1_IK:LENGTH:2_IK) + 0.05*SQRT(-2.0_RK*LOG(N))*COS(TWO_PI*M)
-  SIGNAL_R(2_IK:LENGTH:2_IK) = SIGNAL_R(2_IK:LENGTH:2_IK) + 0.05*SQRT(-2.0_RK*LOG(N))*SIN(TWO_PI*M)
+  signal_r(1_ik:length:2_ik) = signal_r(1_ik:length:2_ik) + 0.05*sqrt(-2.0_rk*log(n))*cos(two_pi*m)
+  signal_r(2_ik:length:2_ik) = signal_r(2_ik:length:2_ik) + 0.05*sqrt(-2.0_rk*log(n))*sin(two_pi*m)
 
-  ! FORMAT TEST SIGNAL
-  SIGNAL = 0.0_RK
-  IF(FLAG == 0_IK) THEN
-    CALL CONVERT_(LENGTH, SIGNAL_R, SIGNAL)
-  ELSE
-    CALL CONVERT_(LENGTH, SIGNAL_R, SIGNAL_I, SIGNAL)
-  END IF
+  ! format test signal
+  signal = 0.0_rk
+  if(flag == 0_ik) then
+    call convert_(length, signal_r, signal)
+  else
+    call convert_(length, signal_r, signal_i, signal)
+  end if
 
-  ! SET WINDOW AND WINDOW SUM
-  ORDER = 1_IK
-  CALL WINDOW_(LENGTH, ORDER, WINDOW)
-  TOTAL = SUM(WINDOW)
+  ! set window and window sum
+  order = 1_ik
+  call window_(length, order, window)
+  total = sum(window)
 
-  ! FREQUENCY ESTIMATION METHOD
-  METHOD = FREQUENCY_PARABOLA
+  ! frequency estimation method
+  method = frequency_parabola
 
-  ! ESTIMATE FREQUENCY
-  BLOCK
-    WRITE(*, '(A)') "FILTER(-)"
-    PEAK = +1_IK
-    RESULT = FREQUENCY_(FLAG, RANGE_MIN, RANGE_MAX, PEAK, METHOD, LENGTH, LENGTH, TOTAL, WINDOW, SIGNAL)
-    CALL AMPLITUDE_(FLAG, LENGTH, TOTAL, WINDOW, SIGNAL, RESULT, COS_AMP, SIN_AMP, AMP)
-    WRITE(*, '(A)') "1ST"
-    WRITE(*,'(A,E32.16,A,E32.16,A,2E32.16)')" FREQUENCY",RESULT," ERROR",ABS(RESULT-1.0_RK*FREQUENCY)," AMPLITUDE",COS_AMP,SIN_AMP
-    PEAK = +2_IK
-    RESULT = FREQUENCY_(FLAG, RANGE_MIN, RANGE_MAX, PEAK, METHOD, LENGTH, LENGTH, TOTAL, WINDOW, SIGNAL)
-    CALL AMPLITUDE_(FLAG, LENGTH, TOTAL, WINDOW, SIGNAL, RESULT, COS_AMP, SIN_AMP, AMP)
-    WRITE(*, '(A)') "2ND"
-    WRITE(*,'(A,E32.16,A,E32.16,A,2E32.16)')" FREQUENCY",RESULT," ERROR",ABS(RESULT-2.0_RK*FREQUENCY)," AMPLITUDE",COS_AMP,SIN_AMP
-    WRITE(*, *)
-  END BLOCK
+  ! estimate frequency
+  block
+    write(*, '(a)') "filter(-)"
+    peak = +1_ik
+    result = frequency_(flag, range_min, range_max, peak, method, length, length, total, window, signal)
+    call amplitude_(flag, length, total, window, signal, result, cos_amp, sin_amp, amp)
+    write(*, '(a)') "1st"
+    write(*,'(a,e32.16,a,e32.16,a,2e32.16)')" frequency",result," error",abs(result-1.0_rk*frequency)," amplitude",cos_amp,sin_amp
+    peak = +2_ik
+    result = frequency_(flag, range_min, range_max, peak, method, length, length, total, window, signal)
+    call amplitude_(flag, length, total, window, signal, result, cos_amp, sin_amp, amp)
+    write(*, '(a)') "2nd"
+    write(*,'(a,e32.16,a,e32.16,a,2e32.16)')" frequency",result," error",abs(result-2.0_rk*frequency)," amplitude",cos_amp,sin_amp
+    write(*, *)
+  end block
 
-  ! FILTER AND ESTIMATE FREQUENCY
-  BLOCK
-    CALL FILTER_(LENGTH, SIGNAL_R, LIMIT, LIST)
-    CALL CONVERT_(LENGTH, SIGNAL_R, SIGNAL)
-    WRITE(*, '(A)') "FILTER(+)"
-    PEAK = +1_IK
-    RESULT = FREQUENCY_(FLAG, RANGE_MIN, RANGE_MAX, PEAK, METHOD, LENGTH, LENGTH, TOTAL, WINDOW, SIGNAL)
-    CALL AMPLITUDE_(FLAG, LENGTH, TOTAL, WINDOW, SIGNAL, RESULT, COS_AMP, SIN_AMP, AMP)
-    WRITE(*, '(A)') "1ST"
-    WRITE(*,'(A,E32.16,A,E32.16,A,2E32.16)')" FREQUENCY",RESULT," ERROR",ABS(RESULT-1.0_RK*FREQUENCY)," AMPLITUDE",COS_AMP,SIN_AMP
-    PEAK = +2_IK
-    RESULT = FREQUENCY_(FLAG, RANGE_MIN, RANGE_MAX, PEAK, METHOD, LENGTH, LENGTH, TOTAL, WINDOW, SIGNAL)
-    CALL AMPLITUDE_(FLAG, LENGTH, TOTAL, WINDOW, SIGNAL, RESULT, COS_AMP, SIN_AMP, AMP)
-    WRITE(*, '(A)') "2ND"
-    WRITE(*,'(A,E32.16,A,E32.16,A,2E32.16)')" FREQUENCY",RESULT," ERROR",ABS(RESULT-2.0_RK*FREQUENCY)," AMPLITUDE",COS_AMP,SIN_AMP
-    WRITE(*, *)
-  END BLOCK
+  ! filter and estimate frequency
+  block
+    call filter_(length, signal_r, limit, list)
+    call convert_(length, signal_r, signal)
+    write(*, '(a)') "filter(+)"
+    peak = +1_ik
+    result = frequency_(flag, range_min, range_max, peak, method, length, length, total, window, signal)
+    call amplitude_(flag, length, total, window, signal, result, cos_amp, sin_amp, amp)
+    write(*, '(a)') "1st"
+    write(*,'(a,e32.16,a,e32.16,a,2e32.16)')" frequency",result," error",abs(result-1.0_rk*frequency)," amplitude",cos_amp,sin_amp
+    peak = +2_ik
+    result = frequency_(flag, range_min, range_max, peak, method, length, length, total, window, signal)
+    call amplitude_(flag, length, total, window, signal, result, cos_amp, sin_amp, amp)
+    write(*, '(a)') "2nd"
+    write(*,'(a,e32.16,a,e32.16,a,2e32.16)')" frequency",result," error",abs(result-2.0_rk*frequency)," amplitude",cos_amp,sin_amp
+    write(*, *)
+  end block
 
-  ! IN GENERAL APPLICATION OF FILTER MIGHT IMPROVE FREQUENCY ESTIMATION ACCURACY (STATISTICALLY)
+  ! in general application of filter might improve frequency estimation accuracy (statistically)
 
-END PROGRAM EXAMPLE
+end program example

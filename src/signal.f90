@@ -1,1324 +1,1324 @@
-! SIGNAL, 2018-2020, I.A.MOROZOV@INP.NSK.SU
-MODULE SIGNAL
-  USE, INTRINSIC :: ISO_C_BINDING,   ONLY: IK => C_INT, RK => C_DOUBLE, C_SIZEOF
-  IMPLICIT NONE
-  PRIVATE
+! signal, 2018-2020, i.a.morozov@inp.nsk.su
+module signal
+  use, intrinsic :: iso_c_binding,   only: ik => c_int, rk => c_double, c_sizeof
+  implicit none
+  private
   ! ############################################################################################################################# !
-  ! GLOBAL
+  ! global
   ! ############################################################################################################################# !
-  PUBLIC :: IK
-  PUBLIC :: RK
-  INTEGER(IK), PUBLIC, PARAMETER :: IK_SIZE                = C_SIZEOF(IK)
-  INTEGER(IK), PUBLIC, PARAMETER :: RK_SIZE                = C_SIZEOF(RK)
-  REAL(RK),    PUBLIC, PARAMETER :: ONE_PI                 = 2.0_RK*ACOS(0.0_RK)
-  REAL(RK),    PUBLIC, PARAMETER :: TWO_PI                 = 2.0_RK*ONE_PI
-  REAL(RK),    PUBLIC, PARAMETER :: EPSILON                = 1.E-16_RK
+  public :: ik
+  public :: rk
+  integer(ik), public, parameter :: ik_size                = c_sizeof(ik)
+  integer(ik), public, parameter :: rk_size                = c_sizeof(rk)
+  real(rk),    public, parameter :: one_pi                 = 2.0_rk*acos(0.0_rk)
+  real(rk),    public, parameter :: two_pi                 = 2.0_rk*one_pi
+  real(rk),    public, parameter :: epsilon                = 1.e-16_rk
   ! ############################################################################################################################# !
-  ! EXTERNAL
+  ! external
   ! ############################################################################################################################# !
-  EXTERNAL :: DGEMV               ! (BLAS)
-  EXTERNAL :: DGEMM               ! (BLAS)
-  EXTERNAL :: DGESVD              ! (LAPACK)
-  EXTERNAL :: DSAUPD              ! (ARPACK)
-  EXTERNAL :: DSEUPD              ! (ARPACK)
-  EXTERNAL :: DFFTW_PLAN_DFT_1D   ! (FFTW)
-  EXTERNAL :: DFFTW_EXECUTE_DFT   ! (FFTW)
-  EXTERNAL :: DFFTW_DESTROY_PLAN  ! (FFTW)
+  external :: dgemv               ! (blas)
+  external :: dgemm               ! (blas)
+  external :: dgesvd              ! (lapack)
+  external :: dsaupd              ! (arpack)
+  external :: dseupd              ! (arpack)
+  external :: dfftw_plan_dft_1d   ! (fftw)
+  external :: dfftw_execute_dft   ! (fftw)
+  external :: dfftw_destroy_plan  ! (fftw)
   ! ############################################################################################################################# !
-  ! AUXILIARY
+  ! auxiliary
   ! ############################################################################################################################# !
-  ! FACTORIAL
-  ! (FUNCTION) FACTORIAL_(<NUMBER>)
-  ! <NUMBER>               -- (IN)     NUMBER (IK)
-  ! <FACTORIAL_>           -- (OUT)    FACTORIAL OF <N> (RK)
-  INTERFACE
-    MODULE REAL(RK) FUNCTION FACTORIAL_(NUMBER)
-      INTEGER(IK), INTENT(IN) :: NUMBER
-    END FUNCTION FACTORIAL_
-  END INTERFACE
-  PUBLIC :: FACTORIAL_
+  ! factorial
+  ! (function) factorial_(<number>)
+  ! <number>               -- (in)     number (ik)
+  ! <factorial_>           -- (out)    factorial of <n> (rk)
+  interface
+    module real(rk) function factorial_(number)
+      integer(ik), intent(in) :: number
+    end function factorial_
+  end interface
+  public :: factorial_
   ! ############################################################################################################################# !
-  ! GAMMA (GSL)
-  ! (FUNCTION) GAMMA_(<NUMBER>)
-  ! <NUMBER>               -- (IN)     NUMBER (RK)
-  ! <GAMMA_>               -- (OUT)    GAMMA OF <N> (RK)
-  INTERFACE GAMMA_
-    REAL(RK) FUNCTION GAMMA_(NUMBER) &
-      BIND(C, NAME = "gsl_sf_gamma")
-      IMPORT :: RK
-      REAL(RK), VALUE :: NUMBER
-      END FUNCTION GAMMA_
-  END INTERFACE GAMMA_
+  ! gamma (gsl)
+  ! (function) gamma_(<number>)
+  ! <number>               -- (in)     number (rk)
+  ! <gamma_>               -- (out)    gamma of <n> (rk)
+  interface gamma_
+    real(rk) function gamma_(number) &
+      bind(c, name = "gsl_sf_gamma")
+      import :: rk
+      real(rk), value :: number
+      end function gamma_
+  end interface gamma_
   ! ############################################################################################################################# !
-  ! GAMMA INCOMPLETE (GSL)
-  ! (FUNCTION) GAMMA_INCOMPLETE_(<A>, <X>)
-  ! <A>                    -- (IN)     A (RK)
-  ! <X>                    -- (IN)     X (RK)
-  ! <GAMMA_INCOMPLETE_>    -- (OUT)    GAMMA INCOMPLETE OF <A> AND <X> (RK)
-  INTERFACE GAMMA_INCOMPLETE_
-    REAL(RK) FUNCTION GAMMA_INCOMPLETE_(A, X) &
-      BIND(C, NAME = "gsl_sf_gamma_inc")
-      IMPORT :: RK
-      REAL(RK), VALUE :: A
-      REAL(RK), VALUE :: X
-    END FUNCTION GAMMA_INCOMPLETE_
-  END INTERFACE GAMMA_INCOMPLETE_
+  ! gamma incomplete (gsl)
+  ! (function) gamma_incomplete_(<a>, <x>)
+  ! <a>                    -- (in)     a (rk)
+  ! <x>                    -- (in)     x (rk)
+  ! <gamma_incomplete_>    -- (out)    gamma incomplete of <a> and <x> (rk)
+  interface gamma_incomplete_
+    real(rk) function gamma_incomplete_(a, x) &
+      bind(c, name = "gsl_sf_gamma_inc")
+      import :: rk
+      real(rk), value :: a
+      real(rk), value :: x
+    end function gamma_incomplete_
+  end interface gamma_incomplete_
   ! ############################################################################################################################# !
-  ! GAMMA REGULARIZED
-  ! (FUNCTION) GAMMA_REGULARIZED_(<A>, <X>, <Y>)
-  ! <A>                    -- (IN)     A (RK)
-  ! <X>                    -- (IN)     X (RK)
-  ! <Y>                    -- (IN)     Y (RK)
-  ! <GAMMA_REGULARIZED_>   -- (OUT)    GAMMA REGULARIZED OF <A>, <X> AND <Y> (RK)
-  INTERFACE
-    MODULE REAL(RK) FUNCTION GAMMA_REGULARIZED_(A, X, Y)
-      REAL(RK), INTENT(IN) :: A
-      REAL(RK), INTENT(IN) :: X
-      REAL(RK), INTENT(IN) :: Y
-    END FUNCTION GAMMA_REGULARIZED_
-  END INTERFACE
+  ! gamma regularized
+  ! (function) gamma_regularized_(<a>, <x>, <y>)
+  ! <a>                    -- (in)     a (rk)
+  ! <x>                    -- (in)     x (rk)
+  ! <y>                    -- (in)     y (rk)
+  ! <gamma_regularized_>   -- (out)    gamma regularized of <a>, <x> and <y> (rk)
+  interface
+    module real(rk) function gamma_regularized_(a, x, y)
+      real(rk), intent(in) :: a
+      real(rk), intent(in) :: x
+      real(rk), intent(in) :: y
+    end function gamma_regularized_
+  end interface
   ! ############################################################################################################################# !
-  ! GENERIC GAMMA
-  INTERFACE GAMMA_
-    PROCEDURE FACTORIAL_
-    PROCEDURE GAMMA_INCOMPLETE_
-    PROCEDURE GAMMA_REGULARIZED_
-  END INTERFACE GAMMA_
-  PUBLIC :: GAMMA_
+  ! generic gamma
+  interface gamma_
+    procedure factorial_
+    procedure gamma_incomplete_
+    procedure gamma_regularized_
+  end interface gamma_
+  public :: gamma_
   ! ############################################################################################################################# !
-  ! MODIFIED BESSEL I_0(X) (GSL)
-  ! (FUNCTION) BESSEL_(<NUMBER>)
-  ! <NUMBER>               -- (IN)     NUMBER (RK)
-  ! <BESSEL_>              -- (OUT)    BESSEL I_0(<NUMBER>) (RK)
-  INTERFACE BESSEL_
-    REAL(RK) FUNCTION BESSEL_(NUMBER) &
-      BIND(C, NAME = "gsl_sf_bessel_I0")
-      IMPORT :: RK
-      REAL(RK), VALUE :: NUMBER
-      END FUNCTION BESSEL_
-  END INTERFACE BESSEL_
-  PUBLIC :: BESSEL_
+  ! modified bessel i_0(x) (gsl)
+  ! (function) bessel_(<number>)
+  ! <number>               -- (in)     number (rk)
+  ! <bessel_>              -- (out)    bessel i_0(<number>) (rk)
+  interface bessel_
+    real(rk) function bessel_(number) &
+      bind(c, name = "gsl_sf_bessel_I0")
+      import :: rk
+      real(rk), value :: number
+      end function bessel_
+  end interface bessel_
+  public :: bessel_
   ! ############################################################################################################################# !
-  ! MINLOC
-  ! (FUNCTION) MINLOC_(<SEQUENCE>)
-  ! <SEQUENCE>             -- (IN)     SEQUENCE (RK ARRAY)
-  ! <MINLOC_>              -- (OUT)    MINIMUM LOCATION (IK)
-  INTERFACE
-    MODULE INTEGER(IK) FUNCTION MINLOC_(SEQUENCE, EMPTY)
-      REAL(RK), DIMENSION(:), CONTIGUOUS, INTENT(IN) :: SEQUENCE
-      INTEGER, INTENT(IN) :: EMPTY
-    END FUNCTION MINLOC_
-  END INTERFACE
+  ! minloc
+  ! (function) minloc_(<sequence>)
+  ! <sequence>             -- (in)     sequence (rk array)
+  ! <minloc_>              -- (out)    minimum location (ik)
+  interface
+    module integer(ik) function minloc_(sequence, empty)
+      real(rk), dimension(:), contiguous, intent(in) :: sequence
+      integer, intent(in) :: empty
+    end function minloc_
+  end interface
   ! ############################################################################################################################# !
-  ! MAXLOC
-  ! (FUNCTION) MAXLOC_(<SEQUENCE>)
-  ! <SEQUENCE>             -- (IN)     SEQUENCE (RK ARRAY)
-  ! <MAXLOC_>              -- (OUT)    MAXIMUM LOCATION (IK)
-  INTERFACE
-    MODULE INTEGER(IK) FUNCTION MAXLOC_(SEQUENCE, EMPTY)
-      REAL(RK), DIMENSION(:), CONTIGUOUS, INTENT(IN) :: SEQUENCE
-      INTEGER, INTENT(IN) :: EMPTY
-    END FUNCTION MAXLOC_
-  END  INTERFACE
+  ! maxloc
+  ! (function) maxloc_(<sequence>)
+  ! <sequence>             -- (in)     sequence (rk array)
+  ! <maxloc_>              -- (out)    maximum location (ik)
+  interface
+    module integer(ik) function maxloc_(sequence, empty)
+      real(rk), dimension(:), contiguous, intent(in) :: sequence
+      integer, intent(in) :: empty
+    end function maxloc_
+  end  interface
   ! ############################################################################################################################# !
-  ! SORT (BUBBLE, DESCENDING)
-  ! (SUBROUTINE) SORT_BUBBLE_(<LENGTH>, <SEQUENCE>, <FST>, <LST>)
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
-  ! <SEQUENCE>             -- (IN)     (UNSORTED) SEQUENCE (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <SEQUENCE>             -- (OUT)    (SORTED, DESCENDING) SEQUENCE (RK ARRAY OF LENGTH = <LENGTH>)
-  INTERFACE
-    MODULE SUBROUTINE SORT_BUBBLE_(LENGTH, SEQUENCE, FST, LST)
-      INTEGER(IK), INTENT(IN) :: LENGTH
-      REAL(RK), DIMENSION(LENGTH), INTENT(INOUT) :: SEQUENCE
-      INTEGER(IK), INTENT(IN) :: FST
-      INTEGER(IK), INTENT(IN) :: LST
-    END SUBROUTINE SORT_BUBBLE_
-  END INTERFACE
+  ! sort (bubble, descending)
+  ! (subroutine) sort_bubble_(<length>, <sequence>, <fst>, <lst>)
+  ! <length>               -- (in)     sequence length (ik)
+  ! <sequence>             -- (in)     (unsorted) sequence (rk array of length = <length>)
+  ! <sequence>             -- (out)    (sorted, descending) sequence (rk array of length = <length>)
+  interface
+    module subroutine sort_bubble_(length, sequence, fst, lst)
+      integer(ik), intent(in) :: length
+      real(rk), dimension(length), intent(inout) :: sequence
+      integer(ik), intent(in) :: fst
+      integer(ik), intent(in) :: lst
+    end subroutine sort_bubble_
+  end interface
   ! ############################################################################################################################# !
-  ! SORT (QUICK, DESCENDING)
-  ! (SUBROUTINE) SORT_QUICK_(<LENGTH>, <SEQUENCE>, <FST>, <LST>)
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
-  ! <SEQUENCE>             -- (IN)     (UNSORTED) SEQUENCE (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <SEQUENCE>             -- (OUT)    (SORTED, DESCENDING) SEQUENCE (RK ARRAY OF LENGTH = <LENGTH>)
-  INTERFACE
-    MODULE RECURSIVE SUBROUTINE SORT_QUICK_(LENGTH, SEQUENCE, FST, LST)
-      INTEGER(IK), INTENT(IN) :: LENGTH
-      REAL(RK), DIMENSION(:), INTENT(INOUT) :: SEQUENCE
-      INTEGER(IK), INTENT(IN) :: FST
-      INTEGER(IK), INTENT(IN) :: LST
-    END SUBROUTINE SORT_QUICK_
-  END INTERFACE
+  ! sort (quick, descending)
+  ! (subroutine) sort_quick_(<length>, <sequence>, <fst>, <lst>)
+  ! <length>               -- (in)     sequence length (ik)
+  ! <sequence>             -- (in)     (unsorted) sequence (rk array of length = <length>)
+  ! <sequence>             -- (out)    (sorted, descending) sequence (rk array of length = <length>)
+  interface
+    module recursive subroutine sort_quick_(length, sequence, fst, lst)
+      integer(ik), intent(in) :: length
+      real(rk), dimension(:), intent(inout) :: sequence
+      integer(ik), intent(in) :: fst
+      integer(ik), intent(in) :: lst
+    end subroutine sort_quick_
+  end interface
   ! ############################################################################################################################# !
-  ! GENERATE HARMONIC SIGNAL
-  ! (SUBROUTINE) GENERATE_SIGNAL_(<FLAG>, <LENGTH>, <SEQUENCE>, <LOOP>, <FREQUENCY>, <COS_AMP>, <SIN_AMP>)
-  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX SEQUENCE
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
-  ! <SEQUENCE>             -- (OUT)    INPUT SEQUENCE (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <LOOP>                 -- (IN)     NUMBER OF HARMONICS (IK)
-  ! <FREQUENCY>            -- (IN)     FREQUENCY ARRAY (RK ARRAY OF LENGTH = <LOOP>)
-  ! <COS_AMP>              -- (IN)     COS AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
-  ! <SIN_AMP>              -- (IN)     SIN AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
+  ! generate harmonic signal
+  ! (subroutine) generate_signal_(<flag>, <length>, <sequence>, <loop>, <frequency>, <cos_amp>, <sin_amp>)
+  ! <flag>                 -- (in)     complex flag (ik), 0/1 for real/complex sequence
+  ! <length>               -- (in)     sequence length (ik)
+  ! <sequence>             -- (out)    input sequence (rk array of length = <length>)
+  ! <loop>                 -- (in)     number of harmonics (ik)
+  ! <frequency>            -- (in)     frequency array (rk array of length = <loop>)
+  ! <cos_amp>              -- (in)     cos amplitude array (rk array of length = <loop>)
+  ! <sin_amp>              -- (in)     sin amplitude array (rk array of length = <loop>)
   ! void    generate_signal_(int* flag, int* length, double* sequence, int* loop, double* frequency, double* cos_amp, double* sin_amp) ;
-  INTERFACE
-    MODULE SUBROUTINE GENERATE_SIGNAL_(FLAG, LENGTH, SEQUENCE, LOOP, FREQUENCY, COS_AMP, SIN_AMP) &
-      BIND(C, NAME = "generate_signal_")
-      INTEGER(IK), INTENT(IN) :: FLAG
-      INTEGER(IK), INTENT(IN) :: LENGTH
-      REAL(RK), DIMENSION(2_IK*LENGTH), INTENT(OUT) :: SEQUENCE
-      INTEGER(IK), INTENT(IN) :: LOOP
-      REAL(RK), DIMENSION(LOOP), INTENT(IN) :: FREQUENCY
-      REAL(RK), DIMENSION(LOOP), INTENT(IN) :: COS_AMP
-      REAL(RK), DIMENSION(LOOP), INTENT(IN) :: SIN_AMP
-    END SUBROUTINE GENERATE_SIGNAL_
-  END INTERFACE
-  PUBLIC :: GENERATE_SIGNAL_
+  interface
+    module subroutine generate_signal_(flag, length, sequence, loop, frequency, cos_amp, sin_amp) &
+      bind(c, name = "generate_signal_")
+      integer(ik), intent(in) :: flag
+      integer(ik), intent(in) :: length
+      real(rk), dimension(2_ik*length), intent(out) :: sequence
+      integer(ik), intent(in) :: loop
+      real(rk), dimension(loop), intent(in) :: frequency
+      real(rk), dimension(loop), intent(in) :: cos_amp
+      real(rk), dimension(loop), intent(in) :: sin_amp
+    end subroutine generate_signal_
+  end interface
+  public :: generate_signal_
   ! ############################################################################################################################# !
-  ! TRANSFORMATION
+  ! transformation
   ! ############################################################################################################################# !
-  INTEGER(IK), PUBLIC, PARAMETER :: FFT_FORWARD            = +1_IK               ! FORWARD FFT
-  INTEGER(IK), PUBLIC, PARAMETER :: FFT_INVERSE            = -1_IK               ! INVERSE FFT
+  integer(ik), public, parameter :: fft_forward            = +1_ik               ! forward fft
+  integer(ik), public, parameter :: fft_inverse            = -1_ik               ! inverse fft
   ! ############################################################################################################################# !
-  ! FFT/FFRFT DATA MEMORIZATION
-  TYPE TABLE
-    INTEGER(IK), DIMENSION(:), ALLOCATABLE :: BIT_FFT
-    INTEGER(IK), DIMENSION(:), ALLOCATABLE :: BIT_FFRFT
-    REAL(RK), DIMENSION(:), ALLOCATABLE :: TRIG_FFT
-    REAL(RK), DIMENSION(:), ALLOCATABLE :: TRIG_FFRFT
-    REAL(RK), DIMENSION(:), ALLOCATABLE :: COS_FST
-    REAL(RK), DIMENSION(:), ALLOCATABLE :: SIN_FST
-    REAL(RK), DIMENSION(:), ALLOCATABLE :: COS_LST
-    REAL(RK), DIMENSION(:), ALLOCATABLE :: SIN_LST
-  END TYPE
+  ! fft/ffrft data memorization
+  type table
+    integer(ik), dimension(:), allocatable :: bit_fft
+    integer(ik), dimension(:), allocatable :: bit_ffrft
+    real(rk), dimension(:), allocatable :: trig_fft
+    real(rk), dimension(:), allocatable :: trig_ffrft
+    real(rk), dimension(:), allocatable :: cos_fst
+    real(rk), dimension(:), allocatable :: sin_fst
+    real(rk), dimension(:), allocatable :: cos_lst
+    real(rk), dimension(:), allocatable :: sin_lst
+  end type
   ! ############################################################################################################################# !
-  ! FFT/FFRFT DATA MEMORIZATION CONTAINER
-  TYPE(TABLE), PROTECTED :: BANK
+  ! fft/ffrft data memorization container
+  type(table), protected :: bank
   ! ############################################################################################################################# !
-  ! (LINEAR) FRACTIONAL COMPLEX DISCRETE FOURIER TRANSFORM
-  ! (SUBROUTINE) FFRFT_(<LENGTH>, <ARGUMENT>, <SEQUENCE>)
-  ! <LENGTH>               -- (IN)     LENGTH (IK)
-  ! <ARGUMENT>             -- (IN)     PARAMETER (RK)
-  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <SEQUENCE>             -- (OUT)    FCDFT (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., FR_I, FI_I, ...]
+  ! (linear) fractional complex discrete fourier transform
+  ! (subroutine) ffrft_(<length>, <argument>, <sequence>)
+  ! <length>               -- (in)     length (ik)
+  ! <argument>             -- (in)     parameter (rk)
+  ! <sequence>             -- (in)     input sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
+  ! <sequence>             -- (out)    fcdft (rk array of length = 2_ik*<length>), <sequence> = [..., fr_i, fi_i, ...]
   ! void    ffrft_(int* length, double* argument, double* sequence) ;
-  INTERFACE
-    MODULE SUBROUTINE FFRFT_(LENGTH, ARGUMENT, SEQUENCE) &
-      BIND(C, NAME = "ffrft_")
-      INTEGER(IK), INTENT(IN) :: LENGTH
-      REAL(RK), INTENT(IN) :: ARGUMENT
-      REAL(RK), DIMENSION(2_IK*LENGTH), INTENT(INOUT) :: SEQUENCE
-    END SUBROUTINE
-  END INTERFACE
-  PUBLIC :: FFRFT_
+  interface
+    module subroutine ffrft_(length, argument, sequence) &
+      bind(c, name = "ffrft_")
+      integer(ik), intent(in) :: length
+      real(rk), intent(in) :: argument
+      real(rk), dimension(2_ik*length), intent(inout) :: sequence
+    end subroutine
+  end interface
+  public :: ffrft_
   ! ############################################################################################################################# !
-  ! (LINEAR) FRACTIONAL COMPLEX DISCRETE FOURIER TRANSFORM (MEMORIZATION)
-  ! (SUBROUTINE) FFRFT__(<LENGTH>, <SEQUENCE>, <IP>, <WORK>, <COS_FST>, <SIN_FST>, <COS_LST>, <SIN_LST>)
-  ! <LENGTH>               -- (IN)     LENGTH (IK)
-  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <IP>                   -- (IN)     FFRFT BIT DATA
-  ! <WORK>                 -- (IN)     FFRFT TRIG DATA
-  ! <COS_FST>              -- (IN)     FIRST COS ARRAY
-  ! <SIN_FST>              -- (IN)     FIRST SIN ARRAY
-  ! <COS_LST>              -- (IN)     LAST COS ARRAY
-  ! <SIN_LAT>              -- (IN)     LAST SIN ARRAY
-  ! <SEQUENCE>             -- (OUT)    FCDFT (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., FR_I, FI_I, ...]
-  INTERFACE
-  MODULE SUBROUTINE FFRFT__(LENGTH, SEQUENCE, IP, WORK, COS_FST, SIN_FST, COS_LST, SIN_LST)
-    INTEGER(IK), INTENT(IN) :: LENGTH
-    REAL(RK), DIMENSION(2_IK*LENGTH), INTENT(INOUT) :: SEQUENCE
-    INTEGER(IK), DIMENSION(0_IK : 1_IK+INT(SQRT(REAL(LENGTH, RK)), IK)), INTENT(IN) :: IP
-    REAL(RK), DIMENSION(0_IK : LENGTH-1_IK), INTENT(IN) :: WORK
-    REAL(RK), DIMENSION(LENGTH), INTENT(IN)   :: COS_FST
-    REAL(RK), DIMENSION(LENGTH), INTENT(IN)   :: SIN_FST
-    REAL(RK), DIMENSION(LENGTH), INTENT(IN)   :: COS_LST
-    REAL(RK), DIMENSION(LENGTH), INTENT(IN)   :: SIN_LST
-    END SUBROUTINE FFRFT__
-  END INTERFACE
-  PUBLIC :: FFRFT__
+  ! (linear) fractional complex discrete fourier transform (memorization)
+  ! (subroutine) ffrft__(<length>, <sequence>, <ip>, <work>, <cos_fst>, <sin_fst>, <cos_lst>, <sin_lst>)
+  ! <length>               -- (in)     length (ik)
+  ! <sequence>             -- (in)     input sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
+  ! <ip>                   -- (in)     ffrft bit data
+  ! <work>                 -- (in)     ffrft trig data
+  ! <cos_fst>              -- (in)     first cos array
+  ! <sin_fst>              -- (in)     first sin array
+  ! <cos_lst>              -- (in)     last cos array
+  ! <sin_lat>              -- (in)     last sin array
+  ! <sequence>             -- (out)    fcdft (rk array of length = 2_ik*<length>), <sequence> = [..., fr_i, fi_i, ...]
+  interface
+  module subroutine ffrft__(length, sequence, ip, work, cos_fst, sin_fst, cos_lst, sin_lst)
+    integer(ik), intent(in) :: length
+    real(rk), dimension(2_ik*length), intent(inout) :: sequence
+    integer(ik), dimension(0_ik : 1_ik+int(sqrt(real(length, rk)), ik)), intent(in) :: ip
+    real(rk), dimension(0_ik : length-1_ik), intent(in) :: work
+    real(rk), dimension(length), intent(in)   :: cos_fst
+    real(rk), dimension(length), intent(in)   :: sin_fst
+    real(rk), dimension(length), intent(in)   :: cos_lst
+    real(rk), dimension(length), intent(in)   :: sin_lst
+    end subroutine ffrft__
+  end interface
+  public :: ffrft__
   ! ############################################################################################################################# !
-  ! (FFTW) COMPLEX DISCRETE FOURIER TRANSFORM
-  ! (SUBROUTINE) FFT_EXTERNAL_(<LENGTH>, <DIRECTION>, <SEQUENCE>)
-  ! <LENGTH>               -- (IN)     LENGTH (IK)
-  ! <DIRECTION>            -- (IN)     DIRECTION (IK), FFT_FORWARD = +1_IK OR FFT_INVERSE = -1_IK
-  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <SEQUENCE>             -- (OUT)    CDFT (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., FR_I, FI_I, ...]
+  ! (fftw) complex discrete fourier transform
+  ! (subroutine) fft_external_(<length>, <direction>, <sequence>)
+  ! <length>               -- (in)     length (ik)
+  ! <direction>            -- (in)     direction (ik), fft_forward = +1_ik or fft_inverse = -1_ik
+  ! <sequence>             -- (in)     input sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
+  ! <sequence>             -- (out)    cdft (rk array of length = 2_ik*<length>), <sequence> = [..., fr_i, fi_i, ...]
   ! void    fft_external_(int* length, int* direction, double* sequence) ;
-  INTERFACE
-    MODULE SUBROUTINE FFT_EXTERNAL_(LENGTH, DIRECTION, SEQUENCE) &
-      BIND(C, NAME = "fft_external_")
-      INTEGER(IK), INTENT(IN) :: LENGTH
-      INTEGER(IK), INTENT(IN) :: DIRECTION
-      REAL(RK), DIMENSION(2_IK*LENGTH), INTENT(INOUT) :: SEQUENCE
-    END SUBROUTINE FFT_EXTERNAL_
-  END INTERFACE
-  PUBLIC :: FFT_EXTERNAL_
+  interface
+    module subroutine fft_external_(length, direction, sequence) &
+      bind(c, name = "fft_external_")
+      integer(ik), intent(in) :: length
+      integer(ik), intent(in) :: direction
+      real(rk), dimension(2_ik*length), intent(inout) :: sequence
+    end subroutine fft_external_
+  end interface
+  public :: fft_external_
   ! ############################################################################################################################# !
-  ! (NRF77) COMPLEX DISCRETE FOURIER TRANSFORM
-  ! (SUBROUTINE) FFT_RADIX_TWO_(<LENGTH>, <DIRECTION>, <SEQUENCE>)
-  ! <LENGTH>               -- (IN)     LENGTH (IK)
-  ! <DIRECTION>            -- (IN)     DIRECTION (IK), FFT_FORWARD = +1_IK OR FFT_INVERSE = -1_IK
-  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <SEQUENCE>             -- (OUT)    CDFT (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., FR_I, FI_I, ...]
+  ! (nrf77) complex discrete fourier transform
+  ! (subroutine) fft_radix_two_(<length>, <direction>, <sequence>)
+  ! <length>               -- (in)     length (ik)
+  ! <direction>            -- (in)     direction (ik), fft_forward = +1_ik or fft_inverse = -1_ik
+  ! <sequence>             -- (in)     input sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
+  ! <sequence>             -- (out)    cdft (rk array of length = 2_ik*<length>), <sequence> = [..., fr_i, fi_i, ...]
   ! void    fft_radix_two_(int* length, int* direction, double* sequence) ;
-  INTERFACE
-    MODULE SUBROUTINE FFT_RADIX_TWO_(LENGTH, DIRECTION, SEQUENCE) &
-      BIND(C, NAME = "fft_radix_two_")
-      INTEGER(IK), INTENT(IN) :: LENGTH
-      INTEGER(IK), INTENT(IN) :: DIRECTION
-      REAL(RK), DIMENSION(2_IK*LENGTH), INTENT(INOUT) :: SEQUENCE
-    END SUBROUTINE FFT_RADIX_TWO_
-  END INTERFACE
-  PUBLIC :: FFT_RADIX_TWO_
+  interface
+    module subroutine fft_radix_two_(length, direction, sequence) &
+      bind(c, name = "fft_radix_two_")
+      integer(ik), intent(in) :: length
+      integer(ik), intent(in) :: direction
+      real(rk), dimension(2_ik*length), intent(inout) :: sequence
+    end subroutine fft_radix_two_
+  end interface
+  public :: fft_radix_two_
   ! ############################################################################################################################# !
-  ! (TAKUYA OOURA) COMPLEX DISCRETE FOURIER TRANSFORM
-  ! (SUBROUTINE) FFT_RADIX_EIGHT_(<LENGTH>, <DIRECTION>, <SEQUENCE>)
-  ! <LENGTH>               -- (IN)     LENGTH (IK)
-  ! <DIRECTION>            -- (IN)     DIRECTION (IK), FFT_FORWARD = +1_IK OR FFT_INVERSE = -1_IK
-  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <SEQUENCE>             -- (OUT)    CDFT (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., FR_I, FI_I, ...]
+  ! (takuya ooura) complex discrete fourier transform
+  ! (subroutine) fft_radix_eight_(<length>, <direction>, <sequence>)
+  ! <length>               -- (in)     length (ik)
+  ! <direction>            -- (in)     direction (ik), fft_forward = +1_ik or fft_inverse = -1_ik
+  ! <sequence>             -- (in)     input sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
+  ! <sequence>             -- (out)    cdft (rk array of length = 2_ik*<length>), <sequence> = [..., fr_i, fi_i, ...]
   ! void    fft_radix_eight_(int* length, int* direction, double* sequence) ;
-  INTERFACE
-    MODULE SUBROUTINE FFT_RADIX_EIGHT_(LENGTH, DIRECTION, SEQUENCE) &
-      BIND(C, NAME = "fft_radix_eight_")
-      INTEGER(IK), INTENT(IN) :: LENGTH
-      INTEGER(IK), INTENT(IN) :: DIRECTION
-      REAL(RK), DIMENSION(2_IK*LENGTH), INTENT(INOUT) :: SEQUENCE
-    END SUBROUTINE FFT_RADIX_EIGHT_
-  END INTERFACE
-  PUBLIC :: FFT_RADIX_EIGHT_
+  interface
+    module subroutine fft_radix_eight_(length, direction, sequence) &
+      bind(c, name = "fft_radix_eight_")
+      integer(ik), intent(in) :: length
+      integer(ik), intent(in) :: direction
+      real(rk), dimension(2_ik*length), intent(inout) :: sequence
+    end subroutine fft_radix_eight_
+  end interface
+  public :: fft_radix_eight_
   ! ############################################################################################################################# !
-  ! (TAKUYA OOURA) COMPLEX DISCRETE FOURIER TRANSFORM
-  ! (SUBROUTINE) FFT_RADIX_EIGHT__(<LENGTH>, <DIRECTION>, <SEQUENCE>, <IP>, <WORK>)
-  ! <LENGTH>               -- (IN)     LENGTH (IK)
-  ! <DIRECTION>            -- (IN)     DIRECTION (IK), FFT_FORWARD = +1_IK OR FFT_INVERSE = -1_IK
-  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <SEQUENCE>             -- (OUT)    CDFT (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., FR_I, FI_I, ...]
-  ! <IP>                   -- (IN)     FFRFT BIT DATA
-  ! <WORK>                 -- (IN)     FFRFT TRIG DATA
-  INTERFACE
-    MODULE SUBROUTINE FFT_RADIX_EIGHT__(LENGTH, DIRECTION, SEQUENCE, IP, WORK)
-      INTEGER(IK), INTENT(IN) :: LENGTH
-      INTEGER(IK), INTENT(IN) :: DIRECTION
-      REAL(RK), DIMENSION(2_IK*LENGTH), INTENT(INOUT) :: SEQUENCE
-      INTEGER(IK), DIMENSION(0_IK : 1_IK+INT(SQRT(REAL(LENGTH/2_IK, RK)), IK)), INTENT(IN) :: IP
-      REAL(RK), DIMENSION(0_IK : LENGTH/2_IK - 1_IK), INTENT(IN) :: WORK
-    END SUBROUTINE FFT_RADIX_EIGHT__
-  END INTERFACE
-  PUBLIC :: FFT_RADIX_EIGHT__
+  ! (takuya ooura) complex discrete fourier transform
+  ! (subroutine) fft_radix_eight__(<length>, <direction>, <sequence>, <ip>, <work>)
+  ! <length>               -- (in)     length (ik)
+  ! <direction>            -- (in)     direction (ik), fft_forward = +1_ik or fft_inverse = -1_ik
+  ! <sequence>             -- (in)     input sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
+  ! <sequence>             -- (out)    cdft (rk array of length = 2_ik*<length>), <sequence> = [..., fr_i, fi_i, ...]
+  ! <ip>                   -- (in)     ffrft bit data
+  ! <work>                 -- (in)     ffrft trig data
+  interface
+    module subroutine fft_radix_eight__(length, direction, sequence, ip, work)
+      integer(ik), intent(in) :: length
+      integer(ik), intent(in) :: direction
+      real(rk), dimension(2_ik*length), intent(inout) :: sequence
+      integer(ik), dimension(0_ik : 1_ik+int(sqrt(real(length/2_ik, rk)), ik)), intent(in) :: ip
+      real(rk), dimension(0_ik : length/2_ik - 1_ik), intent(in) :: work
+    end subroutine fft_radix_eight__
+  end interface
+  public :: fft_radix_eight__
   ! ############################################################################################################################# !
-  ! COMPUTE DATA TABLE (MEMORIZATION)
-  ! (SUBROUTINE) COMPUTE_TABLE_(<LENGTH>, <PAD>)
-  ! <LENGTH>               -- (IN)     LENGTH (IK)
-  ! <PAD>                  -- (IN)     PADDED LENGTH (IK)
+  ! compute data table (memorization)
+  ! (subroutine) compute_table_(<length>, <pad>)
+  ! <length>               -- (in)     length (ik)
+  ! <pad>                  -- (in)     padded length (ik)
   ! void    compute_table_(int* length, int* pad) ;
-  INTERFACE
-    MODULE SUBROUTINE COMPUTE_TABLE_(LENGTH, PAD) &
-      BIND(C, NAME = "compute_table_")
-      INTEGER(IK), INTENT(IN) :: LENGTH
-      INTEGER(IK), INTENT(IN) :: PAD
-    END SUBROUTINE COMPUTE_TABLE_
-  END INTERFACE
-  PUBLIC :: COMPUTE_TABLE_
+  interface
+    module subroutine compute_table_(length, pad) &
+      bind(c, name = "compute_table_")
+      integer(ik), intent(in) :: length
+      integer(ik), intent(in) :: pad
+    end subroutine compute_table_
+  end interface
+  public :: compute_table_
   ! ############################################################################################################################# !
-  ! DESTROY DATA TABLE
-  ! (SUBROUTINE) DESTROY_TABLE_()
+  ! destroy data table
+  ! (subroutine) destroy_table_()
   ! void    destroy_table_() ;
-  INTERFACE
-    MODULE SUBROUTINE DESTROY_TABLE_() &
-      BIND(C, NAME = "destroy_table_")
-    END SUBROUTINE DESTROY_TABLE_
-  END INTERFACE
-  PUBLIC :: DESTROY_TABLE_
+  interface
+    module subroutine destroy_table_() &
+      bind(c, name = "destroy_table_")
+    end subroutine destroy_table_
+  end interface
+  public :: destroy_table_
   ! ############################################################################################################################# !
-  ! SVD
+  ! svd
   ! ############################################################################################################################# !
-  REAL(RK),    PUBLIC, PARAMETER :: SVD_LEVEL              = 1.0E-12_RK          ! SINGULAR VALUE THRESHOLD LEVEL (ABSOLUTE VALUE)
-  INTEGER(IK), PUBLIC, PARAMETER :: SVD_ROW                = 2_IK**12_IK         ! MAX NUMBER OF ROWS
-  INTEGER(IK), PUBLIC, PARAMETER :: SVD_COL                = 2_IK**12_IK         ! MAX NUMBER OF ROWS
-  INTEGER(IK), PUBLIC, PARAMETER :: SVD_BASIS              = 128_IK              ! MAX NUMBER OF BASIS VECTORS IN THE IMPLICITLY RESTARTED ARNOLDI PROCESS, OPTIMAL VALUE (?)
-  INTEGER(IK), PUBLIC, PARAMETER :: SVD_LENGTH             = 64_IK               ! LENGTH OF ARNOLDI FACTORIZATION
-  INTEGER(IK), PUBLIC, PARAMETER :: SVD_LOOP               = 256_IK              ! MAX NUMBER OF MAIN LOOP ITERAIONS
+  real(rk),    public, parameter :: svd_level              = 1.0e-12_rk          ! singular value threshold level (absolute value)
+  integer(ik), public, parameter :: svd_row                = 2_ik**12_ik         ! max number of rows
+  integer(ik), public, parameter :: svd_col                = 2_ik**12_ik         ! max number of rows
+  integer(ik), public, parameter :: svd_basis              = 128_ik              ! max number of basis vectors in the implicitly restarted arnoldi process, optimal value (?)
+  integer(ik), public, parameter :: svd_length             = 64_ik               ! length of arnoldi factorization
+  integer(ik), public, parameter :: svd_loop               = 256_ik              ! max number of main loop iteraions
   ! ############################################################################################################################# !
-  ! SVD (DGESVD)
-  ! (SUBROUTINE) SVD_(<NR>, <NC>, <MATRIX>(<NR>, <NC>), <SVD_LIST>(MIN(<NR>, <NC>)), <U_MATRIX>(<NR>, <NR>), <V_MATRIX>(<NC>, <NC>))
-  ! <NR>                   -- (IN)     NUMBER OF ROWS (IK)
-  ! <NC>                   -- (IN)     NUMBER OF COLS (IK)
-  ! <MATRIX>               -- (IN)     INPUT MATRIX(<NR>, <NC>) (RK)
-  ! <SVD_LIST>             -- (OUT)    LIST OF SINGULAR VALUES WITH SIZE MIN(<NR>, <NC>) (RK)
-  ! <U_MATRIX>             -- (OUT)    L-SINGULAR VECTORS (<NR>, <NR>) (RK)
-  ! <V_MATRIX>             -- (OUT)    R-SINGULAR VECTORS (<NC>, <NC>) (RK)
-  INTERFACE
-    MODULE SUBROUTINE SVD_(NR, NC, MATRIX, SVD_LIST, U_MATRIX, V_MATRIX)
-      INTEGER(IK), INTENT(IN) :: NR
-      INTEGER(IK), INTENT(IN) :: NC
-      REAL(RK), DIMENSION(NR, NC), INTENT(IN) :: MATRIX
-      REAL(RK), DIMENSION(MIN(NR, NC)), INTENT(OUT) :: SVD_LIST
-      REAL(RK), DIMENSION(NR, NR), INTENT(OUT) :: U_MATRIX
-      REAL(RK), DIMENSION(NC, NC), INTENT(OUT) :: V_MATRIX
-    END SUBROUTINE SVD_
-  END INTERFACE
-  PUBLIC :: SVD_
+  ! svd (dgesvd)
+  ! (subroutine) svd_(<nr>, <nc>, <matrix>(<nr>, <nc>), <svd_list>(min(<nr>, <nc>)), <u_matrix>(<nr>, <nr>), <v_matrix>(<nc>, <nc>))
+  ! <nr>                   -- (in)     number of rows (ik)
+  ! <nc>                   -- (in)     number of cols (ik)
+  ! <matrix>               -- (in)     input matrix(<nr>, <nc>) (rk)
+  ! <svd_list>             -- (out)    list of singular values with size min(<nr>, <nc>) (rk)
+  ! <u_matrix>             -- (out)    l-singular vectors (<nr>, <nr>) (rk)
+  ! <v_matrix>             -- (out)    r-singular vectors (<nc>, <nc>) (rk)
+  interface
+    module subroutine svd_(nr, nc, matrix, svd_list, u_matrix, v_matrix)
+      integer(ik), intent(in) :: nr
+      integer(ik), intent(in) :: nc
+      real(rk), dimension(nr, nc), intent(in) :: matrix
+      real(rk), dimension(min(nr, nc)), intent(out) :: svd_list
+      real(rk), dimension(nr, nr), intent(out) :: u_matrix
+      real(rk), dimension(nc, nc), intent(out) :: v_matrix
+    end subroutine svd_
+  end interface
+  public :: svd_
   ! ############################################################################################################################# !
-  ! SVD LIST (DGESVD)
-  ! (SUBROUTINE) SVD_LIST_(<NR>, <NC>, <MATRIX>(<NR>, <NC>), <SVD_LIST>(MIN(<NR>, <NC>)))
-  ! <NR>                   -- (IN)     NUMBER OF ROWS (IK)
-  ! <NC>                   -- (IN)     NUMBER OF COLS (IK)
-  ! <MATRIX>               -- (IN)     INPUT MATRIX(<NR>, <NC>) (RK)
-  ! <SVD_LIST>             -- (OUT)    LIST OF SINGULAR VALUES WITH SIZE MIN(<NR>, <NC>) (RK)
-  INTERFACE
-    MODULE SUBROUTINE SVD_LIST_(NR, NC, MATRIX, SVD_LIST)
-      INTEGER(IK), INTENT(IN) :: NR
-      INTEGER(IK), INTENT(IN) :: NC
-      REAL(RK), DIMENSION(NR, NC), INTENT(IN) :: MATRIX
-      REAL(RK), DIMENSION(MIN(NR, NC)), INTENT(OUT) :: SVD_LIST
-    END SUBROUTINE SVD_LIST_
-  END INTERFACE
-  PUBLIC :: SVD_LIST_
+  ! svd list (dgesvd)
+  ! (subroutine) svd_list_(<nr>, <nc>, <matrix>(<nr>, <nc>), <svd_list>(min(<nr>, <nc>)))
+  ! <nr>                   -- (in)     number of rows (ik)
+  ! <nc>                   -- (in)     number of cols (ik)
+  ! <matrix>               -- (in)     input matrix(<nr>, <nc>) (rk)
+  ! <svd_list>             -- (out)    list of singular values with size min(<nr>, <nc>) (rk)
+  interface
+    module subroutine svd_list_(nr, nc, matrix, svd_list)
+      integer(ik), intent(in) :: nr
+      integer(ik), intent(in) :: nc
+      real(rk), dimension(nr, nc), intent(in) :: matrix
+      real(rk), dimension(min(nr, nc)), intent(out) :: svd_list
+    end subroutine svd_list_
+  end interface
+  public :: svd_list_
   ! ############################################################################################################################# !
-  ! TRUNCATED SVD (ARPACK)
-  ! SVD_TRUNCATED_(<NR>, <NC>, <NS>, <MATRIX>(<NR>, <NC>), <LIST>(<NS>), <RVEC>(<NC>, <NS>), <LVEC>(<NR>, <NS>))
-  ! <NR>                   -- (IN)     NUMBER OF ROWS (IK)
-  ! <NC>                   -- (IN)     NUMBER OF COLS (IK)
-  ! <NS>                   -- (IN)     NUMBER OF SINGULAR VALUES TO KEEP
-  ! <MATRIX>               -- (IN)     INPUT MATRIX(<NR>, <NC>) (RK)
-  ! <LIST>                 -- (OUT)    LIST OF SINGULAR VALUES (<NS>) (RK)
-  ! <RVEC>                 -- (OUT)    L-SINGULAR VECTORS (<NC>, <NS>) (RK)
-  ! <LVEC>                 -- (OUT)    R-SINGULAR VECTORS (<NR>, <NS>) (RK)
-  INTERFACE
-    MODULE SUBROUTINE SVD_TRUNCATED_(NR, NC, NS, MATRIX, LIST, RVEC, LVEC)
-      INTEGER(IK), INTENT(IN) :: NR
-      INTEGER(IK), INTENT(IN) :: NC
-      INTEGER(IK), INTENT(IN) :: NS
-      REAL(RK), DIMENSION(NR, NC), INTENT(IN) :: MATRIX
-      REAL(RK), DIMENSION(NS), INTENT(OUT) :: LIST
-      REAL(RK), DIMENSION(NC, NS), INTENT(OUT) :: RVEC
-      REAL(RK), DIMENSION(NR, NS), INTENT(OUT) :: LVEC
-    END SUBROUTINE SVD_TRUNCATED_
-  END INTERFACE
-  PUBLIC :: SVD_TRUNCATED_
+  ! truncated svd (arpack)
+  ! svd_truncated_(<nr>, <nc>, <ns>, <matrix>(<nr>, <nc>), <list>(<ns>), <rvec>(<nc>, <ns>), <lvec>(<nr>, <ns>))
+  ! <nr>                   -- (in)     number of rows (ik)
+  ! <nc>                   -- (in)     number of cols (ik)
+  ! <ns>                   -- (in)     number of singular values to keep
+  ! <matrix>               -- (in)     input matrix(<nr>, <nc>) (rk)
+  ! <list>                 -- (out)    list of singular values (<ns>) (rk)
+  ! <rvec>                 -- (out)    l-singular vectors (<nc>, <ns>) (rk)
+  ! <lvec>                 -- (out)    r-singular vectors (<nr>, <ns>) (rk)
+  interface
+    module subroutine svd_truncated_(nr, nc, ns, matrix, list, rvec, lvec)
+      integer(ik), intent(in) :: nr
+      integer(ik), intent(in) :: nc
+      integer(ik), intent(in) :: ns
+      real(rk), dimension(nr, nc), intent(in) :: matrix
+      real(rk), dimension(ns), intent(out) :: list
+      real(rk), dimension(nc, ns), intent(out) :: rvec
+      real(rk), dimension(nr, ns), intent(out) :: lvec
+    end subroutine svd_truncated_
+  end interface
+  public :: svd_truncated_
   ! ############################################################################################################################# !
-  ! GENERIC SVD
-  INTERFACE SVD_
-    MODULE PROCEDURE SVD_
-    MODULE PROCEDURE SVD_LIST_
-    MODULE PROCEDURE SVD_TRUNCATED_
-  END INTERFACE SVD_
+  ! generic svd
+  interface svd_
+    module procedure svd_
+    module procedure svd_list_
+    module procedure svd_truncated_
+  end interface svd_
   ! ############################################################################################################################# !
-  ! PROCESS
+  ! process
   ! ############################################################################################################################# !
-  ! CONVERT INPUT SEQUENCE (REAL)
-  ! (SUBROUTINE) CONVERT_REAL_(<LENGTH>, <R_PART>, <SEQUENCE>)
-  ! <LENGTH>               -- (IN)     LENGTH (IK)
-  ! <R_PART>               -- (IN)     INPUT SEQUENCE R-PART (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <SEQUENCE>             -- (OUT)    SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...] AND SI_I=0.0_RK FOR ALL I
+  ! convert input sequence (real)
+  ! (subroutine) convert_real_(<length>, <r_part>, <sequence>)
+  ! <length>               -- (in)     length (ik)
+  ! <r_part>               -- (in)     input sequence r-part (rk array of length = <length>)
+  ! <sequence>             -- (out)    sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...] and si_i=0.0_rk for all i
   ! void    convert_real_(int* length, double* r_part, double* sequence) ;
-  INTERFACE
-    MODULE SUBROUTINE CONVERT_REAL_(LENGTH, R_PART, SEQUENCE) &
-      BIND(C, NAME = "convert_real_")
-      INTEGER(IK), INTENT(IN) :: LENGTH
-      REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: R_PART
-      REAL(RK), INTENT(OUT), DIMENSION(2_IK*LENGTH) :: SEQUENCE
-    END SUBROUTINE CONVERT_REAL_
-  END INTERFACE
-  PUBLIC :: CONVERT_REAL_
+  interface
+    module subroutine convert_real_(length, r_part, sequence) &
+      bind(c, name = "convert_real_")
+      integer(ik), intent(in) :: length
+      real(rk), intent(in), dimension(length) :: r_part
+      real(rk), intent(out), dimension(2_ik*length) :: sequence
+    end subroutine convert_real_
+  end interface
+  public :: convert_real_
   ! ############################################################################################################################# !
-  ! CONVERT INPUT SEQUENCE (COMPLEX)
-  ! (SUBROUTINE) CONVERT_COMPLEX_(<LENGTH>, <R_PART>, <I_PART>, <SEQUENCE>)
-  ! <LENGTH>               -- (IN)     LENGTH (IK)
-  ! <R_PART>               -- (IN)     INPUT SEQUENCE R-PART (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <I_PART>               -- (IN)     INPUT SEQUENCE I-PART (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <SEQUENCE>             -- (OUT)    SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
+  ! convert input sequence (complex)
+  ! (subroutine) convert_complex_(<length>, <r_part>, <i_part>, <sequence>)
+  ! <length>               -- (in)     length (ik)
+  ! <r_part>               -- (in)     input sequence r-part (rk array of length = <length>)
+  ! <i_part>               -- (in)     input sequence i-part (rk array of length = <length>)
+  ! <sequence>             -- (out)    sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
   ! void    convert_complex_(int* length, double* r_part, double* i_part, double* sequence) ;
-  INTERFACE
-    MODULE SUBROUTINE CONVERT_COMPLEX_(LENGTH, R_PART, I_PART, SEQUENCE) &
-      BIND(C, NAME = "convert_complex_")
-      INTEGER(IK), INTENT(IN) :: LENGTH
-      REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: R_PART
-      REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: I_PART
-      REAL(RK), INTENT(OUT), DIMENSION(2_IK*LENGTH) :: SEQUENCE
-    END SUBROUTINE CONVERT_COMPLEX_
-  END INTERFACE
-  PUBLIC :: CONVERT_COMPLEX_
+  interface
+    module subroutine convert_complex_(length, r_part, i_part, sequence) &
+      bind(c, name = "convert_complex_")
+      integer(ik), intent(in) :: length
+      real(rk), intent(in), dimension(length) :: r_part
+      real(rk), intent(in), dimension(length) :: i_part
+      real(rk), intent(out), dimension(2_ik*length) :: sequence
+    end subroutine convert_complex_
+  end interface
+  public :: convert_complex_
   ! ############################################################################################################################# !
-  ! CONVERT INPUT SEQUENCE (REAL/COMPLEX)
-  INTERFACE CONVERT_
-    MODULE PROCEDURE CONVERT_REAL_
-    MODULE PROCEDURE CONVERT_COMPLEX_
-  END INTERFACE
-  PUBLIC :: CONVERT_
+  ! convert input sequence (real/complex)
+  interface convert_
+    module procedure convert_real_
+    module procedure convert_complex_
+  end interface
+  public :: convert_
   ! ############################################################################################################################# !
-  ! ROUND UP (ROUND UP TO THE NEXT POWER OF TWO)
-  ! (FUNCTION) ROUND_UP_(<NUMBER>)
-  ! <NUMBER>               -- (IN)     NUMBER (IK)
-  ! <ROUND_UP>             -- (OUT)    NEXT POWER OF TWO NUMBER (IK)
+  ! round up (round up to the next power of two)
+  ! (function) round_up_(<number>)
+  ! <number>               -- (in)     number (ik)
+  ! <round_up>             -- (out)    next power of two number (ik)
   ! int     round_up_(int* number) ;
-  INTERFACE
-    MODULE INTEGER(IK) FUNCTION ROUND_UP_(NUMBER) &
-      BIND(C, NAME = "round_up_")
-      INTEGER(IK), INTENT(IN) :: NUMBER
-    END FUNCTION ROUND_UP_
-  END INTERFACE
-  PUBLIC :: ROUND_UP_
+  interface
+    module integer(ik) function round_up_(number) &
+      bind(c, name = "round_up_")
+      integer(ik), intent(in) :: number
+    end function round_up_
+  end interface
+  public :: round_up_
   ! ############################################################################################################################# !
-  ! ZERO PADDING
-  ! (SUBROUTINE) PAD_(<LI>, <LO>, <INPUT>, <OUTPUT>)
-  ! <LI>                   -- (IN)     INPUT SEQUENCE LENGTH (IK)
-  ! <LO>                   -- (IN)     OUTPUT SEQUENCE LENGTH (IK)
-  ! <INPUT>                -- (IN)     INPUT SEQUENCE (RK) OF LENGTH = 2*<LI>
-  ! <OUTPUT>               -- (IN)     PADDED SEQUENCE (RK) OF LENGTH = 2*<LO>
+  ! zero padding
+  ! (subroutine) pad_(<li>, <lo>, <input>, <output>)
+  ! <li>                   -- (in)     input sequence length (ik)
+  ! <lo>                   -- (in)     output sequence length (ik)
+  ! <input>                -- (in)     input sequence (rk) of length = 2*<li>
+  ! <output>               -- (in)     padded sequence (rk) of length = 2*<lo>
   ! void    pad_(int* linput, int* loutput, double* input, double* output) ;
-  INTERFACE
-    MODULE SUBROUTINE PAD_(LI, LO, INPUT, OUTPUT) &
-      BIND(C, NAME = "pad_")
-      INTEGER(IK), INTENT(IN) :: LI
-      INTEGER(IK), INTENT(IN) :: LO
-      REAL(RK), DIMENSION(2_IK*LI), INTENT(IN) :: INPUT
-      REAL(RK), DIMENSION(2_IK*LO), INTENT(OUT) :: OUTPUT
-    END  SUBROUTINE PAD_
-  END INTERFACE
-  PUBLIC :: PAD_
+  interface
+    module subroutine pad_(li, lo, input, output) &
+      bind(c, name = "pad_")
+      integer(ik), intent(in) :: li
+      integer(ik), intent(in) :: lo
+      real(rk), dimension(2_ik*li), intent(in) :: input
+      real(rk), dimension(2_ik*lo), intent(out) :: output
+    end  subroutine pad_
+  end interface
+  public :: pad_
   ! ############################################################################################################################# !
-  ! REMOVE MEAN
-  ! (SUBROUTINE) REMOVE_MEAN_(<LENGTH>, <INPUT>, <OUTPUT> )
-  ! <LENGTH>               -- (IN)     INPUT SEQUENCE LENGTH (IK)
-  ! <INPUT>                -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <OUTPUT>               -- (OUT)    OUTPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
+  ! remove mean
+  ! (subroutine) remove_mean_(<length>, <input>, <output> )
+  ! <length>               -- (in)     input sequence length (ik)
+  ! <input>                -- (in)     input sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
+  ! <output>               -- (out)    output sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
   ! void    remove_mean_(int* length, double* input, double* output) ;
-  INTERFACE
-    MODULE SUBROUTINE REMOVE_MEAN_(LENGTH, INPUT, OUTPUT) &
-      BIND(C, NAME = "remove_mean_")
-      INTEGER(IK), INTENT(IN) :: LENGTH
-      REAL(RK), DIMENSION(2_IK*LENGTH), INTENT(IN) :: INPUT
-      REAL(RK), DIMENSION(2_IK*LENGTH), INTENT(OUT) :: OUTPUT
-    END SUBROUTINE REMOVE_MEAN_
-  END INTERFACE
-  PUBLIC :: REMOVE_MEAN_
+  interface
+    module subroutine remove_mean_(length, input, output) &
+      bind(c, name = "remove_mean_")
+      integer(ik), intent(in) :: length
+      real(rk), dimension(2_ik*length), intent(in) :: input
+      real(rk), dimension(2_ik*length), intent(out) :: output
+    end subroutine remove_mean_
+  end interface
+  public :: remove_mean_
   ! ############################################################################################################################# !
-  ! REMOVE WINDOW MEAN
-  ! (SUBROUTINE) REMOVE_WINDOW_MEAN_(<LENGTH>, <TOTAL>, <WINDOW>, <INPUT>, <OUTPUT> )
-  ! <LENGTH>               -- (IN)     INPUT SEQUENCE LENGTH (IK)
-  ! <TOTAL>                -- (IN)     SUM(WINDOW) (RK)
-  ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <INPUT>                -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <OUTPUT>               -- (OUT)    OUTPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
+  ! remove window mean
+  ! (subroutine) remove_window_mean_(<length>, <total>, <window>, <input>, <output> )
+  ! <length>               -- (in)     input sequence length (ik)
+  ! <total>                -- (in)     sum(window) (rk)
+  ! <window>               -- (in)     window array (rk array of length = <length>)
+  ! <input>                -- (in)     input sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
+  ! <output>               -- (out)    output sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
   ! void    remove_window_mean_(int* length, double* total, double* window, double* input, double* output) ;
-  INTERFACE
-    MODULE SUBROUTINE REMOVE_WINDOW_MEAN_(LENGTH, TOTAL, WINDOW, INPUT, OUTPUT) &
-      BIND(C, NAME = "remove_window_mean_")
-      INTEGER(IK), INTENT(IN) :: LENGTH
-      REAL(RK), INTENT(IN) :: TOTAL
-      REAL(RK), DIMENSION(LENGTH), INTENT(IN) :: WINDOW
-      REAL(RK), DIMENSION(2_IK*LENGTH), INTENT(IN) :: INPUT
-      REAL(RK), DIMENSION(2_IK*LENGTH), INTENT(OUT) :: OUTPUT
-    END SUBROUTINE REMOVE_WINDOW_MEAN_
-  END INTERFACE
-  PUBLIC :: REMOVE_WINDOW_MEAN_
+  interface
+    module subroutine remove_window_mean_(length, total, window, input, output) &
+      bind(c, name = "remove_window_mean_")
+      integer(ik), intent(in) :: length
+      real(rk), intent(in) :: total
+      real(rk), dimension(length), intent(in) :: window
+      real(rk), dimension(2_ik*length), intent(in) :: input
+      real(rk), dimension(2_ik*length), intent(out) :: output
+    end subroutine remove_window_mean_
+  end interface
+  public :: remove_window_mean_
   ! ############################################################################################################################# !
-  ! APPLY WINDOW
-  ! (SUBROUTINE) APPLY_WINDOW_(<LENGTH>, <WINDOW>, <INPUT>, <OUTPUT> )
-  ! <LENGTH>               -- (IN)     INPUT SEQUENCE LENGTH (IK)
-  ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <INPUT>                -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <OUTPUT>               -- (OUT)    OUTPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
+  ! apply window
+  ! (subroutine) apply_window_(<length>, <window>, <input>, <output> )
+  ! <length>               -- (in)     input sequence length (ik)
+  ! <window>               -- (in)     window array (rk array of length = <length>)
+  ! <input>                -- (in)     input sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
+  ! <output>               -- (out)    output sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
   ! void    apply_window_(int* length, double* window, double* input, double* output) ;
-  INTERFACE
-    MODULE SUBROUTINE APPLY_WINDOW_(LENGTH, WINDOW, INPUT, OUTPUT) &
-      BIND(C, NAME = "apply_window_")
-      INTEGER(IK), INTENT(IN) :: LENGTH
-      REAL(RK), DIMENSION(LENGTH), INTENT(IN) :: WINDOW
-      REAL(RK), DIMENSION(2_IK*LENGTH), INTENT(IN) :: INPUT
-      REAL(RK), DIMENSION(2_IK*LENGTH), INTENT(OUT) :: OUTPUT
-    END SUBROUTINE APPLY_WINDOW_
-  END INTERFACE
-  PUBLIC :: APPLY_WINDOW_
+  interface
+    module subroutine apply_window_(length, window, input, output) &
+      bind(c, name = "apply_window_")
+      integer(ik), intent(in) :: length
+      real(rk), dimension(length), intent(in) :: window
+      real(rk), dimension(2_ik*length), intent(in) :: input
+      real(rk), dimension(2_ik*length), intent(out) :: output
+    end subroutine apply_window_
+  end interface
+  public :: apply_window_
   ! ############################################################################################################################# !
-  ! MATRIX (GENERATE MATRIX FROM SEQUENCE)
-  ! (SUBROUTINE) MATRIX_(<LENGTH>, <SEQUENCE>, <MATRIX>)
-  ! <LENGTH>               -- (IN)     INPUT SEQUENCE LENGTH (IK)
-  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK)
-  ! <MATRIX>               -- (OUT)    MATRIX (<LENGTH>/2+1, <LENGTH>/2) (RK)
-  INTERFACE
-    MODULE SUBROUTINE MATRIX_(LENGTH, SEQUENCE, MATRIX)
-      INTEGER(IK), INTENT(IN) :: LENGTH
-      REAL(RK), DIMENSION(LENGTH), INTENT(IN) :: SEQUENCE
-      REAL(RK), DIMENSION(LENGTH/2_IK+1_IK, LENGTH/2_IK), INTENT(OUT) :: MATRIX
-    END SUBROUTINE MATRIX_
-  END INTERFACE
-  PUBLIC :: MATRIX_
+  ! matrix (generate matrix from sequence)
+  ! (subroutine) matrix_(<length>, <sequence>, <matrix>)
+  ! <length>               -- (in)     input sequence length (ik)
+  ! <sequence>             -- (in)     input sequence (rk)
+  ! <matrix>               -- (out)    matrix (<length>/2+1, <length>/2) (rk)
+  interface
+    module subroutine matrix_(length, sequence, matrix)
+      integer(ik), intent(in) :: length
+      real(rk), dimension(length), intent(in) :: sequence
+      real(rk), dimension(length/2_ik+1_ik, length/2_ik), intent(out) :: matrix
+    end subroutine matrix_
+  end interface
+  public :: matrix_
   ! ############################################################################################################################# !
-  ! SEQUENCE (ROW) (GENERATE SEQUENCE FROM MATRIX USING 1ST AND LAST ROWS)
-  ! (SUBROUTINE) SEQUENCE_ROW_(<LENGTH>, <SEQUENCE>, <MATRIX>)
-  ! <LENGTH>               -- (IN)     INPUT SEQUENCE LENGTH (IK)
-  ! <SEQUENCE>             -- (OUT)    INPUT SEQUENCE (RK)
-  ! <MATRIX>               -- (IN)     MATRIX (<LENGTH>/2+1, <LENGTH>/2) (RK)
-  INTERFACE
-    MODULE SUBROUTINE SEQUENCE_ROW_(LENGTH, SEQUENCE, MATRIX)
-      INTEGER(IK), INTENT(IN) :: LENGTH
-      REAL(RK), DIMENSION(LENGTH), INTENT(OUT) :: SEQUENCE
-      REAL(RK), DIMENSION(LENGTH/2_IK+1_IK, LENGTH/2_IK), INTENT(IN) :: MATRIX
-    END SUBROUTINE SEQUENCE_ROW_
-  END INTERFACE
-  PUBLIC :: SEQUENCE_ROW_
+  ! sequence (row) (generate sequence from matrix using 1st and last rows)
+  ! (subroutine) sequence_row_(<length>, <sequence>, <matrix>)
+  ! <length>               -- (in)     input sequence length (ik)
+  ! <sequence>             -- (out)    input sequence (rk)
+  ! <matrix>               -- (in)     matrix (<length>/2+1, <length>/2) (rk)
+  interface
+    module subroutine sequence_row_(length, sequence, matrix)
+      integer(ik), intent(in) :: length
+      real(rk), dimension(length), intent(out) :: sequence
+      real(rk), dimension(length/2_ik+1_ik, length/2_ik), intent(in) :: matrix
+    end subroutine sequence_row_
+  end interface
+  public :: sequence_row_
   ! ############################################################################################################################# !
-  ! SEQUENCE (SUM) (GENERATE SEQUENCE FROM MATRIX USING SUMS OF SKEW DIAGONALS)
-  ! (SUBROUTINE) SEQUENCE_ROW_(<LENGTH>, <SEQUENCE>, <MATRIX>)
-  ! <LENGTH>               -- (IN)     INPUT SEQUENCE LENGTH (IK)
-  ! <SEQUENCE>             -- (OUT)    INPUT SEQUENCE (RK)
-  ! <MATRIX>               -- (IN)     MATRIX (<LENGTH>/2+1, <LENGTH>/2) (RK)
-  INTERFACE
-    MODULE SUBROUTINE SEQUENCE_SUM_(LENGTH, SEQUENCE, MATRIX)
-      INTEGER(IK), INTENT(IN) :: LENGTH
-      REAL(RK), DIMENSION(LENGTH), INTENT(OUT) :: SEQUENCE
-      REAL(RK), DIMENSION(LENGTH/2_IK+1_IK, LENGTH/2_IK), INTENT(IN) :: MATRIX
-    END SUBROUTINE SEQUENCE_SUM_
-  END INTERFACE
-  PUBLIC :: SEQUENCE_SUM_
+  ! sequence (sum) (generate sequence from matrix using sums of skew diagonals)
+  ! (subroutine) sequence_row_(<length>, <sequence>, <matrix>)
+  ! <length>               -- (in)     input sequence length (ik)
+  ! <sequence>             -- (out)    input sequence (rk)
+  ! <matrix>               -- (in)     matrix (<length>/2+1, <length>/2) (rk)
+  interface
+    module subroutine sequence_sum_(length, sequence, matrix)
+      integer(ik), intent(in) :: length
+      real(rk), dimension(length), intent(out) :: sequence
+      real(rk), dimension(length/2_ik+1_ik, length/2_ik), intent(in) :: matrix
+    end subroutine sequence_sum_
+  end interface
+  public :: sequence_sum_
   ! ############################################################################################################################# !
-  ! FILTER
-  ! (SUBROUTINE) FILTER(<LENGTH>, <SEQUENCE>, <LIMIT>)
-  ! <LENGTH>               -- (IN)     LENGTH (IK)
-  ! <SEQUENCE>             -- (INOUT)  SEQUENCE (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <LIMIT>                -- (IN)     NUMBER OF SINGULAR VALUES TO KEEP (IK)
-  ! <SVD_LIST>             -- (OUT)    LIST OF SINGULAR VALUES
+  ! filter
+  ! (subroutine) filter(<length>, <sequence>, <limit>)
+  ! <length>               -- (in)     length (ik)
+  ! <sequence>             -- (inout)  sequence (rk array of length = <length>)
+  ! <limit>                -- (in)     number of singular values to keep (ik)
+  ! <svd_list>             -- (out)    list of singular values
   ! void    filter_(int* length, double* sequence, int* limit, double* svd_list) ;
-  INTERFACE
-    MODULE SUBROUTINE FILTER_(LENGTH, SEQUENCE, LIMIT, SVD_LIST) &
-      BIND(C, NAME = "filter_")
-      INTEGER(IK), INTENT(IN) :: LENGTH
-      REAL(RK), DIMENSION(LENGTH), INTENT(INOUT) :: SEQUENCE
-      INTEGER(IK), INTENT(IN) :: LIMIT
-      REAL(RK), DIMENSION(LIMIT), INTENT(OUT) :: SVD_LIST
-    END SUBROUTINE FILTER_
-  END INTERFACE
-  PUBLIC :: FILTER_
+  interface
+    module subroutine filter_(length, sequence, limit, svd_list) &
+      bind(c, name = "filter_")
+      integer(ik), intent(in) :: length
+      real(rk), dimension(length), intent(inout) :: sequence
+      integer(ik), intent(in) :: limit
+      real(rk), dimension(limit), intent(out) :: svd_list
+    end subroutine filter_
+  end interface
+  public :: filter_
   ! ############################################################################################################################# !
-  ! PEAKDETECT
+  ! peakdetect
   ! ############################################################################################################################# !
-  INTEGER(IK), PUBLIC, PARAMETER :: PEAK_WIDTH             = 2_IK                ! PEAK WIDTH
-  REAL(RK),    PUBLIC, PARAMETER :: PEAK_LEVEL             = -10.0_RK            ! PEAK THRESHOLD LEVEL
+  integer(ik), public, parameter :: peak_width             = 2_ik                ! peak width
+  real(rk),    public, parameter :: peak_level             = -10.0_rk            ! peak threshold level
   ! ############################################################################################################################# !
-  ! PEAK LIST
-  ! (SUBROUTINE) PEAK_LIST_(<LENGTH>, <SEQUENCE>, <PEAK_LIST>)
-  ! PEAK_WIDTH             -- (GLOBAL) PEAK WIDTH (IK)
-  ! PEAK_LEVEL             -- (GLOBAL) PEAK LEVEL THRESHOLD (RK)
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
-  ! <SEQUENCE>             -- (IN)     SEQUENCE (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <PEAK_LIST>            -- (OUT)    PEAK LIST (IK ARRAY OF LENGTH = <LENGTH>), VALUE OF ONE CORRESPOND TO PEAK LOCATION
-  INTERFACE
-    MODULE SUBROUTINE PEAK_LIST_(LENGTH, SEQUENCE, PEAK_LIST)
-      INTEGER(IK), INTENT(IN) :: LENGTH
-      REAL(RK), DIMENSION(LENGTH), INTENT(IN) :: SEQUENCE
-      INTEGER(IK), DIMENSION(LENGTH), INTENT(OUT) :: PEAK_LIST
-    END SUBROUTINE PEAK_LIST_
-  END INTERFACE
-  PUBLIC :: PEAK_LIST_
+  ! peak list
+  ! (subroutine) peak_list_(<length>, <sequence>, <peak_list>)
+  ! peak_width             -- (global) peak width (ik)
+  ! peak_level             -- (global) peak level threshold (rk)
+  ! <length>               -- (in)     sequence length (ik)
+  ! <sequence>             -- (in)     sequence (rk array of length = <length>)
+  ! <peak_list>            -- (out)    peak list (ik array of length = <length>), value of one correspond to peak location
+  interface
+    module subroutine peak_list_(length, sequence, peak_list)
+      integer(ik), intent(in) :: length
+      real(rk), dimension(length), intent(in) :: sequence
+      integer(ik), dimension(length), intent(out) :: peak_list
+    end subroutine peak_list_
+  end interface
+  public :: peak_list_
   ! ############################################################################################################################# !
-  ! TOTAL NUMBER OF PEAKS
-  ! (FUNCTION) PEAK_COUNT_(<LENGTH>, <PEAK_LIST>)
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
-  ! <PEAK_LIST>            -- (IN)     PEAK LIST (IK ARRAY OF LENGTH <LENGTH>)
-  ! <PEAK_COUNT_>          -- (OUT)    TOTAL NUMBER OF PEAKS (IK)
-  INTERFACE
-    MODULE INTEGER(IK) FUNCTION PEAK_COUNT_(LENGTH, PEAK_LIST)
-      INTEGER(IK), INTENT(IN) :: LENGTH
-      INTEGER(IK), DIMENSION(LENGTH), INTENT(IN) :: PEAK_LIST
-    END FUNCTION PEAK_COUNT_
-  END INTERFACE
-  PUBLIC :: PEAK_COUNT_
+  ! total number of peaks
+  ! (function) peak_count_(<length>, <peak_list>)
+  ! <length>               -- (in)     sequence length (ik)
+  ! <peak_list>            -- (in)     peak list (ik array of length <length>)
+  ! <peak_count_>          -- (out)    total number of peaks (ik)
+  interface
+    module integer(ik) function peak_count_(length, peak_list)
+      integer(ik), intent(in) :: length
+      integer(ik), dimension(length), intent(in) :: peak_list
+    end function peak_count_
+  end interface
+  public :: peak_count_
   ! ############################################################################################################################# !
-  ! DETECT SEVERAL PEAKS (LIST OF ORDERED PEAK POSITIONS)
-  ! (SUBROUTINE) PEAK_DETECT_(<LENGTH>, <SEQUENCE>, <PEAK_LENGTH>, <PEAK_ORDERED_LIST>)
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
-  ! <SEQUENCE>             -- (IN)     SEQUENCE (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <PEAK_LENGTH>          -- (IN)     NUMBER OF PEAKS TO FIND (IK)
-  ! <PEAK_ORDERED_LIST>    -- (OUT)    PEAK POSITIONS (IK ARRAY OF LENGTH = <PEAK_LENGTH>)
-  INTERFACE
-    MODULE SUBROUTINE PEAK_DETECT_(LENGTH, SEQUENCE, PEAK_LENGTH, PEAK_ORDERED_LIST)
-      INTEGER(IK), INTENT(IN) :: LENGTH
-      REAL(RK), DIMENSION(LENGTH), INTENT(IN) :: SEQUENCE
-      INTEGER(IK), INTENT(IN) :: PEAK_LENGTH
-      INTEGER(IK), DIMENSION(PEAK_LENGTH), INTENT(OUT) :: PEAK_ORDERED_LIST
-    END SUBROUTINE PEAK_DETECT_
-  END INTERFACE
-  PUBLIC :: PEAK_DETECT_
+  ! detect several peaks (list of ordered peak positions)
+  ! (subroutine) peak_detect_(<length>, <sequence>, <peak_length>, <peak_ordered_list>)
+  ! <length>               -- (in)     sequence length (ik)
+  ! <sequence>             -- (in)     sequence (rk array of length = <length>)
+  ! <peak_length>          -- (in)     number of peaks to find (ik)
+  ! <peak_ordered_list>    -- (out)    peak positions (ik array of length = <peak_length>)
+  interface
+    module subroutine peak_detect_(length, sequence, peak_length, peak_ordered_list)
+      integer(ik), intent(in) :: length
+      real(rk), dimension(length), intent(in) :: sequence
+      integer(ik), intent(in) :: peak_length
+      integer(ik), dimension(peak_length), intent(out) :: peak_ordered_list
+    end subroutine peak_detect_
+  end interface
+  public :: peak_detect_
   ! ############################################################################################################################# !
-  ! PEAK (RANKED)
-  ! (FUNCTION) PEAK_(<LENGTH>, <SEQUENCE>, <PEAK_ID>)
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
-  ! <SEQUENCE>             -- (IN)     SEQUENCE (RK ARRAY OF LENGTH <LENGTH>)
-  ! <PEAK_ID>              -- (IN)     PEAK RANK (IK)
-  ! <PEAK_>                -- (OUT)    PEAK POSITION (IK)
+  ! peak (ranked)
+  ! (function) peak_(<length>, <sequence>, <peak_id>)
+  ! <length>               -- (in)     sequence length (ik)
+  ! <sequence>             -- (in)     sequence (rk array of length <length>)
+  ! <peak_id>              -- (in)     peak rank (ik)
+  ! <peak_>                -- (out)    peak position (ik)
   ! int     peak_(int* length, double* sequence, int* id) ;
-  INTERFACE
-    MODULE INTEGER(IK) FUNCTION PEAK_(LENGTH, SEQUENCE, PEAK_ID) &
-      BIND(C, NAME = "peak_")
-      INTEGER(IK), INTENT(IN) :: LENGTH
-      REAL(RK), DIMENSION(LENGTH), INTENT(IN) :: SEQUENCE
-      INTEGER(IK), INTENT(IN) :: PEAK_ID
-    END FUNCTION PEAK_
-  END  INTERFACE
-  PUBLIC :: PEAK_
+  interface
+    module integer(ik) function peak_(length, sequence, peak_id) &
+      bind(c, name = "peak_")
+      integer(ik), intent(in) :: length
+      real(rk), dimension(length), intent(in) :: sequence
+      integer(ik), intent(in) :: peak_id
+    end function peak_
+  end  interface
+  public :: peak_
   ! ############################################################################################################################# !
-  ! WINDOW
+  ! window
   ! ############################################################################################################################# !
-  ! WINDOW (COSINE)
-  ! (SUBROUTINE) WINDOW_COS_(<LENGTH>, <ORDER>, <SEQUENCE>)
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
-  ! <ORDER>                -- (IN)     WINDOW ORDER (IK)
-  ! <WINDOW>               -- (OUT)    WINDOW (RK ARRAY OF LENGTH = <LENGTH>)
+  ! window (cosine)
+  ! (subroutine) window_cos_(<length>, <order>, <sequence>)
+  ! <length>               -- (in)     sequence length (ik)
+  ! <order>                -- (in)     window order (ik)
+  ! <window>               -- (out)    window (rk array of length = <length>)
   ! void    window_cos_(int* length, int* order, double* window) ;
-  INTERFACE
-    MODULE SUBROUTINE WINDOW_COS_(LENGTH, ORDER, WINDOW) &
-      BIND(C, NAME = "window_cos_")
-      INTEGER(IK), INTENT(IN) :: LENGTH
-      INTEGER(IK), INTENT(IN) :: ORDER
-      REAL(RK), INTENT(OUT), DIMENSION(LENGTH) :: WINDOW
-    END SUBROUTINE WINDOW_COS_
-  END INTERFACE
-  PUBLIC :: WINDOW_COS_
+  interface
+    module subroutine window_cos_(length, order, window) &
+      bind(c, name = "window_cos_")
+      integer(ik), intent(in) :: length
+      integer(ik), intent(in) :: order
+      real(rk), intent(out), dimension(length) :: window
+    end subroutine window_cos_
+  end interface
+  public :: window_cos_
   ! ############################################################################################################################# !
-  ! WINDOW (COSINE) (GENERIC, FRACTIONAL ORDER)
-  ! (SUBROUTINE) WINDOW_COS_GENERIC_(<LENGTH>, <ORDER>, <SEQUENCE>)
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
-  ! <ORDER>                -- (IN)     WINDOW ORDER (RK)
-  ! <WINDOW>               -- (OUT)    WINDOW (RK ARRAY OF LENGTH = <LENGTH>)
+  ! window (cosine) (generic, fractional order)
+  ! (subroutine) window_cos_generic_(<length>, <order>, <sequence>)
+  ! <length>               -- (in)     sequence length (ik)
+  ! <order>                -- (in)     window order (rk)
+  ! <window>               -- (out)    window (rk array of length = <length>)
   ! void    window_cos_generic_(int* length, double* order, double* window) ;
-  INTERFACE
-    MODULE SUBROUTINE WINDOW_COS_GENERIC_(LENGTH, ORDER, WINDOW)&
-      BIND(C, NAME = "window_cos_generic_")
-      INTEGER(IK), INTENT(IN) :: LENGTH
-      REAL(RK), INTENT(IN) :: ORDER
-      REAL(RK), INTENT(OUT), DIMENSION(LENGTH) :: WINDOW
-    END SUBROUTINE WINDOW_COS_GENERIC_
-  END INTERFACE
-  PUBLIC :: WINDOW_COS_GENERIC_
+  interface
+    module subroutine window_cos_generic_(length, order, window)&
+      bind(c, name = "window_cos_generic_")
+      integer(ik), intent(in) :: length
+      real(rk), intent(in) :: order
+      real(rk), intent(out), dimension(length) :: window
+    end subroutine window_cos_generic_
+  end interface
+  public :: window_cos_generic_
   ! ############################################################################################################################# !
-  ! GENERIC WINDOW
-  INTERFACE WINDOW_
-    MODULE PROCEDURE WINDOW_COS_
-    MODULE PROCEDURE WINDOW_COS_GENERIC_
-  END INTERFACE
-  PUBLIC :: WINDOW_
+  ! generic window
+  interface window_
+    module procedure window_cos_
+    module procedure window_cos_generic_
+  end interface
+  public :: window_
   ! ############################################################################################################################# !
-  ! WINDOW (KAISER)
-  ! (SUBROUTINE) WINDOW_KAISER_(<LENGTH>, <ORDER>, <SEQUENCE>)
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
-  ! <PARAMETER>            -- (IN)     WINDOW ORDER (RK)
-  ! <WINDOW>               -- (OUT)    WINDOW (RK ARRAY OF LENGTH = <LENGTH>)
+  ! window (kaiser)
+  ! (subroutine) window_kaiser_(<length>, <order>, <sequence>)
+  ! <length>               -- (in)     sequence length (ik)
+  ! <parameter>            -- (in)     window order (rk)
+  ! <window>               -- (out)    window (rk array of length = <length>)
   ! void    window_kaiser_(int* length, double* order, double* window) ;
-  INTERFACE
-    MODULE SUBROUTINE WINDOW_KAISER_(LENGTH, ORDER, WINDOW) &
-      BIND(C, NAME = "window_kaiser_")
-      INTEGER(IK), INTENT(IN) :: LENGTH
-      REAL(RK), INTENT(IN) :: ORDER
-      REAL(RK), INTENT(OUT), DIMENSION(LENGTH) :: WINDOW
-    END SUBROUTINE WINDOW_KAISER_
-  END INTERFACE
-  PUBLIC :: WINDOW_KAISER_
+  interface
+    module subroutine window_kaiser_(length, order, window) &
+      bind(c, name = "window_kaiser_")
+      integer(ik), intent(in) :: length
+      real(rk), intent(in) :: order
+      real(rk), intent(out), dimension(length) :: window
+    end subroutine window_kaiser_
+  end interface
+  public :: window_kaiser_
   ! ############################################################################################################################# !
-  ! FREQUENCY
+  ! frequency
   ! ############################################################################################################################# !
-  INTEGER(IK), PUBLIC, PARAMETER :: FLAG_REAL              = 0_IK                ! SIGNAL FLAG (REAL)
-  INTEGER(IK), PUBLIC, PARAMETER :: FLAG_COMPLEX           = 1_IK                ! SIGNAL FLAG (COMPLEX)
-  INTEGER(IK), PUBLIC, PARAMETER :: FREQUENCY_FFT          = 0_IK                ! FFT
-  INTEGER(IK), PUBLIC, PARAMETER :: FREQUENCY_FFRFT        = 1_IK                ! FFRFT
-  INTEGER(IK), PUBLIC, PARAMETER :: FREQUENCY_PARABOLA     = 2_IK                ! PARABOLA
-  INTEGER(IK), PUBLIC, PARAMETER :: FREQUENCY_PARABOLA_FIT = 3_IK                ! PARABOLA FIT
-  INTEGER(IK), PUBLIC, PARAMETER :: FREQUENCY_SEARCH       = 4_IK                ! MAXIMUM SEARCH
-  INTEGER(IK), PUBLIC, PARAMETER :: PARABOLA_FIT_LENGTH    = 4_IK                ! NUMBER OF PARABOLA FIT POINTS
-  INTEGER(IK), PUBLIC, PARAMETER :: SEARCH_LIMIT           = 128_IK              ! SEARCH LIMIT
-  REAL(RK)   , PUBLIC, PARAMETER :: SEARCH_TOLERANCE       = EPSILON             ! SEARCH TOLERANCE
+  integer(ik), public, parameter :: flag_real              = 0_ik                ! signal flag (real)
+  integer(ik), public, parameter :: flag_complex           = 1_ik                ! signal flag (complex)
+  integer(ik), public, parameter :: frequency_fft          = 0_ik                ! fft
+  integer(ik), public, parameter :: frequency_ffrft        = 1_ik                ! ffrft
+  integer(ik), public, parameter :: frequency_parabola     = 2_ik                ! parabola
+  integer(ik), public, parameter :: frequency_parabola_fit = 3_ik                ! parabola fit
+  integer(ik), public, parameter :: frequency_search       = 4_ik                ! maximum search
+  integer(ik), public, parameter :: parabola_fit_length    = 4_ik                ! number of parabola fit points
+  integer(ik), public, parameter :: search_limit           = 128_ik              ! search limit
+  real(rk)   , public, parameter :: search_tolerance       = epsilon             ! search tolerance
   ! ############################################################################################################################# !
-  ! INITIAL FREQUENCY ESTIMATION
-  ! (FUNCTION) FREQUENCY_INITIAL_(<RANGE_MIN>, <RANGE_MAX>, <PEAK>, <LENGTH>, <PAD>, <SEQUENCE>)
-  ! <RANGE_MIN>            -- (IN)     (MIN) FREQUENCY RANGE (RK)
-  ! <RANGE_MAX>            -- (IN)     (MAX) FREQUENCY RANGE (RK)
-  ! <PEAK>                 -- (IN)     PEAK NUMBER TO USE (IK), <PEAK> = 0 USE MAXIMUM BIN, <PEAK> = N > 0 USE N'TH PEAK WITHIN GIVEN FREQUENCY RANGE
-  ! <LENGTH>               -- (IN)     INPUT SEQUENCE LENGTH (IK)
-  ! <PAD>                  -- (IN)     PADDED SEQUENCE LENGTH (IK), IF PAD > LENGTH, INPUT SEQUENCE IS PADDED WITH ZEROS
-  ! <SEQUENCE>             -- (IN)     INPUT (PROCESSED) SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <FREQUENCY_>           -- (OUT)    INITIAL FREQUENCY ESTIMATION (RK)
+  ! initial frequency estimation
+  ! (function) frequency_initial_(<range_min>, <range_max>, <peak>, <length>, <pad>, <sequence>)
+  ! <range_min>            -- (in)     (min) frequency range (rk)
+  ! <range_max>            -- (in)     (max) frequency range (rk)
+  ! <peak>                 -- (in)     peak number to use (ik), <peak> = 0 use maximum bin, <peak> = n > 0 use n'th peak within given frequency range
+  ! <length>               -- (in)     input sequence length (ik)
+  ! <pad>                  -- (in)     padded sequence length (ik), if pad > length, input sequence is padded with zeros
+  ! <sequence>             -- (in)     input (processed) sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
+  ! <frequency_>           -- (out)    initial frequency estimation (rk)
   ! double  frequency_initial_(double* range_min, double* range_max, int* peak, int* length, int* pad, double* sequence) ;
-  INTERFACE
-    MODULE REAL(RK) FUNCTION FREQUENCY_INITIAL_(RANGE_MIN, RANGE_MAX, PEAK, LENGTH, PAD, SEQUENCE) &
-      BIND(C, NAME = "frequency_initial_")
-      REAL(RK), INTENT(IN) :: RANGE_MIN
-      REAL(RK), INTENT(IN) :: RANGE_MAX
-      INTEGER(IK), INTENT(IN) :: PEAK
-      INTEGER(IK), INTENT(IN):: LENGTH
-      INTEGER(IK), INTENT(IN):: PAD
-      REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
-    END FUNCTION FREQUENCY_INITIAL_
-  END INTERFACE
-  PUBLIC :: FREQUENCY_INITIAL_
+  interface
+    module real(rk) function frequency_initial_(range_min, range_max, peak, length, pad, sequence) &
+      bind(c, name = "frequency_initial_")
+      real(rk), intent(in) :: range_min
+      real(rk), intent(in) :: range_max
+      integer(ik), intent(in) :: peak
+      integer(ik), intent(in):: length
+      integer(ik), intent(in):: pad
+      real(rk), intent(in), dimension(2_ik*length) :: sequence
+    end function frequency_initial_
+  end interface
+  public :: frequency_initial_
   ! ############################################################################################################################# !
-  ! INITIAL FREQUENCY ESTIMATION (MEMORIZATION)
-  ! (FUNCTION) FREQUENCY_INITIAL__(<RANGE_MIN>, <RANGE_MAX>, <PEAK>, <LENGTH>, <PAD>, <SEQUENCE>)
-  ! <RANGE_MIN>            -- (IN)     (MIN) FREQUENCY RANGE (RK)
-  ! <RANGE_MAX>            -- (IN)     (MAX) FREQUENCY RANGE (RK)
-  ! <PEAK>                 -- (IN)     PEAK NUMBER TO USE (IK), <PEAK> = 0 USE MAXIMUM BIN, <PEAK> = N > 0 USE N'TH PEAK WITHIN GIVEN FREQUENCY RANGE
-  ! <LENGTH>               -- (IN)     INPUT SEQUENCE LENGTH (IK)
-  ! <PAD>                  -- (IN)     PADDED SEQUENCE LENGTH (IK), IF PAD > LENGTH, INPUT SEQUENCE IS PADDED WITH ZEROS
-  ! <SEQUENCE>             -- (IN)     INPUT (PROCESSED) SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <FREQUENCY_>           -- (OUT)    INITIAL FREQUENCY ESTIMATION (RK)
+  ! initial frequency estimation (memorization)
+  ! (function) frequency_initial__(<range_min>, <range_max>, <peak>, <length>, <pad>, <sequence>)
+  ! <range_min>            -- (in)     (min) frequency range (rk)
+  ! <range_max>            -- (in)     (max) frequency range (rk)
+  ! <peak>                 -- (in)     peak number to use (ik), <peak> = 0 use maximum bin, <peak> = n > 0 use n'th peak within given frequency range
+  ! <length>               -- (in)     input sequence length (ik)
+  ! <pad>                  -- (in)     padded sequence length (ik), if pad > length, input sequence is padded with zeros
+  ! <sequence>             -- (in)     input (processed) sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
+  ! <frequency_>           -- (out)    initial frequency estimation (rk)
   ! double  frequency_initial__(double* range_min, double* range_max, int* peak, int* length, int* pad, double* sequence) ;
-  INTERFACE
-    MODULE REAL(RK) FUNCTION FREQUENCY_INITIAL__(RANGE_MIN, RANGE_MAX, PEAK, LENGTH, PAD, SEQUENCE) &
-      BIND(C, NAME = "frequency_initial__")
-      REAL(RK), INTENT(IN) :: RANGE_MIN
-      REAL(RK), INTENT(IN) :: RANGE_MAX
-      INTEGER(IK), INTENT(IN) :: PEAK
-      INTEGER(IK), INTENT(IN):: LENGTH
-      INTEGER(IK), INTENT(IN):: PAD
-      REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
-    END FUNCTION FREQUENCY_INITIAL__
-  END INTERFACE
-  PUBLIC :: FREQUENCY_INITIAL__
+  interface
+    module real(rk) function frequency_initial__(range_min, range_max, peak, length, pad, sequence) &
+      bind(c, name = "frequency_initial__")
+      real(rk), intent(in) :: range_min
+      real(rk), intent(in) :: range_max
+      integer(ik), intent(in) :: peak
+      integer(ik), intent(in):: length
+      integer(ik), intent(in):: pad
+      real(rk), intent(in), dimension(2_ik*length) :: sequence
+    end function frequency_initial__
+  end interface
+  public :: frequency_initial__
   ! ############################################################################################################################# !
-  ! REFINE FREQUENCY ESTIMATION (FFRFT)
-  ! (FUNCTION) FREQUENCY_REFINE_(<METHOD>, <LENGTH>, <SEQUENCE>, <INITIAL>)
-  ! <METHOD>               -- (IN)     METHOD
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
-  ! <SEQUENCE>             -- (IN)     INPUT (PROCESSED) SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <INITIAL>              -- (IN)     INITIAL FREQUENCY GUESS (RK)
-  ! <FREQUENCY_REFINE_>    -- (OUT)    REFINED FREQUENCY ESTIMATION (RK)
+  ! refine frequency estimation (ffrft)
+  ! (function) frequency_refine_(<method>, <length>, <sequence>, <initial>)
+  ! <method>               -- (in)     method
+  ! <length>               -- (in)     sequence length (ik)
+  ! <sequence>             -- (in)     input (processed) sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
+  ! <initial>              -- (in)     initial frequency guess (rk)
+  ! <frequency_refine_>    -- (out)    refined frequency estimation (rk)
   ! double  frequency_refine_(int* method, int* length, double* sequence, double* initial) ;
-  INTERFACE
-    MODULE REAL(RK) FUNCTION FREQUENCY_REFINE_(METHOD, LENGTH, SEQUENCE, INITIAL) &
-      BIND(C, NAME = "frequency_refine_")
-      INTEGER(IK), INTENT(IN):: METHOD
-      INTEGER(IK), INTENT(IN):: LENGTH
-      REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
-      REAL(RK), INTENT(IN) :: INITIAL
-    END FUNCTION FREQUENCY_REFINE_
-  END INTERFACE
-  PUBLIC :: FREQUENCY_REFINE_
+  interface
+    module real(rk) function frequency_refine_(method, length, sequence, initial) &
+      bind(c, name = "frequency_refine_")
+      integer(ik), intent(in):: method
+      integer(ik), intent(in):: length
+      real(rk), intent(in), dimension(2_ik*length) :: sequence
+      real(rk), intent(in) :: initial
+    end function frequency_refine_
+  end interface
+  public :: frequency_refine_
   ! ############################################################################################################################# !
-  ! REFINE FREQUENCY ESTIMATION (FFRFT) (MEMORIZATION)
-  ! (FUNCTION) FREQUENCY_REFINE_(<METHOD>, <LENGTH>, <SEQUENCE>, <INITIAL>)
-  ! <METHOD>               -- (IN)     METHOD
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
-  ! <SEQUENCE>             -- (IN)     INPUT (PROCESSED) SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <INITIAL>              -- (IN)     INITIAL FREQUENCY GUESS (RK)
-  ! <FREQUENCY_REFINE_>    -- (OUT)    REFINED FREQUENCY ESTIMATION (RK)
+  ! refine frequency estimation (ffrft) (memorization)
+  ! (function) frequency_refine_(<method>, <length>, <sequence>, <initial>)
+  ! <method>               -- (in)     method
+  ! <length>               -- (in)     sequence length (ik)
+  ! <sequence>             -- (in)     input (processed) sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
+  ! <initial>              -- (in)     initial frequency guess (rk)
+  ! <frequency_refine_>    -- (out)    refined frequency estimation (rk)
   ! double  frequency_refine__(int* method, int* length, double* sequence, double* initial) ;
-  INTERFACE
-    MODULE REAL(RK) FUNCTION FREQUENCY_REFINE__(METHOD, LENGTH, SEQUENCE, INITIAL) &
-      BIND(C, NAME = "frequency_refine__")
-      INTEGER(IK), INTENT(IN):: METHOD
-      INTEGER(IK), INTENT(IN):: LENGTH
-      REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
-      REAL(RK), INTENT(IN) :: INITIAL
-    END FUNCTION FREQUENCY_REFINE__
-  END INTERFACE
-  PUBLIC :: FREQUENCY_REFINE__
+  interface
+    module real(rk) function frequency_refine__(method, length, sequence, initial) &
+      bind(c, name = "frequency_refine__")
+      integer(ik), intent(in):: method
+      integer(ik), intent(in):: length
+      real(rk), intent(in), dimension(2_ik*length) :: sequence
+      real(rk), intent(in) :: initial
+    end function frequency_refine__
+  end interface
+  public :: frequency_refine__
   ! ############################################################################################################################# !
-  ! REFINE FREQUENCY ESTIMATION (BINARY SEARCH)
-  ! (FUNCTION) BINARY_AMPLITUDE_(<FLAG>, <LENGTH>, <TOTAL>, <WINDOW>, <SEQUENCE>, <INITIAL>)
-  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
-  ! <TOTAL>                -- (IN)     SUM(WINDOW) (RK)
-  ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <SEQUENCE>             -- (IN)     INPUT (UNPROCESSED) SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <INITIAL>              -- (IN)     INITIAL FREQUENCY GUESS (RK)
-  ! <BINARY_AMPLITUDE_>    -- (OUT)    REFINED FREQUENCY (RK)
+  ! refine frequency estimation (binary search)
+  ! (function) binary_amplitude_(<flag>, <length>, <total>, <window>, <sequence>, <initial>)
+  ! <flag>                 -- (in)     complex flag (ik), 0/1 for real/complex input sequence
+  ! <length>               -- (in)     sequence length (ik)
+  ! <total>                -- (in)     sum(window) (rk)
+  ! <window>               -- (in)     window array (rk array of length = <length>)
+  ! <sequence>             -- (in)     input (unprocessed) sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
+  ! <initial>              -- (in)     initial frequency guess (rk)
+  ! <binary_amplitude_>    -- (out)    refined frequency (rk)
   ! double  binary_amplitude_(int* flag, int* length, double* total, double* window, double* sequence, double* initial) ;
-  INTERFACE
-    MODULE REAL(RK) FUNCTION BINARY_AMPLITUDE_(FLAG, LENGTH, TOTAL, WINDOW, SEQUENCE, INITIAL) &
-      BIND(C, NAME = "binary_amplitude_")
-      INTEGER(IK), INTENT(IN):: FLAG
-      INTEGER(IK), INTENT(IN):: LENGTH
-      REAL(RK), INTENT(IN) :: TOTAL
-      REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: WINDOW
-      REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
-      REAL(RK), INTENT(IN) :: INITIAL
-    END FUNCTION
-  END INTERFACE
-  PUBLIC :: BINARY_AMPLITUDE_
+  interface
+    module real(rk) function binary_amplitude_(flag, length, total, window, sequence, initial) &
+      bind(c, name = "binary_amplitude_")
+      integer(ik), intent(in):: flag
+      integer(ik), intent(in):: length
+      real(rk), intent(in) :: total
+      real(rk), intent(in), dimension(length) :: window
+      real(rk), intent(in), dimension(2_ik*length) :: sequence
+      real(rk), intent(in) :: initial
+    end function
+  end interface
+  public :: binary_amplitude_
   ! ############################################################################################################################# !
-  ! REFINE FREQUENCY ESTIMATION (GOLDEN SEARCH)
-  ! (FUNCTION) GOLDEN_AMPLITUDE_(<FLAG>, <LENGTH>, <TOTAL>, <WINDOW>, <SEQUENCE>, <INITIAL>)
-  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
-  ! <TOTAL>                -- (IN)     SUM(WINDOW) (RK)
-  ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <SEQUENCE>             -- (IN)     INPUT (UNPROCESSED) SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <INITIAL>              -- (IN)     INITIAL FREQUENCY GUESS (RK)
-  ! <GOLDEN_AMPLITUDE_>    -- (OUT)    REFINED FREQUENCY (RK)
+  ! refine frequency estimation (golden search)
+  ! (function) golden_amplitude_(<flag>, <length>, <total>, <window>, <sequence>, <initial>)
+  ! <flag>                 -- (in)     complex flag (ik), 0/1 for real/complex input sequence
+  ! <length>               -- (in)     sequence length (ik)
+  ! <total>                -- (in)     sum(window) (rk)
+  ! <window>               -- (in)     window array (rk array of length = <length>)
+  ! <sequence>             -- (in)     input (unprocessed) sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
+  ! <initial>              -- (in)     initial frequency guess (rk)
+  ! <golden_amplitude_>    -- (out)    refined frequency (rk)
   ! double  golden_amplitude_(int* flag, int* length, double* total, double* window, double* sequence, double* initial) ;
-  INTERFACE
-    MODULE REAL(RK) FUNCTION GOLDEN_AMPLITUDE_(FLAG, LENGTH, TOTAL, WINDOW, SEQUENCE, INITIAL) &
-      BIND(C, NAME = "golden_amplitude_")
-      INTEGER(IK), INTENT(IN):: FLAG
-      INTEGER(IK), INTENT(IN):: LENGTH
-      REAL(RK), INTENT(IN) :: TOTAL
-      REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: WINDOW
-      REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
-      REAL(RK), INTENT(IN) :: INITIAL
-    END FUNCTION
-  END INTERFACE
-  PUBLIC :: GOLDEN_AMPLITUDE_
+  interface
+    module real(rk) function golden_amplitude_(flag, length, total, window, sequence, initial) &
+      bind(c, name = "golden_amplitude_")
+      integer(ik), intent(in):: flag
+      integer(ik), intent(in):: length
+      real(rk), intent(in) :: total
+      real(rk), intent(in), dimension(length) :: window
+      real(rk), intent(in), dimension(2_ik*length) :: sequence
+      real(rk), intent(in) :: initial
+    end function
+  end interface
+  public :: golden_amplitude_
   ! ############################################################################################################################# !
-  ! FREQUENCY ESTIMATION (GERERIC)
-  ! (FUNCTION) FREQUENCY_(<FLAG>, <RANGE_MIN>, <RANGE_MAX>, <PEAK>, <METHOD>, <LENGTH>, <PAD>, <TOTAL>, <WINDOW>, <SEQUENCE>)
-  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
-  ! <RANGE_MIN>            -- (IN)     (MIN) FREQUENCY RANGE (RK)
-  ! <RANGE_MAX>            -- (IN)     (MAX) FREQUENCY RANGE (RK)
-  ! <PEAK>                 -- (IN)     PEAK NUMBER TO USE (IK), <PEAK> = 0 USE MAXIMUM BIN, <PEAK> = N > 0 USE N'TH PEAK WITHIN GIVEN FREQUENCY RANGE
-  ! <METHOD>               -- (IN)     FREQUENCY ESTIMATION METHOD (IK)
-  ! <LENGTH>               -- (IN)     INPUT SEQUENCE LENGTH (IK)
-  ! <PAD>                  -- (IN)     PADDED SEQUENCE LENGTH (IK), IF PAD > LENGTH, INPUT SEQUENCE IS PADDED WITH ZEROS
-  ! <TOTAL>                -- (IN)     SUM(WINDOW) (RK)
-  ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <SEQUENCE>             -- (IN)     INPUT (UNPROCESSED) SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <FREQUENCY_>           -- (OUT)    FREQUENCY ESTIMATION (RK)
+  ! frequency estimation (gereric)
+  ! (function) frequency_(<flag>, <range_min>, <range_max>, <peak>, <method>, <length>, <pad>, <total>, <window>, <sequence>)
+  ! <flag>                 -- (in)     complex flag (ik), 0/1 for real/complex input sequence
+  ! <range_min>            -- (in)     (min) frequency range (rk)
+  ! <range_max>            -- (in)     (max) frequency range (rk)
+  ! <peak>                 -- (in)     peak number to use (ik), <peak> = 0 use maximum bin, <peak> = n > 0 use n'th peak within given frequency range
+  ! <method>               -- (in)     frequency estimation method (ik)
+  ! <length>               -- (in)     input sequence length (ik)
+  ! <pad>                  -- (in)     padded sequence length (ik), if pad > length, input sequence is padded with zeros
+  ! <total>                -- (in)     sum(window) (rk)
+  ! <window>               -- (in)     window array (rk array of length = <length>)
+  ! <sequence>             -- (in)     input (unprocessed) sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
+  ! <frequency_>           -- (out)    frequency estimation (rk)
   ! double  frequency_(int* flag, double* range_min, double* range_max, int* peak, int* method, int* length, int* pad, double* total, double* window, double* sequence) ;
-  INTERFACE
-    MODULE REAL(RK) FUNCTION FREQUENCY_(FLAG, RANGE_MIN, RANGE_MAX, PEAK, METHOD, LENGTH, PAD, TOTAL, WINDOW, SEQUENCE) &
-      BIND(C, NAME = "frequency_")
-      INTEGER(IK), INTENT(IN):: FLAG
-      REAL(RK), INTENT(IN) :: RANGE_MIN
-      REAL(RK), INTENT(IN) :: RANGE_MAX
-      INTEGER(IK), INTENT(IN) :: PEAK
-      INTEGER(IK), INTENT(IN) :: METHOD
-      INTEGER(IK), INTENT(IN):: LENGTH
-      INTEGER(IK), INTENT(IN):: PAD
-      REAL(RK), INTENT(IN) :: TOTAL
-      REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: WINDOW
-      REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
-    END FUNCTION FREQUENCY_
-  END INTERFACE
-  PUBLIC :: FREQUENCY_
+  interface
+    module real(rk) function frequency_(flag, range_min, range_max, peak, method, length, pad, total, window, sequence) &
+      bind(c, name = "frequency_")
+      integer(ik), intent(in):: flag
+      real(rk), intent(in) :: range_min
+      real(rk), intent(in) :: range_max
+      integer(ik), intent(in) :: peak
+      integer(ik), intent(in) :: method
+      integer(ik), intent(in):: length
+      integer(ik), intent(in):: pad
+      real(rk), intent(in) :: total
+      real(rk), intent(in), dimension(length) :: window
+      real(rk), intent(in), dimension(2_ik*length) :: sequence
+    end function frequency_
+  end interface
+  public :: frequency_
   ! ############################################################################################################################# !
-  ! FREQUENCY ESTIMATION (GERERIC) (MEMORIZATION)
-  ! (FUNCTION) FREQUENCY__(<FLAG>, <RANGE_MIN>, <RANGE_MAX>, <PEAK>, <METHOD>, <LENGTH>, <PAD>, <TOTAL>, <WINDOW>, <SEQUENCE>)
-  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
-  ! <RANGE_MIN>            -- (IN)     (MIN) FREQUENCY RANGE (RK)
-  ! <RANGE_MAX>            -- (IN)     (MAX) FREQUENCY RANGE (RK)
-  ! <PEAK>                 -- (IN)     PEAK NUMBER TO USE (IK), <PEAK> = 0 USE MAXIMUM BIN, <PEAK> = N > 0 USE N'TH PEAK WITHIN GIVEN FREQUENCY RANGE
-  ! <METHOD>               -- (IN)     FREQUENCY ESTIMATION METHOD (IK)
-  ! <LENGTH>               -- (IN)     INPUT SEQUENCE LENGTH (IK)
-  ! <PAD>                  -- (IN)     PADDED SEQUENCE LENGTH (IK), IF PAD > LENGTH, INPUT SEQUENCE IS PADDED WITH ZEROS
-  ! <TOTAL>                -- (IN)     SUM(WINDOW) (RK)
-  ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <SEQUENCE>             -- (IN)     INPUT (UNPROCESSED) SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <FREQUENCY_>           -- (OUT)    FREQUENCY ESTIMATION (RK)
+  ! frequency estimation (gereric) (memorization)
+  ! (function) frequency__(<flag>, <range_min>, <range_max>, <peak>, <method>, <length>, <pad>, <total>, <window>, <sequence>)
+  ! <flag>                 -- (in)     complex flag (ik), 0/1 for real/complex input sequence
+  ! <range_min>            -- (in)     (min) frequency range (rk)
+  ! <range_max>            -- (in)     (max) frequency range (rk)
+  ! <peak>                 -- (in)     peak number to use (ik), <peak> = 0 use maximum bin, <peak> = n > 0 use n'th peak within given frequency range
+  ! <method>               -- (in)     frequency estimation method (ik)
+  ! <length>               -- (in)     input sequence length (ik)
+  ! <pad>                  -- (in)     padded sequence length (ik), if pad > length, input sequence is padded with zeros
+  ! <total>                -- (in)     sum(window) (rk)
+  ! <window>               -- (in)     window array (rk array of length = <length>)
+  ! <sequence>             -- (in)     input (unprocessed) sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
+  ! <frequency_>           -- (out)    frequency estimation (rk)
   ! double  frequency__(int* flag, double* range_min, double* range_max, int* peak, int* method, int* length, int* pad, double* total, double* window, double* sequence) ;
-  INTERFACE
-    MODULE REAL(RK) FUNCTION FREQUENCY__(FLAG, RANGE_MIN, RANGE_MAX, PEAK, METHOD, LENGTH, PAD, TOTAL, WINDOW, SEQUENCE) &
-      BIND(C, NAME = "frequency__")
-      INTEGER(IK), INTENT(IN):: FLAG
-      REAL(RK), INTENT(IN) :: RANGE_MIN
-      REAL(RK), INTENT(IN) :: RANGE_MAX
-      INTEGER(IK), INTENT(IN) :: PEAK
-      INTEGER(IK), INTENT(IN) :: METHOD
-      INTEGER(IK), INTENT(IN):: LENGTH
-      INTEGER(IK), INTENT(IN):: PAD
-      REAL(RK), INTENT(IN) :: TOTAL
-      REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: WINDOW
-      REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
-    END FUNCTION FREQUENCY__
-  END INTERFACE
-  PUBLIC :: FREQUENCY__
+  interface
+    module real(rk) function frequency__(flag, range_min, range_max, peak, method, length, pad, total, window, sequence) &
+      bind(c, name = "frequency__")
+      integer(ik), intent(in):: flag
+      real(rk), intent(in) :: range_min
+      real(rk), intent(in) :: range_max
+      integer(ik), intent(in) :: peak
+      integer(ik), intent(in) :: method
+      integer(ik), intent(in):: length
+      integer(ik), intent(in):: pad
+      real(rk), intent(in) :: total
+      real(rk), intent(in), dimension(length) :: window
+      real(rk), intent(in), dimension(2_ik*length) :: sequence
+    end function frequency__
+  end interface
+  public :: frequency__
   ! ############################################################################################################################# !
-  ! DECOMPOSITION
+  ! decomposition
   ! ############################################################################################################################# !
-  INTEGER(IK), PUBLIC, PARAMETER :: DECOMPOSITION_SUBTRACT = 0_IK                ! DECOMPOSITION BY ITERATIVE SUBTRACTION
-  INTEGER(IK), PUBLIC, PARAMETER :: DECOMPOSITION_PEAK     = 1_IK                ! DECOMPOSITION BY PEAKS
+  integer(ik), public, parameter :: decomposition_subtract = 0_ik                ! decomposition by iterative subtraction
+  integer(ik), public, parameter :: decomposition_peak     = 1_ik                ! decomposition by peaks
   ! ############################################################################################################################# !
-  ! ESTIMATE AMPLITUDE FOR GIVEN FREQUENCY
-  ! (SUBROUTINE) AMPLITUDE_(<FLAG>, <LENGTH>, <TOTAL>, <WINDOW>, <SEQUENCE>, <FREQUENCY>, <COS_AMP>, <SIN_AMP>, <AMP>)
-  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
-  ! <TOTAL>                -- (IN)     SUM(WINDOW) (RK)
-  ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <FREQUENCY>            -- (IN)     FREQUENCY (RK)
-  ! <COS_AMP>              -- (OUT)    COS AMPLITUDE (RK)
-  ! <SIN_AMP>              -- (OUT)    SIN AMPLITUDE (RK)
-  ! <AMP>                  -- (OUT)    ABS AMPLITUDE (RK)
+  ! estimate amplitude for given frequency
+  ! (subroutine) amplitude_(<flag>, <length>, <total>, <window>, <sequence>, <frequency>, <cos_amp>, <sin_amp>, <amp>)
+  ! <flag>                 -- (in)     complex flag (ik), 0/1 for real/complex input sequence
+  ! <length>               -- (in)     sequence length (ik)
+  ! <total>                -- (in)     sum(window) (rk)
+  ! <window>               -- (in)     window array (rk array of length = <length>)
+  ! <sequence>             -- (in)     input sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
+  ! <frequency>            -- (in)     frequency (rk)
+  ! <cos_amp>              -- (out)    cos amplitude (rk)
+  ! <sin_amp>              -- (out)    sin amplitude (rk)
+  ! <amp>                  -- (out)    abs amplitude (rk)
   ! void    amplitude_(int* flag, int* length, double* total, double* window, double* sequence, double* frequency, double* cos_amp, double* sin_amp, double* amp) ;
-  INTERFACE
-    MODULE SUBROUTINE AMPLITUDE_(FLAG, LENGTH, TOTAL, WINDOW, SEQUENCE, FREQUENCY, COS_AMP, SIN_AMP, AMP) &
-      BIND(C, NAME = "amplutude_")
-      INTEGER(IK), INTENT(IN):: FLAG
-      INTEGER(IK), INTENT(IN):: LENGTH
-      REAL(RK), INTENT(IN) :: TOTAL
-      REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: WINDOW
-      REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
-      REAL(RK), INTENT(IN) :: FREQUENCY
-      REAL(RK), INTENT(OUT) :: COS_AMP
-      REAL(RK), INTENT(OUT) :: SIN_AMP
-      REAL(RK), INTENT(OUT) :: AMP
-    END SUBROUTINE AMPLITUDE_
-  END INTERFACE
-  PUBLIC :: AMPLITUDE_
+  interface
+    module subroutine amplitude_(flag, length, total, window, sequence, frequency, cos_amp, sin_amp, amp) &
+      bind(c, name = "amplutude_")
+      integer(ik), intent(in):: flag
+      integer(ik), intent(in):: length
+      real(rk), intent(in) :: total
+      real(rk), intent(in), dimension(length) :: window
+      real(rk), intent(in), dimension(2_ik*length) :: sequence
+      real(rk), intent(in) :: frequency
+      real(rk), intent(out) :: cos_amp
+      real(rk), intent(out) :: sin_amp
+      real(rk), intent(out) :: amp
+    end subroutine amplitude_
+  end interface
+  public :: amplitude_
   ! ############################################################################################################################# !
-  ! SIGNAL DECOMPOSITION
-  ! (SUBROUTINE) DECOMPOSITION_(<FLAG>, <RANGE_MIN>, <RANGE_MAX>, <METHOD>, <MODE>, <LENGTH>, <PAD>, <TOTAL>, <WINDOW>, <SEQUENCE>, <LOOP>, <FREQUENCY>, <COS_AMP>, <SIN_AMP>)
-  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
-  ! <RANGE_MIN>            -- (IN)     (MIN) FREQUENCY RANGE (RK)
-  ! <RANGE_MAX>            -- (IN)     (MAX) FREQUENCY RANGE (RK)
-  ! <METHOD>               -- (IN)     FREQUENCY APPROXIMATION METHOD (IK), FREQUENCY_FFT = 0_IK, FREQUENCY_FFRFT = 1_IK, FREQUECY_PARABOLA = 2_IK
-  ! <MODE>                 -- (IN)     DECOMPOSTION MODE (IK), <MODE> = DECOMPOSITION_SUBTRACT = 0 OR <MODE> = DECOMPOSITION_PEAK = 1
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
-  ! <PAD>                  -- (IN)     PADDED SEQUENCE LENGTH (IK), IF PAD > LENGTH, INPUT SEQUENCE IS PADDED
-  ! <TOTAL>                -- (IN)     SUM(WINDOW) (RK)
-  ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <LOOP>                 -- (IN)     NUMBER OF ITERATIONS/PEAKS (IK)
-  ! <FREQUENCY>            -- (OUT)    FREQUENCY ARRAY (RK ARRAY OF LENGTH = <LOOP>)
-  ! <COS_AMP>              -- (OUT)    COS AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
-  ! <SIN_AMP>              -- (OUT)    SIN AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
+  ! signal decomposition
+  ! (subroutine) decomposition_(<flag>, <range_min>, <range_max>, <method>, <mode>, <length>, <pad>, <total>, <window>, <sequence>, <loop>, <frequency>, <cos_amp>, <sin_amp>)
+  ! <flag>                 -- (in)     complex flag (ik), 0/1 for real/complex input sequence
+  ! <range_min>            -- (in)     (min) frequency range (rk)
+  ! <range_max>            -- (in)     (max) frequency range (rk)
+  ! <method>               -- (in)     frequency approximation method (ik), frequency_fft = 0_ik, frequency_ffrft = 1_ik, frequecy_parabola = 2_ik
+  ! <mode>                 -- (in)     decompostion mode (ik), <mode> = decomposition_subtract = 0 or <mode> = decomposition_peak = 1
+  ! <length>               -- (in)     sequence length (ik)
+  ! <pad>                  -- (in)     padded sequence length (ik), if pad > length, input sequence is padded
+  ! <total>                -- (in)     sum(window) (rk)
+  ! <window>               -- (in)     window array (rk array of length = <length>)
+  ! <sequence>             -- (in)     input sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
+  ! <loop>                 -- (in)     number of iterations/peaks (ik)
+  ! <frequency>            -- (out)    frequency array (rk array of length = <loop>)
+  ! <cos_amp>              -- (out)    cos amplitude array (rk array of length = <loop>)
+  ! <sin_amp>              -- (out)    sin amplitude array (rk array of length = <loop>)
   ! void    decomposition_(int* flag, double* range_min, double* range_max, int* method, int* mode, int* length, int* pad, double* total, double* window, double* sequence, int* loop, double* frequency, double* cos_amp, double* sin_amp) ;
-  INTERFACE
-    MODULE SUBROUTINE DECOMPOSITION_(FLAG, RANGE_MIN, RANGE_MAX, &
-      METHOD, MODE, LENGTH, PAD, TOTAL, WINDOW, SEQUENCE, LOOP, FREQUENCY, COS_AMP, SIN_AMP) &
-      BIND(C, NAME = "decomposition_")
-      INTEGER(IK), INTENT(IN):: FLAG
-      REAL(RK), INTENT(IN) :: RANGE_MIN
-      REAL(RK), INTENT(IN) :: RANGE_MAX
-      INTEGER(IK), INTENT(IN):: METHOD
-      INTEGER(IK), INTENT(IN):: MODE
-      INTEGER(IK), INTENT(IN):: LENGTH
-      INTEGER(IK), INTENT(IN):: PAD
-      REAL(RK), INTENT(IN) :: TOTAL
-      REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: WINDOW
-      REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
-      INTEGER(IK), INTENT(IN) :: LOOP
-      REAL(RK), DIMENSION(LOOP), INTENT(OUT) :: FREQUENCY
-      REAL(RK), DIMENSION(LOOP), INTENT(OUT) :: COS_AMP
-      REAL(RK), DIMENSION(LOOP), INTENT(OUT) :: SIN_AMP
-    END SUBROUTINE DECOMPOSITION_
-  END INTERFACE
-  PUBLIC :: DECOMPOSITION_
+  interface
+    module subroutine decomposition_(flag, range_min, range_max, &
+      method, mode, length, pad, total, window, sequence, loop, frequency, cos_amp, sin_amp) &
+      bind(c, name = "decomposition_")
+      integer(ik), intent(in):: flag
+      real(rk), intent(in) :: range_min
+      real(rk), intent(in) :: range_max
+      integer(ik), intent(in):: method
+      integer(ik), intent(in):: mode
+      integer(ik), intent(in):: length
+      integer(ik), intent(in):: pad
+      real(rk), intent(in) :: total
+      real(rk), intent(in), dimension(length) :: window
+      real(rk), intent(in), dimension(2_ik*length) :: sequence
+      integer(ik), intent(in) :: loop
+      real(rk), dimension(loop), intent(out) :: frequency
+      real(rk), dimension(loop), intent(out) :: cos_amp
+      real(rk), dimension(loop), intent(out) :: sin_amp
+    end subroutine decomposition_
+  end interface
+  public :: decomposition_
   ! ############################################################################################################################# !
-  ! SIGNAL DECOMPOSITION (MEMORIZATION)
-  ! (SUBROUTINE) DECOMPOSITION__(<FLAG>, <RANGE_MIN>, <RANGE_MAX>, <METHOD>, <MODE>, <LENGTH>, <PAD>, <TOTAL>, <WINDOW>, <SEQUENCE>, <LOOP>, <FREQUENCY>, <COS_AMP>, <SIN_AMP>)
-  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
-  ! <RANGE_MIN>            -- (IN)     (MIN) FREQUENCY RANGE (RK)
-  ! <RANGE_MAX>            -- (IN)     (MAX) FREQUENCY RANGE (RK)
-  ! <METHOD>               -- (IN)     FREQUENCY APPROXIMATION METHOD (IK), FREQUENCY_FFT = 0_IK, FREQUENCY_FFRFT = 1_IK, FREQUECY_PARABOLA = 2_IK
-  ! <MODE>                 -- (IN)     DECOMPOSTION MODE (IK), <MODE> = DECOMPOSITION_SUBTRACT = 0 OR <MODE> = DECOMPOSITION_PEAK = 1
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
-  ! <PAD>                  -- (IN)     PADDED SEQUENCE LENGTH (IK), IF PAD > LENGTH, INPUT SEQUENCE IS PADDED
-  ! <TOTAL>                -- (IN)     SUM(WINDOW) (RK)
-  ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <LOOP>                 -- (IN)     NUMBER OF ITERATIONS/PEAKS (IK)
-  ! <FREQUENCY>            -- (OUT)    FREQUENCY ARRAY (RK ARRAY OF LENGTH = <LOOP>)
-  ! <COS_AMP>              -- (OUT)    COS AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
-  ! <SIN_AMP>              -- (OUT)    SIN AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
+  ! signal decomposition (memorization)
+  ! (subroutine) decomposition__(<flag>, <range_min>, <range_max>, <method>, <mode>, <length>, <pad>, <total>, <window>, <sequence>, <loop>, <frequency>, <cos_amp>, <sin_amp>)
+  ! <flag>                 -- (in)     complex flag (ik), 0/1 for real/complex input sequence
+  ! <range_min>            -- (in)     (min) frequency range (rk)
+  ! <range_max>            -- (in)     (max) frequency range (rk)
+  ! <method>               -- (in)     frequency approximation method (ik), frequency_fft = 0_ik, frequency_ffrft = 1_ik, frequecy_parabola = 2_ik
+  ! <mode>                 -- (in)     decompostion mode (ik), <mode> = decomposition_subtract = 0 or <mode> = decomposition_peak = 1
+  ! <length>               -- (in)     sequence length (ik)
+  ! <pad>                  -- (in)     padded sequence length (ik), if pad > length, input sequence is padded
+  ! <total>                -- (in)     sum(window) (rk)
+  ! <window>               -- (in)     window array (rk array of length = <length>)
+  ! <sequence>             -- (in)     input sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
+  ! <loop>                 -- (in)     number of iterations/peaks (ik)
+  ! <frequency>            -- (out)    frequency array (rk array of length = <loop>)
+  ! <cos_amp>              -- (out)    cos amplitude array (rk array of length = <loop>)
+  ! <sin_amp>              -- (out)    sin amplitude array (rk array of length = <loop>)
   ! void    decomposition__(int* flag, double* range_min, double* range_max, int* method, int* mode, int* length, int* pad, double* total, double* window, double* sequence, int* loop, double* frequency, double* cos_amp, double* sin_amp) ;
-  INTERFACE
-    MODULE SUBROUTINE DECOMPOSITION__(FLAG, RANGE_MIN, RANGE_MAX, &
-      METHOD, MODE, LENGTH, PAD, TOTAL, WINDOW, SEQUENCE, LOOP, FREQUENCY, COS_AMP, SIN_AMP) &
-      BIND(C, NAME = "decomposition__")
-      INTEGER(IK), INTENT(IN):: FLAG
-      REAL(RK), INTENT(IN) :: RANGE_MIN
-      REAL(RK), INTENT(IN) :: RANGE_MAX
-      INTEGER(IK), INTENT(IN):: METHOD
-      INTEGER(IK), INTENT(IN):: MODE
-      INTEGER(IK), INTENT(IN):: LENGTH
-      INTEGER(IK), INTENT(IN):: PAD
-      REAL(RK), INTENT(IN) :: TOTAL
-      REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: WINDOW
-      REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
-      INTEGER(IK), INTENT(IN) :: LOOP
-      REAL(RK), DIMENSION(LOOP), INTENT(OUT) :: FREQUENCY
-      REAL(RK), DIMENSION(LOOP), INTENT(OUT) :: COS_AMP
-      REAL(RK), DIMENSION(LOOP), INTENT(OUT) :: SIN_AMP
-    END SUBROUTINE DECOMPOSITION__
-  END INTERFACE
-  PUBLIC :: DECOMPOSITION__
+  interface
+    module subroutine decomposition__(flag, range_min, range_max, &
+      method, mode, length, pad, total, window, sequence, loop, frequency, cos_amp, sin_amp) &
+      bind(c, name = "decomposition__")
+      integer(ik), intent(in):: flag
+      real(rk), intent(in) :: range_min
+      real(rk), intent(in) :: range_max
+      integer(ik), intent(in):: method
+      integer(ik), intent(in):: mode
+      integer(ik), intent(in):: length
+      integer(ik), intent(in):: pad
+      real(rk), intent(in) :: total
+      real(rk), intent(in), dimension(length) :: window
+      real(rk), intent(in), dimension(2_ik*length) :: sequence
+      integer(ik), intent(in) :: loop
+      real(rk), dimension(loop), intent(out) :: frequency
+      real(rk), dimension(loop), intent(out) :: cos_amp
+      real(rk), dimension(loop), intent(out) :: sin_amp
+    end subroutine decomposition__
+  end interface
+  public :: decomposition__
   ! ############################################################################################################################# !
-  ! FREQUENCY LIST (PERFORM DECOMPOSITION AND RETURN LIST OF FREQUENCIES)
-  ! (SUBROUTINE) FREQUENCY_LIST_(<FLAG>, <RANGE_MIN>, <RANGE_MAX>, <METHOD>, <MODE>, <LENGTH>, <PAD>, <TOTAL>, <WINDOW>, <SEQUENCE>, <LOOP>, <FREQUENCY>, <COS_AMP>, <SIN_AMP>)
-  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
-  ! <RANGE_MIN>            -- (IN)     (MIN) FREQUENCY RANGE (RK)
-  ! <RANGE_MAX>            -- (IN)     (MAX) FREQUENCY RANGE (RK)
-  ! <METHOD>               -- (IN)     FREQUENCY APPROXIMATION METHOD (IK), FREQUENCY_FFT = 0_IK, FREQUENCY_FFRFT = 1_IK, FREQUECY_PARABOLA = 2_IK
-  ! <MODE>                 -- (IN)     DECOMPOSTION MODE (IK), <MODE> = DECOMPOSITION_SUBTRACT = 0 OR <MODE> = DECOMPOSITION_PEAK = 1
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
-  ! <PAD>                  -- (IN)     PADDED SEQUENCE LENGTH (IK), IF PAD > LENGTH, INPUT SEQUENCE IS PADDED
-  ! <TOTAL>                -- (IN)     SUM(WINDOW) (RK)
-  ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <LOOP>                 -- (IN)     NUMBER OF ITERATIONS/PEAKS (IK)
-  ! <FREQUENCY>            -- (OUT)    FREQUENCY ARRAY (RK ARRAY OF LENGTH = <LOOP>)
+  ! frequency list (perform decomposition and return list of frequencies)
+  ! (subroutine) frequency_list_(<flag>, <range_min>, <range_max>, <method>, <mode>, <length>, <pad>, <total>, <window>, <sequence>, <loop>, <frequency>, <cos_amp>, <sin_amp>)
+  ! <flag>                 -- (in)     complex flag (ik), 0/1 for real/complex input sequence
+  ! <range_min>            -- (in)     (min) frequency range (rk)
+  ! <range_max>            -- (in)     (max) frequency range (rk)
+  ! <method>               -- (in)     frequency approximation method (ik), frequency_fft = 0_ik, frequency_ffrft = 1_ik, frequecy_parabola = 2_ik
+  ! <mode>                 -- (in)     decompostion mode (ik), <mode> = decomposition_subtract = 0 or <mode> = decomposition_peak = 1
+  ! <length>               -- (in)     sequence length (ik)
+  ! <pad>                  -- (in)     padded sequence length (ik), if pad > length, input sequence is padded
+  ! <total>                -- (in)     sum(window) (rk)
+  ! <window>               -- (in)     window array (rk array of length = <length>)
+  ! <sequence>             -- (in)     input sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
+  ! <loop>                 -- (in)     number of iterations/peaks (ik)
+  ! <frequency>            -- (out)    frequency array (rk array of length = <loop>)
   ! void    frequency_list_(int* flag, double* range_min, double* range_max, int* method, int* mode, int* length, int* pad, double* total, double* window, double* sequence, int* loop, double* frequency) ;
-  INTERFACE
-    MODULE SUBROUTINE FREQUENCY_LIST_(FLAG, RANGE_MIN, RANGE_MAX, &
-      METHOD, MODE, LENGTH, PAD, TOTAL, WINDOW, SEQUENCE, LOOP, FREQUENCY) &
-      BIND(C, NAME = "frequency_list_")
-      INTEGER(IK), INTENT(IN):: FLAG
-      REAL(RK), INTENT(IN) :: RANGE_MIN
-      REAL(RK), INTENT(IN) :: RANGE_MAX
-      INTEGER(IK), INTENT(IN):: METHOD
-      INTEGER(IK), INTENT(IN):: MODE
-      INTEGER(IK), INTENT(IN):: LENGTH
-      INTEGER(IK), INTENT(IN):: PAD
-      REAL(RK), INTENT(IN) :: TOTAL
-      REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: WINDOW
-      REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
-      INTEGER(IK), INTENT(IN) :: LOOP
-      REAL(RK), DIMENSION(LOOP), INTENT(OUT) :: FREQUENCY
-    END SUBROUTINE FREQUENCY_LIST_
-  END INTERFACE
-  PUBLIC :: FREQUENCY_LIST_
+  interface
+    module subroutine frequency_list_(flag, range_min, range_max, &
+      method, mode, length, pad, total, window, sequence, loop, frequency) &
+      bind(c, name = "frequency_list_")
+      integer(ik), intent(in):: flag
+      real(rk), intent(in) :: range_min
+      real(rk), intent(in) :: range_max
+      integer(ik), intent(in):: method
+      integer(ik), intent(in):: mode
+      integer(ik), intent(in):: length
+      integer(ik), intent(in):: pad
+      real(rk), intent(in) :: total
+      real(rk), intent(in), dimension(length) :: window
+      real(rk), intent(in), dimension(2_ik*length) :: sequence
+      integer(ik), intent(in) :: loop
+      real(rk), dimension(loop), intent(out) :: frequency
+    end subroutine frequency_list_
+  end interface
+  public :: frequency_list_
   ! ############################################################################################################################# !
-  ! FREQUENCY LIST (PERFORM DECOMPOSITION AND RETURN LIST OF FREQUENCIES) (MEMORIZATION)
-  ! (SUBROUTINE) FREQUENCY_LIST__(<FLAG>, <RANGE_MIN>, <RANGE_MAX>, <METHOD>, <MODE>, <LENGTH>, <PAD>, <TOTAL>, <WINDOW>, <SEQUENCE>, <LOOP>, <FREQUENCY>, <COS_AMP>, <SIN_AMP>)
-  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
-  ! <RANGE_MIN>            -- (IN)     (MIN) FREQUENCY RANGE (RK)
-  ! <RANGE_MAX>            -- (IN)     (MAX) FREQUENCY RANGE (RK)
-  ! <METHOD>               -- (IN)     FREQUENCY APPROXIMATION METHOD (IK), FREQUENCY_FFT = 0_IK, FREQUENCY_FFRFT = 1_IK, FREQUECY_PARABOLA = 2_IK
-  ! <MODE>                 -- (IN)     DECOMPOSTION MODE (IK), <MODE> = DECOMPOSITION_SUBTRACT = 0 OR <MODE> = DECOMPOSITION_PEAK = 1
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
-  ! <PAD>                  -- (IN)     PADDED SEQUENCE LENGTH (IK), IF PAD > LENGTH, INPUT SEQUENCE IS PADDED
-  ! <TOTAL>                -- (IN)     SUM(WINDOW) (RK)
-  ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <LOOP>                 -- (IN)     NUMBER OF ITERATIONS/PEAKS (IK)
-  ! <FREQUENCY>            -- (OUT)    FREQUENCY ARRAY (RK ARRAY OF LENGTH = <LOOP>)
+  ! frequency list (perform decomposition and return list of frequencies) (memorization)
+  ! (subroutine) frequency_list__(<flag>, <range_min>, <range_max>, <method>, <mode>, <length>, <pad>, <total>, <window>, <sequence>, <loop>, <frequency>, <cos_amp>, <sin_amp>)
+  ! <flag>                 -- (in)     complex flag (ik), 0/1 for real/complex input sequence
+  ! <range_min>            -- (in)     (min) frequency range (rk)
+  ! <range_max>            -- (in)     (max) frequency range (rk)
+  ! <method>               -- (in)     frequency approximation method (ik), frequency_fft = 0_ik, frequency_ffrft = 1_ik, frequecy_parabola = 2_ik
+  ! <mode>                 -- (in)     decompostion mode (ik), <mode> = decomposition_subtract = 0 or <mode> = decomposition_peak = 1
+  ! <length>               -- (in)     sequence length (ik)
+  ! <pad>                  -- (in)     padded sequence length (ik), if pad > length, input sequence is padded
+  ! <total>                -- (in)     sum(window) (rk)
+  ! <window>               -- (in)     window array (rk array of length = <length>)
+  ! <sequence>             -- (in)     input sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
+  ! <loop>                 -- (in)     number of iterations/peaks (ik)
+  ! <frequency>            -- (out)    frequency array (rk array of length = <loop>)
   ! void    frequency_list__(int* flag, double* range_min, double* range_max, int* method, int* mode, int* length, int* pad, double* total, double* window, double* sequence, int* loop, double* frequency) ;
-  INTERFACE
-    MODULE SUBROUTINE FREQUENCY_LIST__(FLAG, RANGE_MIN, RANGE_MAX, &
-      METHOD, MODE, LENGTH, PAD, TOTAL, WINDOW, SEQUENCE, LOOP, FREQUENCY) &
-      BIND(C, NAME = "frequency_list__")
-      INTEGER(IK), INTENT(IN):: FLAG
-      REAL(RK), INTENT(IN) :: RANGE_MIN
-      REAL(RK), INTENT(IN) :: RANGE_MAX
-      INTEGER(IK), INTENT(IN):: METHOD
-      INTEGER(IK), INTENT(IN):: MODE
-      INTEGER(IK), INTENT(IN):: LENGTH
-      INTEGER(IK), INTENT(IN):: PAD
-      REAL(RK), INTENT(IN) :: TOTAL
-      REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: WINDOW
-      REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
-      INTEGER(IK), INTENT(IN) :: LOOP
-      REAL(RK), DIMENSION(LOOP), INTENT(OUT) :: FREQUENCY
-    END SUBROUTINE FREQUENCY_LIST__
-  END INTERFACE
-  PUBLIC :: FREQUENCY_LIST__
+  interface
+    module subroutine frequency_list__(flag, range_min, range_max, &
+      method, mode, length, pad, total, window, sequence, loop, frequency) &
+      bind(c, name = "frequency_list__")
+      integer(ik), intent(in):: flag
+      real(rk), intent(in) :: range_min
+      real(rk), intent(in) :: range_max
+      integer(ik), intent(in):: method
+      integer(ik), intent(in):: mode
+      integer(ik), intent(in):: length
+      integer(ik), intent(in):: pad
+      real(rk), intent(in) :: total
+      real(rk), intent(in), dimension(length) :: window
+      real(rk), intent(in), dimension(2_ik*length) :: sequence
+      integer(ik), intent(in) :: loop
+      real(rk), dimension(loop), intent(out) :: frequency
+    end subroutine frequency_list__
+  end interface
+  public :: frequency_list__
   ! ############################################################################################################################# !
-  ! AMPLITUDE LIST (COMPUTE AMPLITUDES FOR LIST OF GIVEN FREQUENCIES)
-  ! (SUBROUTINE) AMPLITUDE_LIST_(<FLAG>, <LENGTH>, <TOTAL>, <WINDOW>, <SEQUENCE>, <LOOP>, <FREQUENCY>, <COS_AMP>, <SIN_AMP>)
-  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
-  ! <TOTAL>                -- (IN)     SUM(WINDOW) (RK)
-  ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <LOOP>                 -- (IN)     NUMBER OF ITERATIONS (IK)
-  ! <FREQUENCY>            -- (IN)     FREQUENCY ARRAY (RK ARRAY OF LENGTH = <LOOP>)
-  ! <COS_AMP>              -- (OUT)    COS AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
-  ! <SIN_AMP>              -- (OUT)    SIN AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
+  ! amplitude list (compute amplitudes for list of given frequencies)
+  ! (subroutine) amplitude_list_(<flag>, <length>, <total>, <window>, <sequence>, <loop>, <frequency>, <cos_amp>, <sin_amp>)
+  ! <flag>                 -- (in)     complex flag (ik), 0/1 for real/complex input sequence
+  ! <length>               -- (in)     sequence length (ik)
+  ! <total>                -- (in)     sum(window) (rk)
+  ! <window>               -- (in)     window array (rk array of length = <length>)
+  ! <sequence>             -- (in)     input sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
+  ! <loop>                 -- (in)     number of iterations (ik)
+  ! <frequency>            -- (in)     frequency array (rk array of length = <loop>)
+  ! <cos_amp>              -- (out)    cos amplitude array (rk array of length = <loop>)
+  ! <sin_amp>              -- (out)    sin amplitude array (rk array of length = <loop>)
   ! void    amplitude_list_(int* flag, int* length, double* total, double* window, double* sequence, int* loop, double* frequency, double* cos_amp, double* sin_amp) ;
-  INTERFACE
-    MODULE SUBROUTINE AMPLITUDE_LIST_(FLAG, LENGTH, TOTAL, WINDOW, SEQUENCE, LOOP, FREQUENCY, COS_AMP, SIN_AMP) &
-      BIND(C, NAME = "amplitude_list_")
-      INTEGER(IK), INTENT(IN):: FLAG
-      INTEGER(IK), INTENT(IN):: LENGTH
-      REAL(RK), INTENT(IN) :: TOTAL
-      REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: WINDOW
-      REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
-      INTEGER(IK), INTENT(IN) :: LOOP
-      REAL(RK), DIMENSION(LOOP), INTENT(IN) :: FREQUENCY
-      REAL(RK), DIMENSION(LOOP), INTENT(OUT) :: COS_AMP
-      REAL(RK), DIMENSION(LOOP), INTENT(OUT) :: SIN_AMP
-    END SUBROUTINE AMPLITUDE_LIST_
-  END INTERFACE
-  PUBLIC :: AMPLITUDE_LIST_
+  interface
+    module subroutine amplitude_list_(flag, length, total, window, sequence, loop, frequency, cos_amp, sin_amp) &
+      bind(c, name = "amplitude_list_")
+      integer(ik), intent(in):: flag
+      integer(ik), intent(in):: length
+      real(rk), intent(in) :: total
+      real(rk), intent(in), dimension(length) :: window
+      real(rk), intent(in), dimension(2_ik*length) :: sequence
+      integer(ik), intent(in) :: loop
+      real(rk), dimension(loop), intent(in) :: frequency
+      real(rk), dimension(loop), intent(out) :: cos_amp
+      real(rk), dimension(loop), intent(out) :: sin_amp
+    end subroutine amplitude_list_
+  end interface
+  public :: amplitude_list_
   ! ############################################################################################################################# !
-  ! FREQUENCY CORRECTION
-  ! (SUBROUTINE) FREQUENCY_CORRECTION_(<FLAG>, <RANGE_MIN>, <RANGE_MAX>, <METHOD>, <MODE>, <LENGTH>, <PAD>, <TOTAL>, <WINDOW>, <LOOP>, <FREQUENCY>, <COS_AMP>, <SIN_AMP>)
-  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
-  ! <RANGE_MIN>            -- (IN)     (MIN) FREQUENCY RANGE (RK)
-  ! <RANGE_MAX>            -- (IN)     (MAX) FREQUENCY RANGE (RK)
-  ! <METHOD>               -- (IN)     FREQUENCY APPROXIMATION METHOD (IK), FREQUENCY_FFT = 0_IK, FREQUENCY_FFRFT = 1_IK, FREQUECY_PARABOLA = 2_IK
-  ! <MODE>                 -- (IN)     DECOMPOSTION MODE (IK), <MODE> = DECOMPOSITION_SUBTRACT = 0 OR <MODE> = DECOMPOSITION_PEAK = 1
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
-  ! <PAD>                  -- (IN)     PADDED SEQUENCE LENGTH (IK), IF PAD > LENGTH, INPUT SEQUENCE IS PADDED
-  ! <TOTAL>                -- (IN)     SUM(WINDOW) (RK)
-  ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <LOOP>                 -- (IN)     NUMBER OF ITERATIONS/PEAKS (IK)
-  ! <FREQUENCY>            -- (INOUT)  FREQUENCY ARRAY (RK ARRAY OF LENGTH = <LOOP>)
-  ! <COS_AMP>              -- (INOUT)  COS AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
-  ! <SIN_AMP>              -- (INOUT)  SIN AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
+  ! frequency correction
+  ! (subroutine) frequency_correction_(<flag>, <range_min>, <range_max>, <method>, <mode>, <length>, <pad>, <total>, <window>, <loop>, <frequency>, <cos_amp>, <sin_amp>)
+  ! <flag>                 -- (in)     complex flag (ik), 0/1 for real/complex input sequence
+  ! <range_min>            -- (in)     (min) frequency range (rk)
+  ! <range_max>            -- (in)     (max) frequency range (rk)
+  ! <method>               -- (in)     frequency approximation method (ik), frequency_fft = 0_ik, frequency_ffrft = 1_ik, frequecy_parabola = 2_ik
+  ! <mode>                 -- (in)     decompostion mode (ik), <mode> = decomposition_subtract = 0 or <mode> = decomposition_peak = 1
+  ! <length>               -- (in)     sequence length (ik)
+  ! <pad>                  -- (in)     padded sequence length (ik), if pad > length, input sequence is padded
+  ! <total>                -- (in)     sum(window) (rk)
+  ! <window>               -- (in)     window array (rk array of length = <length>)
+  ! <loop>                 -- (in)     number of iterations/peaks (ik)
+  ! <frequency>            -- (inout)  frequency array (rk array of length = <loop>)
+  ! <cos_amp>              -- (inout)  cos amplitude array (rk array of length = <loop>)
+  ! <sin_amp>              -- (inout)  sin amplitude array (rk array of length = <loop>)
   ! void    frequency_correction_(int* flag, double* range_min, double* range_max, int* method, int* mode, int* length, int* pad, double* total, double* window, int* loop, double* frequency, double* cos_amp, double* sin_amp) ;
-  INTERFACE
-    MODULE SUBROUTINE FREQUENCY_CORRECTION_(FLAG, RANGE_MIN, RANGE_MAX, &
-      METHOD, MODE, LENGTH, PAD, TOTAL, WINDOW, LOOP, FREQUENCY, COS_AMP, SIN_AMP) &
-      BIND(C, NAME = "frequency_correction_")
-      INTEGER(IK), INTENT(IN):: FLAG
-      REAL(RK), INTENT(IN) :: RANGE_MIN
-      REAL(RK), INTENT(IN) :: RANGE_MAX
-      INTEGER(IK), INTENT(IN):: METHOD
-      INTEGER(IK), INTENT(IN):: MODE
-      INTEGER(IK), INTENT(IN):: LENGTH
-      INTEGER(IK), INTENT(IN):: PAD
-      REAL(RK), INTENT(IN) :: TOTAL
-      REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: WINDOW
-      INTEGER(IK), INTENT(IN) :: LOOP
-      REAL(RK), DIMENSION(LOOP), INTENT(INOUT) :: FREQUENCY
-      REAL(RK), DIMENSION(LOOP), INTENT(INOUT) :: COS_AMP
-      REAL(RK), DIMENSION(LOOP), INTENT(INOUT) :: SIN_AMP
-    END SUBROUTINE FREQUENCY_CORRECTION_
-  END INTERFACE
-  PUBLIC :: FREQUENCY_CORRECTION_
+  interface
+    module subroutine frequency_correction_(flag, range_min, range_max, &
+      method, mode, length, pad, total, window, loop, frequency, cos_amp, sin_amp) &
+      bind(c, name = "frequency_correction_")
+      integer(ik), intent(in):: flag
+      real(rk), intent(in) :: range_min
+      real(rk), intent(in) :: range_max
+      integer(ik), intent(in):: method
+      integer(ik), intent(in):: mode
+      integer(ik), intent(in):: length
+      integer(ik), intent(in):: pad
+      real(rk), intent(in) :: total
+      real(rk), intent(in), dimension(length) :: window
+      integer(ik), intent(in) :: loop
+      real(rk), dimension(loop), intent(inout) :: frequency
+      real(rk), dimension(loop), intent(inout) :: cos_amp
+      real(rk), dimension(loop), intent(inout) :: sin_amp
+    end subroutine frequency_correction_
+  end interface
+  public :: frequency_correction_
   ! ############################################################################################################################# !
-  ! FREQUENCY CORRECTION
-  ! (SUBROUTINE) FREQUENCY_CORRECTION_(<FLAG>, <RANGE_MIN>, <RANGE_MAX>, <METHOD>, <MODE>, <LENGTH>, <PAD>, <TOTAL>, <WINDOW>, <LOOP>, <FREQUENCY>, <COS_AMP>, <SIN_AMP>)
-  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
-  ! <RANGE_MIN>            -- (IN)     (MIN) FREQUENCY RANGE (RK)
-  ! <RANGE_MAX>            -- (IN)     (MAX) FREQUENCY RANGE (RK)
-  ! <METHOD>               -- (IN)     FREQUENCY APPROXIMATION METHOD (IK), FREQUENCY_FFT = 0_IK, FREQUENCY_FFRFT = 1_IK, FREQUECY_PARABOLA = 2_IK
-  ! <MODE>                 -- (IN)     DECOMPOSTION MODE (IK), <MODE> = DECOMPOSITION_SUBTRACT = 0 OR <MODE> = DECOMPOSITION_PEAK = 1
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
-  ! <PAD>                  -- (IN)     PADDED SEQUENCE LENGTH (IK), IF PAD > LENGTH, INPUT SEQUENCE IS PADDED
-  ! <TOTAL>                -- (IN)     SUM(WINDOW) (RK)
-  ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <LOOP>                 -- (IN)     NUMBER OF ITERATIONS/PEAKS (IK)
-  ! <FREQUENCY>            -- (INOUT)  FREQUENCY ARRAY (RK ARRAY OF LENGTH = <LOOP>)
-  ! <COS_AMP>              -- (INOUT)  COS AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
-  ! <SIN_AMP>              -- (INOUT)  SIN AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
+  ! frequency correction
+  ! (subroutine) frequency_correction_(<flag>, <range_min>, <range_max>, <method>, <mode>, <length>, <pad>, <total>, <window>, <loop>, <frequency>, <cos_amp>, <sin_amp>)
+  ! <flag>                 -- (in)     complex flag (ik), 0/1 for real/complex input sequence
+  ! <range_min>            -- (in)     (min) frequency range (rk)
+  ! <range_max>            -- (in)     (max) frequency range (rk)
+  ! <method>               -- (in)     frequency approximation method (ik), frequency_fft = 0_ik, frequency_ffrft = 1_ik, frequecy_parabola = 2_ik
+  ! <mode>                 -- (in)     decompostion mode (ik), <mode> = decomposition_subtract = 0 or <mode> = decomposition_peak = 1
+  ! <length>               -- (in)     sequence length (ik)
+  ! <pad>                  -- (in)     padded sequence length (ik), if pad > length, input sequence is padded
+  ! <total>                -- (in)     sum(window) (rk)
+  ! <window>               -- (in)     window array (rk array of length = <length>)
+  ! <loop>                 -- (in)     number of iterations/peaks (ik)
+  ! <frequency>            -- (inout)  frequency array (rk array of length = <loop>)
+  ! <cos_amp>              -- (inout)  cos amplitude array (rk array of length = <loop>)
+  ! <sin_amp>              -- (inout)  sin amplitude array (rk array of length = <loop>)
   ! void    frequency_correction__(int* flag, double* range_min, double* range_max, int* method, int* mode, int* length, int* pad, double* total, double* window, int* loop, double* frequency, double* cos_amp, double* sin_amp) ;
-  INTERFACE
-    MODULE SUBROUTINE FREQUENCY_CORRECTION__(FLAG, RANGE_MIN, RANGE_MAX, &
-      METHOD, MODE, LENGTH, PAD, TOTAL, WINDOW, LOOP, FREQUENCY, COS_AMP, SIN_AMP) &
-      BIND(C, NAME = "frequency_correction__")
-      INTEGER(IK), INTENT(IN):: FLAG
-      REAL(RK), INTENT(IN) :: RANGE_MIN
-      REAL(RK), INTENT(IN) :: RANGE_MAX
-      INTEGER(IK), INTENT(IN):: METHOD
-      INTEGER(IK), INTENT(IN):: MODE
-      INTEGER(IK), INTENT(IN):: LENGTH
-      INTEGER(IK), INTENT(IN):: PAD
-      REAL(RK), INTENT(IN) :: TOTAL
-      REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: WINDOW
-      INTEGER(IK), INTENT(IN) :: LOOP
-      REAL(RK), DIMENSION(LOOP), INTENT(INOUT) :: FREQUENCY
-      REAL(RK), DIMENSION(LOOP), INTENT(INOUT) :: COS_AMP
-      REAL(RK), DIMENSION(LOOP), INTENT(INOUT) :: SIN_AMP
-    END SUBROUTINE FREQUENCY_CORRECTION__
-  END INTERFACE
-  PUBLIC :: FREQUENCY_CORRECTION__
+  interface
+    module subroutine frequency_correction__(flag, range_min, range_max, &
+      method, mode, length, pad, total, window, loop, frequency, cos_amp, sin_amp) &
+      bind(c, name = "frequency_correction__")
+      integer(ik), intent(in):: flag
+      real(rk), intent(in) :: range_min
+      real(rk), intent(in) :: range_max
+      integer(ik), intent(in):: method
+      integer(ik), intent(in):: mode
+      integer(ik), intent(in):: length
+      integer(ik), intent(in):: pad
+      real(rk), intent(in) :: total
+      real(rk), intent(in), dimension(length) :: window
+      integer(ik), intent(in) :: loop
+      real(rk), dimension(loop), intent(inout) :: frequency
+      real(rk), dimension(loop), intent(inout) :: cos_amp
+      real(rk), dimension(loop), intent(inout) :: sin_amp
+    end subroutine frequency_correction__
+  end interface
+  public :: frequency_correction__
   ! ############################################################################################################################# !
-  ! OPTIMIZATION
+  ! optimization
   ! ############################################################################################################################# !
-  ! LEAST SQUARES (SVD)
-  ! (SUBROUTINE) LEAST_SQUARES_(<NR>, <NC>, <MATRIX>(<NR>, <NC>), <VECTOR>(<NR>), <SOLUTION>(<NC>))
-  ! <NR>                   -- (IN)     NUMBER OF ROWS (IK)
-  ! <NC>                   -- (IN)     NUMBER OF COLS (IK)
-  ! <MATRIX>               -- (IN)     INPUT DATA MATRIX (<NR>, <NC>) (RK)
-  ! <VECTOR>               -- (IN)     INPUT VECTOR (<NR>) (RK)
-  ! <SOLUTION>             -- (OUT)    LS SOLUTION (<NC>) (RK)
-  INTERFACE
-    MODULE SUBROUTINE LEAST_SQUARES_(NR, NC, MATRIX, VECTOR, SOLUTION)
-      INTEGER(IK), INTENT(IN) :: NR
-      INTEGER(IK), INTENT(IN) :: NC
-      REAL(RK), DIMENSION(NR, NC), INTENT(IN) :: MATRIX
-      REAL(RK), DIMENSION(NR), INTENT(IN) :: VECTOR
-      REAL(RK), DIMENSION(NC), INTENT(OUT) :: SOLUTION
-    END SUBROUTINE LEAST_SQUARES_
-  END INTERFACE
-  PUBLIC :: LEAST_SQUARES_
+  ! least squares (svd)
+  ! (subroutine) least_squares_(<nr>, <nc>, <matrix>(<nr>, <nc>), <vector>(<nr>), <solution>(<nc>))
+  ! <nr>                   -- (in)     number of rows (ik)
+  ! <nc>                   -- (in)     number of cols (ik)
+  ! <matrix>               -- (in)     input data matrix (<nr>, <nc>) (rk)
+  ! <vector>               -- (in)     input vector (<nr>) (rk)
+  ! <solution>             -- (out)    ls solution (<nc>) (rk)
+  interface
+    module subroutine least_squares_(nr, nc, matrix, vector, solution)
+      integer(ik), intent(in) :: nr
+      integer(ik), intent(in) :: nc
+      real(rk), dimension(nr, nc), intent(in) :: matrix
+      real(rk), dimension(nr), intent(in) :: vector
+      real(rk), dimension(nc), intent(out) :: solution
+    end subroutine least_squares_
+  end interface
+  public :: least_squares_
   ! ############################################################################################################################# !
-  ! FIT (HARMONIC SIGNAL)
-  ! (SUBROUTINE) FIT_(<LENGTH>, <SEQUENCE>, <LOOP>, <FREQUENCY>, <MEAN>, <COS_AMP>, <SIN_AMP>, <ERROR>)
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK), POWER OF TWO
-  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <LOOP>                 -- (IN)     NUMBER OF HARMONICS (IK)
-  ! <FREQUENCY>            -- (IN)     FREQUENCY ARRAY (RK ARRAY OF LENGTH = <LOOP>)
-  ! <MEAN>                 -- (OUT)    MEAN VALUE
-  ! <COS_AMP>              -- (OUT)    COS AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
-  ! <SIN_AMP>              -- (OUT)    SIN AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
-  ! <ERROR>                -- (OUT)    ERROR
+  ! fit (harmonic signal)
+  ! (subroutine) fit_(<length>, <sequence>, <loop>, <frequency>, <mean>, <cos_amp>, <sin_amp>, <error>)
+  ! <length>               -- (in)     sequence length (ik), power of two
+  ! <sequence>             -- (in)     input sequence (rk array of length = <length>)
+  ! <loop>                 -- (in)     number of harmonics (ik)
+  ! <frequency>            -- (in)     frequency array (rk array of length = <loop>)
+  ! <mean>                 -- (out)    mean value
+  ! <cos_amp>              -- (out)    cos amplitude array (rk array of length = <loop>)
+  ! <sin_amp>              -- (out)    sin amplitude array (rk array of length = <loop>)
+  ! <error>                -- (out)    error
   ! void    fit_(int* length, double* sequence, int* loop, double* frequency, double* mean, double* cos_amp, double* sin_amp, double* error) ;
-  INTERFACE
-    MODULE SUBROUTINE FIT_(LENGTH, SEQUENCE, LOOP, FREQUENCY, MEAN, COS_AMP, SIN_AMP, ERROR) &
-      BIND(C, NAME = "fit_")
-      INTEGER(IK), INTENT(IN) :: LENGTH
-      REAL(RK), DIMENSION(LENGTH), INTENT(IN) :: SEQUENCE
-      INTEGER(IK), INTENT(IN) :: LOOP
-      REAL(RK), DIMENSION(LOOP), INTENT(IN) :: FREQUENCY
-      REAL(RK), INTENT(OUT) :: MEAN
-      REAL(RK), DIMENSION(LOOP), INTENT(OUT) :: COS_AMP
-      REAL(RK), DIMENSION(LOOP), INTENT(OUT) :: SIN_AMP
-      REAL(RK), INTENT(OUT) :: ERROR
-    END SUBROUTINE FIT_
-  END INTERFACE
-  PUBLIC :: FIT_
+  interface
+    module subroutine fit_(length, sequence, loop, frequency, mean, cos_amp, sin_amp, error) &
+      bind(c, name = "fit_")
+      integer(ik), intent(in) :: length
+      real(rk), dimension(length), intent(in) :: sequence
+      integer(ik), intent(in) :: loop
+      real(rk), dimension(loop), intent(in) :: frequency
+      real(rk), intent(out) :: mean
+      real(rk), dimension(loop), intent(out) :: cos_amp
+      real(rk), dimension(loop), intent(out) :: sin_amp
+      real(rk), intent(out) :: error
+    end subroutine fit_
+  end interface
+  public :: fit_
   ! ############################################################################################################################# !
-  ! FIT (PARABOLA) Y = A*X**2 + B*X + C
-  ! (SUBROUTINE) FIT_PARABOLA_(<LENGTH>, <X>, <Y>, <A>, <B>, <C>, <MAXIMUM>)
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK), POWER OF TWO
-  ! <X>                    -- (IN)     X (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <Y>                    -- (IN)     Y (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <A>                    -- (OUT)    A (RK)
-  ! <B>                    -- (OUT)    B (RK)
-  ! <C>                    -- (OUT)    C (RK)
-  ! <MAXIMUM>              -- (OUT)    MAXIMUM (MINIMUM) POSITION (RK)
+  ! fit (parabola) y = a*x**2 + b*x + c
+  ! (subroutine) fit_parabola_(<length>, <x>, <y>, <a>, <b>, <c>, <maximum>)
+  ! <length>               -- (in)     sequence length (ik), power of two
+  ! <x>                    -- (in)     x (rk array of length = <length>)
+  ! <y>                    -- (in)     y (rk array of length = <length>)
+  ! <a>                    -- (out)    a (rk)
+  ! <b>                    -- (out)    b (rk)
+  ! <c>                    -- (out)    c (rk)
+  ! <maximum>              -- (out)    maximum (minimum) position (rk)
   ! void    fit_parabola_(int* length, double* x, double* y, double* a, double* b, double* c, double* maximum) ;
-  INTERFACE
-    MODULE SUBROUTINE FIT_PARABOLA_(LENGTH, X, Y, A, B, C, MAXIMUM) &
-      BIND(C, NAME = "fit_parabola_")
-      INTEGER(IK), INTENT(IN) :: LENGTH
-      REAL(RK), DIMENSION(LENGTH), INTENT(IN) :: X
-      REAL(RK), DIMENSION(LENGTH), INTENT(IN) :: Y
-      REAL(RK), INTENT(OUT) :: A
-      REAL(RK), INTENT(OUT) :: B
-      REAL(RK), INTENT(OUT) :: C
-      REAL(RK), INTENT(OUT) :: MAXIMUM
-    END SUBROUTINE FIT_PARABOLA_
-  END INTERFACE
-  PUBLIC :: FIT_PARABOLA_
+  interface
+    module subroutine fit_parabola_(length, x, y, a, b, c, maximum) &
+      bind(c, name = "fit_parabola_")
+      integer(ik), intent(in) :: length
+      real(rk), dimension(length), intent(in) :: x
+      real(rk), dimension(length), intent(in) :: y
+      real(rk), intent(out) :: a
+      real(rk), intent(out) :: b
+      real(rk), intent(out) :: c
+      real(rk), intent(out) :: maximum
+    end subroutine fit_parabola_
+  end interface
+  public :: fit_parabola_
   ! ############################################################################################################################# !
-  ! BINARY SEARCH MAXIMIZATION
-  ! (FUNCTION) BINARY_(<FUN>, <GUESS>, <INTERVAL>, <LIMIT>, <TOLERANCE>)
-  ! <FUN>                  -- (IN)     FUNCTION TO MAXIMIZE (RK) -> (RK)
-  ! <GUESS>                -- (IN)     INITIAL GUESS VALUE (RK)
-  ! <INTERVAL>             -- (IN)     SEARCH INTERVAL (RK), GUESS IS IN THE MIDLE
-  ! <LIMIT>                -- (IN)     MAXIMUM NUMBER OF ITERATIONS (IK)
-  ! <TOLERANCE>            -- (IN)     MAXIMUM TOLERANCE (RK)
-  ! <BINARY_>              -- (OUT)    MAXIMUM POSITION
-  INTERFACE
-    MODULE REAL(RK) FUNCTION BINARY_(FUN, GUESS, INTERVAL, LIMIT, TOLERANCE)
-      INTERFACE
-        REAL(RK) FUNCTION FUN(ARG)
-          IMPORT :: RK
-          REAL(RK), INTENT(IN) :: ARG
-        END FUNCTION FUN
-      END INTERFACE
-      REAL(RK), INTENT(IN) :: GUESS
-      REAL(RK), INTENT(IN) :: INTERVAL
-      INTEGER(IK), INTENT(IN) :: LIMIT
-      REAL(RK), INTENT(IN) :: TOLERANCE
-    END FUNCTION BINARY_
-  END INTERFACE
-  PUBLIC :: BINARY_
+  ! binary search maximization
+  ! (function) binary_(<fun>, <guess>, <interval>, <limit>, <tolerance>)
+  ! <fun>                  -- (in)     function to maximize (rk) -> (rk)
+  ! <guess>                -- (in)     initial guess value (rk)
+  ! <interval>             -- (in)     search interval (rk), guess is in the midle
+  ! <limit>                -- (in)     maximum number of iterations (ik)
+  ! <tolerance>            -- (in)     maximum tolerance (rk)
+  ! <binary_>              -- (out)    maximum position
+  interface
+    module real(rk) function binary_(fun, guess, interval, limit, tolerance)
+      interface
+        real(rk) function fun(arg)
+          import :: rk
+          real(rk), intent(in) :: arg
+        end function fun
+      end interface
+      real(rk), intent(in) :: guess
+      real(rk), intent(in) :: interval
+      integer(ik), intent(in) :: limit
+      real(rk), intent(in) :: tolerance
+    end function binary_
+  end interface
+  public :: binary_
   ! ############################################################################################################################# !
-  ! GOLDEN SEARCH MAXIMIZATION
-  ! (FUNCTION) GOLDEN_(<FUN>, <GUESS>, <INTERVAL>, <LIMIT>, <TOLERANCE>)
-  ! <FUN>                  -- (IN)     FUNCTION TO MAXIMIZE (RK) -> (RK)
-  ! <GUESS>                -- (IN)     INITIAL GUESS VALUE (RK)
-  ! <INTERVAL>             -- (IN)     SEARCH INTERVAL (RK), GUESS IS IN THE MIDLE
-  ! <LIMIT>                -- (IN)     MAXIMUM NUMBER OF ITERATIONS (IK)
-  ! <TOLERANCE>            -- (IN)     MAXIMUM TOLERANCE (RK)
-  ! <GOLDEN_>              -- (OUT)    MAXIMUM POSITION
-  INTERFACE
-    MODULE REAL(RK) FUNCTION GOLDEN_(FUN, GUESS, INTERVAL, LIMIT, TOLERANCE)
-      INTERFACE
-        REAL(RK) FUNCTION FUN(ARG)
-          IMPORT :: RK
-          REAL(RK), INTENT(IN) :: ARG
-        END FUNCTION FUN
-      END INTERFACE
-      REAL(RK), INTENT(IN) :: GUESS
-      REAL(RK), INTENT(IN) :: INTERVAL
-      INTEGER(IK), INTENT(IN) :: LIMIT
-      REAL(RK), INTENT(IN) :: TOLERANCE
-    END FUNCTION GOLDEN_
-  END INTERFACE
-  PUBLIC :: GOLDEN_
+  ! golden search maximization
+  ! (function) golden_(<fun>, <guess>, <interval>, <limit>, <tolerance>)
+  ! <fun>                  -- (in)     function to maximize (rk) -> (rk)
+  ! <guess>                -- (in)     initial guess value (rk)
+  ! <interval>             -- (in)     search interval (rk), guess is in the midle
+  ! <limit>                -- (in)     maximum number of iterations (ik)
+  ! <tolerance>            -- (in)     maximum tolerance (rk)
+  ! <golden_>              -- (out)    maximum position
+  interface
+    module real(rk) function golden_(fun, guess, interval, limit, tolerance)
+      interface
+        real(rk) function fun(arg)
+          import :: rk
+          real(rk), intent(in) :: arg
+        end function fun
+      end interface
+      real(rk), intent(in) :: guess
+      real(rk), intent(in) :: interval
+      integer(ik), intent(in) :: limit
+      real(rk), intent(in) :: tolerance
+    end function golden_
+  end interface
+  public :: golden_
   ! ############################################################################################################################# !
-END MODULE SIGNAL
+end module signal

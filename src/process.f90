@@ -1,222 +1,222 @@
 
 #include "signal.inc"
 
-SUBMODULE (SIGNAL) PROCESS
-  IMPLICIT NONE
-  CONTAINS
+submodule (signal) process
+  implicit none
+  contains
   ! ############################################################################################################################# !
-  ! CONVERT INPUT SEQUENCE (REAL)
-  ! (SUBROUTINE) CONVERT_REAL_(<LENGTH>, <R_PART>, <SEQUENCE>)
-  ! <LENGTH>               -- (IN)     LENGTH (IK)
-  ! <R_PART>               -- (IN)     INPUT SEQUENCE R-PART (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <SEQUENCE>             -- (OUT)    SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...] AND SI_I=0.0_RK FOR ALL I
+  ! convert input sequence (real)
+  ! (subroutine) convert_real_(<length>, <r_part>, <sequence>)
+  ! <length>               -- (in)     length (ik)
+  ! <r_part>               -- (in)     input sequence r-part (rk array of length = <length>)
+  ! <sequence>             -- (out)    sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...] and si_i=0.0_rk for all i
   ! void    convert_real_(int* length, double* r_part, double* sequence) ;
-  MODULE SUBROUTINE CONVERT_REAL_(LENGTH, R_PART, SEQUENCE) &
-    BIND(C, NAME = "convert_real_")
-    INTEGER(IK), INTENT(IN) :: LENGTH
-    REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: R_PART
-    REAL(RK), INTENT(OUT), DIMENSION(2_IK*LENGTH) :: SEQUENCE
-    SEQUENCE = 0.0_RK
-    SEQUENCE(1_IK::2_IK) = R_PART
-  END SUBROUTINE CONVERT_REAL_
+  module subroutine convert_real_(length, r_part, sequence) &
+    bind(c, name = "convert_real_")
+    integer(ik), intent(in) :: length
+    real(rk), intent(in), dimension(length) :: r_part
+    real(rk), intent(out), dimension(2_ik*length) :: sequence
+    sequence = 0.0_rk
+    sequence(1_ik::2_ik) = r_part
+  end subroutine convert_real_
   ! ############################################################################################################################# !
-  ! CONVERT INPUT SEQUENCE (COMPLEX)
-  ! (SUBROUTINE) CONVERT_COMPLEX_(<LENGTH>, <R_PART>, <I_PART>, <SEQUENCE>)
-  ! <LENGTH>               -- (IN)     LENGTH (IK)
-  ! <R_PART>               -- (IN)     INPUT SEQUENCE R-PART (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <I_PART>               -- (IN)     INPUT SEQUENCE I-PART (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <SEQUENCE>             -- (OUT)    SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
+  ! convert input sequence (complex)
+  ! (subroutine) convert_complex_(<length>, <r_part>, <i_part>, <sequence>)
+  ! <length>               -- (in)     length (ik)
+  ! <r_part>               -- (in)     input sequence r-part (rk array of length = <length>)
+  ! <i_part>               -- (in)     input sequence i-part (rk array of length = <length>)
+  ! <sequence>             -- (out)    sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
   ! void    convert_complex_(int* length, double* r_part, double* i_part, double* sequence) ;
-  MODULE SUBROUTINE CONVERT_COMPLEX_(LENGTH, R_PART, I_PART, SEQUENCE) &
-    BIND(C, NAME = "convert_complex_")
-    INTEGER(IK), INTENT(IN) :: LENGTH
-    REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: R_PART
-    REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: I_PART
-    REAL(RK), INTENT(OUT), DIMENSION(2_IK*LENGTH) :: SEQUENCE
-    SEQUENCE = 0.0_RK
-    SEQUENCE(1_IK::2_IK) = R_PART
-    SEQUENCE(2_IK::2_IK) = I_PART
-  END SUBROUTINE CONVERT_COMPLEX_
+  module subroutine convert_complex_(length, r_part, i_part, sequence) &
+    bind(c, name = "convert_complex_")
+    integer(ik), intent(in) :: length
+    real(rk), intent(in), dimension(length) :: r_part
+    real(rk), intent(in), dimension(length) :: i_part
+    real(rk), intent(out), dimension(2_ik*length) :: sequence
+    sequence = 0.0_rk
+    sequence(1_ik::2_ik) = r_part
+    sequence(2_ik::2_ik) = i_part
+  end subroutine convert_complex_
   ! ############################################################################################################################# !
-  ! ROUND UP (ROUND UP TO THE NEXT POWER OF TWO)
-  ! (FUNCTION) ROUND_UP_(<NUMBER>)
-  ! <NUMBER>               -- (IN)     NUMBER (IK)
-  ! <ROUND_UP>             -- (OUT)    NEXT POWER OF TWO NUMBER (IK)
+  ! round up (round up to the next power of two)
+  ! (function) round_up_(<number>)
+  ! <number>               -- (in)     number (ik)
+  ! <round_up>             -- (out)    next power of two number (ik)
   ! int     round_up_(int* number) ;
-  MODULE INTEGER(IK) FUNCTION ROUND_UP_(NUMBER) &
-    BIND(C, NAME = "round_up_")
-    INTEGER(IK), INTENT(IN) :: NUMBER
-    ROUND_UP_ = 2_IK**CEILING(LOG(REAL(NUMBER, RK))/LOG(2.0_RK), KIND=IK)
-  END FUNCTION ROUND_UP_
+  module integer(ik) function round_up_(number) &
+    bind(c, name = "round_up_")
+    integer(ik), intent(in) :: number
+    round_up_ = 2_ik**ceiling(log(real(number, rk))/log(2.0_rk), kind=ik)
+  end function round_up_
   ! ############################################################################################################################# !
-  ! ZERO PADDING
-  ! (SUBROUTINE) PAD_(<LI>, <LO>, <INPUT>, <OUTPUT>)
-  ! <LI>                   -- (IN)     INPUT SEQUENCE LENGTH (IK)
-  ! <LO>                   -- (IN)     OUTPUT SEQUENCE LENGTH (IK)
-  ! <INPUT>                -- (IN)     INPUT SEQUENCE (RK) OF LENGTH = 2*<LI>
-  ! <OUTPUT>               -- (IN)     PADDED SEQUENCE (RK) OF LENGTH = 2*<LO>
+  ! zero padding
+  ! (subroutine) pad_(<li>, <lo>, <input>, <output>)
+  ! <li>                   -- (in)     input sequence length (ik)
+  ! <lo>                   -- (in)     output sequence length (ik)
+  ! <input>                -- (in)     input sequence (rk) of length = 2*<li>
+  ! <output>               -- (in)     padded sequence (rk) of length = 2*<lo>
   ! void    pad_(int* linput, int* loutput, double* input, double* output) ;
-  MODULE SUBROUTINE PAD_(LI, LO, INPUT, OUTPUT) &
-    BIND(C, NAME = "pad_")
-    INTEGER(IK), INTENT(IN) :: LI
-    INTEGER(IK), INTENT(IN) :: LO
-    REAL(RK), DIMENSION(2_IK*LI), INTENT(IN) :: INPUT
-    REAL(RK), DIMENSION(2_IK*LO), INTENT(OUT) :: OUTPUT
-    REAL(RK) :: LZERO(FLOOR(REAL(LO-LI,RK)/2_RK))
-    REAL(RK) :: RZERO(CEILING(REAL(LO-LI,RK)/2_RK))
-    INTEGER(IK) :: I
-    LZERO = [(0.0_RK, I = 1_IK, SIZE(LZERO), 1_IK)]
-    RZERO = [(0.0_RK, I = 1_IK, SIZE(RZERO), 1_IK)]
-    OUTPUT(1_IK::2_IK) = [LZERO, INPUT(1_IK::2_IK), RZERO]
-    OUTPUT(2_IK::2_IK) = [LZERO, INPUT(2_IK::2_IK), RZERO]
-  END  SUBROUTINE PAD_
+  module subroutine pad_(li, lo, input, output) &
+    bind(c, name = "pad_")
+    integer(ik), intent(in) :: li
+    integer(ik), intent(in) :: lo
+    real(rk), dimension(2_ik*li), intent(in) :: input
+    real(rk), dimension(2_ik*lo), intent(out) :: output
+    real(rk) :: lzero(floor(real(lo-li,rk)/2_rk))
+    real(rk) :: rzero(ceiling(real(lo-li,rk)/2_rk))
+    integer(ik) :: i
+    lzero = [(0.0_rk, i = 1_ik, size(lzero), 1_ik)]
+    rzero = [(0.0_rk, i = 1_ik, size(rzero), 1_ik)]
+    output(1_ik::2_ik) = [lzero, input(1_ik::2_ik), rzero]
+    output(2_ik::2_ik) = [lzero, input(2_ik::2_ik), rzero]
+  end  subroutine pad_
   ! ############################################################################################################################# !
-  ! REMOVE MEAN
-  ! (SUBROUTINE) REMOVE_MEAN_(<LENGTH>, <INPUT>, <OUTPUT> )
-  ! <LENGTH>               -- (IN)     INPUT SEQUENCE LENGTH (IK)
-  ! <INPUT>                -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <OUTPUT>               -- (OUT)    OUTPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
+  ! remove mean
+  ! (subroutine) remove_mean_(<length>, <input>, <output> )
+  ! <length>               -- (in)     input sequence length (ik)
+  ! <input>                -- (in)     input sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
+  ! <output>               -- (out)    output sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
   ! void    remove_mean_(int* length, double* input, double* output) ;
-  MODULE SUBROUTINE REMOVE_MEAN_(LENGTH, INPUT, OUTPUT) &
-    BIND(C, NAME = "remove_mean_")
-    INTEGER(IK), INTENT(IN) :: LENGTH
-    REAL(RK), DIMENSION(2_IK*LENGTH), INTENT(IN) :: INPUT
-    REAL(RK), DIMENSION(2_IK*LENGTH), INTENT(OUT) :: OUTPUT
-    OUTPUT(1_IK::2_IK)  = INPUT(1_IK::2_IK)-SUM(INPUT(1_IK::2_IK))/REAL(LENGTH, RK)
-    OUTPUT(2_IK::2_IK)  = INPUT(2_IK::2_IK)-SUM(INPUT(2_IK::2_IK))/REAL(LENGTH, RK)
-  END SUBROUTINE REMOVE_MEAN_
+  module subroutine remove_mean_(length, input, output) &
+    bind(c, name = "remove_mean_")
+    integer(ik), intent(in) :: length
+    real(rk), dimension(2_ik*length), intent(in) :: input
+    real(rk), dimension(2_ik*length), intent(out) :: output
+    output(1_ik::2_ik)  = input(1_ik::2_ik)-sum(input(1_ik::2_ik))/real(length, rk)
+    output(2_ik::2_ik)  = input(2_ik::2_ik)-sum(input(2_ik::2_ik))/real(length, rk)
+  end subroutine remove_mean_
   ! ############################################################################################################################# !
-  ! REMOVE WINDOW MEAN
-  ! (SUBROUTINE) REMOVE_WINDOW_MEAN_(<LENGTH>, <TOTAL>, <WINDOW>, <INPUT>, <OUTPUT> )
-  ! <LENGTH>               -- (IN)     INPUT SEQUENCE LENGTH (IK)
-  ! <TOTAL>                -- (IN)     SUM(WINDOW) (RK)
-  ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <INPUT>                -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <OUTPUT>               -- (OUT)    OUTPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
+  ! remove window mean
+  ! (subroutine) remove_window_mean_(<length>, <total>, <window>, <input>, <output> )
+  ! <length>               -- (in)     input sequence length (ik)
+  ! <total>                -- (in)     sum(window) (rk)
+  ! <window>               -- (in)     window array (rk array of length = <length>)
+  ! <input>                -- (in)     input sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
+  ! <output>               -- (out)    output sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
   ! void    remove_window_mean_(int* length, double* total, double* window, double* input, double* output) ;
-  MODULE SUBROUTINE REMOVE_WINDOW_MEAN_(LENGTH, TOTAL, WINDOW, INPUT, OUTPUT) &
-    BIND(C, NAME = "remove_window_mean_")
-    INTEGER(IK), INTENT(IN) :: LENGTH
-    REAL(RK), INTENT(IN) :: TOTAL
-    REAL(RK), DIMENSION(LENGTH), INTENT(IN) :: WINDOW
-    REAL(RK), DIMENSION(2_IK*LENGTH), INTENT(IN) :: INPUT
-    REAL(RK), DIMENSION(2_IK*LENGTH), INTENT(OUT) :: OUTPUT
-    OUTPUT(1_IK::2_IK) = (INPUT(1_IK::2_IK)-SUM(WINDOW*INPUT(1_IK::2_IK))/TOTAL)
-    OUTPUT(2_IK::2_IK) = (INPUT(2_IK::2_IK)-SUM(WINDOW*INPUT(2_IK::2_IK))/TOTAL)
-  END SUBROUTINE REMOVE_WINDOW_MEAN_
+  module subroutine remove_window_mean_(length, total, window, input, output) &
+    bind(c, name = "remove_window_mean_")
+    integer(ik), intent(in) :: length
+    real(rk), intent(in) :: total
+    real(rk), dimension(length), intent(in) :: window
+    real(rk), dimension(2_ik*length), intent(in) :: input
+    real(rk), dimension(2_ik*length), intent(out) :: output
+    output(1_ik::2_ik) = (input(1_ik::2_ik)-sum(window*input(1_ik::2_ik))/total)
+    output(2_ik::2_ik) = (input(2_ik::2_ik)-sum(window*input(2_ik::2_ik))/total)
+  end subroutine remove_window_mean_
   ! ############################################################################################################################# !
-  ! APPLY WINDOW
-  ! (SUBROUTINE) APPLY_WINDOW_(<LENGTH>, <WINDOW>, <INPUT>, <OUTPUT> )
-  ! <LENGTH>               -- (IN)     INPUT SEQUENCE LENGTH (IK)
-  ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <INPUT>                -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <OUTPUT>               -- (OUT)    OUTPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
+  ! apply window
+  ! (subroutine) apply_window_(<length>, <window>, <input>, <output> )
+  ! <length>               -- (in)     input sequence length (ik)
+  ! <window>               -- (in)     window array (rk array of length = <length>)
+  ! <input>                -- (in)     input sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
+  ! <output>               -- (out)    output sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
   ! void    apply_window_(int* length, double* window, double* input, double* output) ;
-  MODULE SUBROUTINE APPLY_WINDOW_(LENGTH, WINDOW, INPUT, OUTPUT) &
-    BIND(C, NAME = "apply_window_")
-    INTEGER(IK), INTENT(IN) :: LENGTH
-    REAL(RK), DIMENSION(LENGTH), INTENT(IN) :: WINDOW
-    REAL(RK), DIMENSION(2_IK*LENGTH), INTENT(IN) :: INPUT
-    REAL(RK), DIMENSION(2_IK*LENGTH), INTENT(OUT) :: OUTPUT
-    OUTPUT(1_IK::2_IK) = INPUT(1_IK::2_IK)*WINDOW
-    OUTPUT(2_IK::2_IK) = INPUT(2_IK::2_IK)*WINDOW
-  END SUBROUTINE APPLY_WINDOW_
+  module subroutine apply_window_(length, window, input, output) &
+    bind(c, name = "apply_window_")
+    integer(ik), intent(in) :: length
+    real(rk), dimension(length), intent(in) :: window
+    real(rk), dimension(2_ik*length), intent(in) :: input
+    real(rk), dimension(2_ik*length), intent(out) :: output
+    output(1_ik::2_ik) = input(1_ik::2_ik)*window
+    output(2_ik::2_ik) = input(2_ik::2_ik)*window
+  end subroutine apply_window_
   ! ############################################################################################################################# !
-  ! MATRIX (GENERATE MATRIX FROM SEQUENCE)
-  ! (SUBROUTINE) MATRIX_(<LENGTH>, <SEQUENCE>, <MATRIX>)
-  ! <LENGTH>               -- (IN)     INPUT SEQUENCE LENGTH (IK)
-  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK)
-  ! <MATRIX>               -- (OUT)    MATRIX (<LENGTH>/2+1, <LENGTH>/2) (RK)
-  MODULE SUBROUTINE MATRIX_(LENGTH, SEQUENCE, MATRIX)
-    INTEGER(IK), INTENT(IN) :: LENGTH
-    REAL(RK), DIMENSION(LENGTH), INTENT(IN) :: SEQUENCE
-    REAL(RK), DIMENSION(LENGTH/2_IK+1_IK, LENGTH/2_IK), INTENT(OUT) :: MATRIX
-    INTEGER(IK) :: I
-    DO I = 1_IK, LENGTH/2_IK+1_IK, 1_IK
-      MATRIX(I, :) = SEQUENCE(I:I-1_IK+LENGTH/2_IK)
-    END DO
-  END SUBROUTINE MATRIX_
+  ! matrix (generate matrix from sequence)
+  ! (subroutine) matrix_(<length>, <sequence>, <matrix>)
+  ! <length>               -- (in)     input sequence length (ik)
+  ! <sequence>             -- (in)     input sequence (rk)
+  ! <matrix>               -- (out)    matrix (<length>/2+1, <length>/2) (rk)
+  module subroutine matrix_(length, sequence, matrix)
+    integer(ik), intent(in) :: length
+    real(rk), dimension(length), intent(in) :: sequence
+    real(rk), dimension(length/2_ik+1_ik, length/2_ik), intent(out) :: matrix
+    integer(ik) :: i
+    do i = 1_ik, length/2_ik+1_ik, 1_ik
+      matrix(i, :) = sequence(i:i-1_ik+length/2_ik)
+    end do
+  end subroutine matrix_
   ! ############################################################################################################################# !
-  ! SEQUENCE (ROW) (GENERATE SEQUENCE FROM MATRIX USING 1ST AND LAST ROWS)
-  ! (SUBROUTINE) SEQUENCE_ROW_(<LENGTH>, <SEQUENCE>, <MATRIX>)
-  ! <LENGTH>               -- (IN)     INPUT SEQUENCE LENGTH (IK)
-  ! <SEQUENCE>             -- (OUT)    INPUT SEQUENCE (RK)
-  ! <MATRIX>               -- (IN)     MATRIX (<LENGTH>/2+1, <LENGTH>/2) (RK)
-  MODULE SUBROUTINE SEQUENCE_ROW_(LENGTH, SEQUENCE, MATRIX)
-    INTEGER(IK), INTENT(IN) :: LENGTH
-    REAL(RK), DIMENSION(LENGTH), INTENT(OUT) :: SEQUENCE
-    REAL(RK), DIMENSION(LENGTH/2_IK+1_IK, LENGTH/2_IK), INTENT(IN) :: MATRIX
-    SEQUENCE = [MATRIX(1_IK, :), MATRIX(LENGTH/2_IK+1_IK, :)]
-  END SUBROUTINE SEQUENCE_ROW_
+  ! sequence (row) (generate sequence from matrix using 1st and last rows)
+  ! (subroutine) sequence_row_(<length>, <sequence>, <matrix>)
+  ! <length>               -- (in)     input sequence length (ik)
+  ! <sequence>             -- (out)    input sequence (rk)
+  ! <matrix>               -- (in)     matrix (<length>/2+1, <length>/2) (rk)
+  module subroutine sequence_row_(length, sequence, matrix)
+    integer(ik), intent(in) :: length
+    real(rk), dimension(length), intent(out) :: sequence
+    real(rk), dimension(length/2_ik+1_ik, length/2_ik), intent(in) :: matrix
+    sequence = [matrix(1_ik, :), matrix(length/2_ik+1_ik, :)]
+  end subroutine sequence_row_
   ! ############################################################################################################################# !
-  ! SEQUENCE (SUM) (GENERATE SEQUENCE FROM MATRIX USING SUMS OF SKEW DIAGONALS)
-  ! (SUBROUTINE) SEQUENCE_ROW_(<LENGTH>, <SEQUENCE>, <MATRIX>)
-  ! <LENGTH>               -- (IN)     INPUT SEQUENCE LENGTH (IK)
-  ! <SEQUENCE>             -- (OUT)    INPUT SEQUENCE (RK)
-  ! <MATRIX>               -- (IN)     MATRIX (<LENGTH>/2+1, <LENGTH>/2) (RK)
-  MODULE SUBROUTINE SEQUENCE_SUM_(LENGTH, SEQUENCE, MATRIX)
-    INTEGER(IK), INTENT(IN) :: LENGTH
-    REAL(RK), DIMENSION(LENGTH), INTENT(OUT) :: SEQUENCE
-    REAL(RK), DIMENSION(LENGTH/2_IK+1_IK, LENGTH/2_IK), INTENT(IN) :: MATRIX
-    INTEGER(IK) :: ROW
-    INTEGER(IK) :: COL
-    REAL(RK), DIMENSION((LENGTH/2_IK+1_IK)*(LENGTH/2_IK)) :: ARRAY
-    INTEGER(IK) :: SHIFT
-    INTEGER(IK) :: START
-    INTEGER(IK) :: COUNT
-    INTEGER(IK) :: Q, P
-    ROW = LENGTH/2_IK+1_IK
-    COL = LENGTH/2_IK
-    ARRAY = RESHAPE(MATRIX, SHAPE(ARRAY))
-    SHIFT = 1_IK ;
-    SEQUENCE = 0.0_RK
-    DO Q = 1_IK, 2_IK*COL, 1_IK
-      START = Q
-      IF (Q > ROW) THEN
-        START = Q + COL*SHIFT
-        SHIFT = SHIFT + 1_IK
-      END IF
-      COUNT = 0_IK
-      DO P = 0_IK, MIN(Q, COL)-SHIFT, 1_IK
-        SEQUENCE(Q) = SEQUENCE(Q)+ARRAY(START+P*COL)
-        COUNT = COUNT + 1_IK
-      END DO
-      SEQUENCE(Q) = SEQUENCE(Q)/REAL(COUNT, RK) ;
-    END DO
-  END SUBROUTINE SEQUENCE_SUM_
+  ! sequence (sum) (generate sequence from matrix using sums of skew diagonals)
+  ! (subroutine) sequence_row_(<length>, <sequence>, <matrix>)
+  ! <length>               -- (in)     input sequence length (ik)
+  ! <sequence>             -- (out)    input sequence (rk)
+  ! <matrix>               -- (in)     matrix (<length>/2+1, <length>/2) (rk)
+  module subroutine sequence_sum_(length, sequence, matrix)
+    integer(ik), intent(in) :: length
+    real(rk), dimension(length), intent(out) :: sequence
+    real(rk), dimension(length/2_ik+1_ik, length/2_ik), intent(in) :: matrix
+    integer(ik) :: row
+    integer(ik) :: col
+    real(rk), dimension((length/2_ik+1_ik)*(length/2_ik)) :: array
+    integer(ik) :: shift
+    integer(ik) :: start
+    integer(ik) :: count
+    integer(ik) :: q, p
+    row = length/2_ik+1_ik
+    col = length/2_ik
+    array = reshape(matrix, shape(array))
+    shift = 1_ik ;
+    sequence = 0.0_rk
+    do q = 1_ik, 2_ik*col, 1_ik
+      start = q
+      if (q > row) then
+        start = q + col*shift
+        shift = shift + 1_ik
+      end if
+      count = 0_ik
+      do p = 0_ik, min(q, col)-shift, 1_ik
+        sequence(q) = sequence(q)+array(start+p*col)
+        count = count + 1_ik
+      end do
+      sequence(q) = sequence(q)/real(count, rk) ;
+    end do
+  end subroutine sequence_sum_
   ! ############################################################################################################################# !
-  ! FILTER
-  ! (SUBROUTINE) FILTER(<LENGTH>, <SEQUENCE>, <LIMIT>)
-  ! <LENGTH>               -- (IN)     LENGTH (IK)
-  ! <SEQUENCE>             -- (INOUT)  SEQUENCE (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <LIMIT>                -- (IN)     NUMBER OF SINGULAR VALUES TO KEEP (IK)
-  ! <SVD_LIST>             -- (OUT)    LIST OF SINGULAR VALUES
+  ! filter
+  ! (subroutine) filter(<length>, <sequence>, <limit>)
+  ! <length>               -- (in)     length (ik)
+  ! <sequence>             -- (inout)  sequence (rk array of length = <length>)
+  ! <limit>                -- (in)     number of singular values to keep (ik)
+  ! <svd_list>             -- (out)    list of singular values
   ! void    filter_(int* length, double* sequence, int* limit, double* svd_list) ;
-  MODULE SUBROUTINE FILTER_(LENGTH, SEQUENCE, LIMIT, SVD_LIST) &
-    BIND(C, NAME = "filter_")
-    INTEGER(IK), INTENT(IN) :: LENGTH
-    REAL(RK), DIMENSION(LENGTH), INTENT(INOUT) :: SEQUENCE
-    INTEGER(IK), INTENT(IN) :: LIMIT
-    REAL(RK), DIMENSION(LIMIT), INTENT(OUT) :: SVD_LIST
-    REAL(RK), DIMENSION(LENGTH/2_IK+1_IK, LENGTH/2_IK) :: MATRIX
-    REAL(RK), DIMENSION(LENGTH/2_IK+1_IK, LIMIT) :: U_MATRIX
-    REAL(RK), DIMENSION(LENGTH/2_IK, LIMIT) :: V_MATRIX
-    REAL(RK), DIMENSION(LIMIT, LIMIT) :: DIAG
-    REAL(RK), DIMENSION(LIMIT, LENGTH/2_IK) :: COPY
-    INTEGER(IK) :: I
-    INTEGER :: NR, NC, NS
-    CALL MATRIX_(LENGTH, SEQUENCE, MATRIX)
-    CALL SVD_TRUNCATED_(LENGTH/2_IK+1_IK, LENGTH/2_IK, LIMIT, MATRIX, SVD_LIST, V_MATRIX, U_MATRIX)
-    MATRIX = 0.0_RK
-    DO I = 1_IK, LIMIT, 1_IK
-      DIAG(I, I) = SVD_LIST(I)
-    END DO
-    NR = INT(LENGTH)/2_IK + 1_IK
-    NC = INT(LENGTH)/2_IK
-    NS = LIMIT
-    CALL DGEMM('N','T',NS,NC,NS,1.0_RK,DIAG,SIZE(DIAG,1_IK),V_MATRIX,SIZE(V_MATRIX,1_IK),0.0_RK,COPY,SIZE(COPY,1_IK))
-    CALL DGEMM('N','N',NR,NC,NS,1.0_RK,U_MATRIX,SIZE(U_MATRIX,1_IK),COPY,SIZE(COPY,1_IK),0.0_RK,MATRIX,SIZE(MATRIX,1_IK))
-    CALL __SEQUENCE__(LENGTH, SEQUENCE, MATRIX)
-  END SUBROUTINE FILTER_
+  module subroutine filter_(length, sequence, limit, svd_list) &
+    bind(c, name = "filter_")
+    integer(ik), intent(in) :: length
+    real(rk), dimension(length), intent(inout) :: sequence
+    integer(ik), intent(in) :: limit
+    real(rk), dimension(limit), intent(out) :: svd_list
+    real(rk), dimension(length/2_ik+1_ik, length/2_ik) :: matrix
+    real(rk), dimension(length/2_ik+1_ik, limit) :: u_matrix
+    real(rk), dimension(length/2_ik, limit) :: v_matrix
+    real(rk), dimension(limit, limit) :: diag
+    real(rk), dimension(limit, length/2_ik) :: copy
+    integer(ik) :: i
+    integer :: nr, nc, ns
+    call matrix_(length, sequence, matrix)
+    call svd_truncated_(length/2_ik+1_ik, length/2_ik, limit, matrix, svd_list, v_matrix, u_matrix)
+    matrix = 0.0_rk
+    do i = 1_ik, limit, 1_ik
+      diag(i, i) = svd_list(i)
+    end do
+    nr = int(length)/2_ik + 1_ik
+    nc = int(length)/2_ik
+    ns = limit
+    call dgemm('n','t',ns,nc,ns,1.0_rk,diag,size(diag,1_ik),v_matrix,size(v_matrix,1_ik),0.0_rk,copy,size(copy,1_ik))
+    call dgemm('n','n',nr,nc,ns,1.0_rk,u_matrix,size(u_matrix,1_ik),copy,size(copy,1_ik),0.0_rk,matrix,size(matrix,1_ik))
+    call __sequence__(length, sequence, matrix)
+  end subroutine filter_
   ! ############################################################################################################################# !
-END SUBMODULE PROCESS
+end submodule process

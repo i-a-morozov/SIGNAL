@@ -1,176 +1,176 @@
-! EXAMPLE-03: HARMONIC SIGNAL DECOMPOSITION
-PROGRAM EXAMPLE
-  USE SIGNAL
+! example-03: harmonic signal decomposition
+program example
+  use signal
 
-  IMPLICIT NONE
+  implicit none
 
-  INTEGER(IK), PARAMETER           :: LENGTH = 2_IK**10_IK  ! INPUT SIGNAL LENGTH
-  INTEGER(IK)                      :: FLAG                  ! COMPLEX FLAG (0/1)
-  REAL(RK)                         :: RANGE_MIN             ! (MIN) FREQUENCY RANGE
-  REAL(RK)                         :: RANGE_MAX             ! (MAX) FREQUENCY RANGE
-  INTEGER(IK)                      :: METHOD                ! FREQUENCY ESTIMATION METHOD
-  INTEGER(IK)                      :: MODE                  ! DECOMPOSITION MODE
-  INTEGER(IK)                      :: ORDER                 ! COSINE WINDOW ORDER
-  REAL(RK), DIMENSION(LENGTH)      :: WINDOW                ! COSINE WINDOW DATA
-  REAL(RK)                         :: TOTAL                 ! SUM OF WINDOW ELEMENTS
-  REAL(RK), DIMENSION(LENGTH)      :: SIGNAL_R, SIGNAL_I    ! SIGNAL REAL AND COMPLEX PARTS
-  REAL(RK), DIMENSION(2_IK*LENGTH) :: SIGNAL                ! INPUT SIGNAL, [..., SR_I, SI_I, ...]
-  INTEGER(IK), PARAMETER           :: LOOP = 4_IK           ! NUMBER OF HARMONICS
-  REAL(RK), DIMENSION(LOOP)        :: FREQUENCY             ! FREQUENCIES
-  REAL(RK)                         :: MEAN                  ! SINGAL MEAN
-  REAL(RK), DIMENSION(LOOP)        :: COS_AMP               ! COS-AMPLITUDES
-  REAL(RK), DIMENSION(LOOP)        :: SIN_AMP               ! SIN-AMPLITUDES
+  integer(ik), parameter           :: length = 2_ik**10_ik  ! input signal length
+  integer(ik)                      :: flag                  ! complex flag (0/1)
+  real(rk)                         :: range_min             ! (min) frequency range
+  real(rk)                         :: range_max             ! (max) frequency range
+  integer(ik)                      :: method                ! frequency estimation method
+  integer(ik)                      :: mode                  ! decomposition mode
+  integer(ik)                      :: order                 ! cosine window order
+  real(rk), dimension(length)      :: window                ! cosine window data
+  real(rk)                         :: total                 ! sum of window elements
+  real(rk), dimension(length)      :: signal_r, signal_i    ! signal real and complex parts
+  real(rk), dimension(2_ik*length) :: signal                ! input signal, [..., sr_i, si_i, ...]
+  integer(ik), parameter           :: loop = 4_ik           ! number of harmonics
+  real(rk), dimension(loop)        :: frequency             ! frequencies
+  real(rk)                         :: mean                  ! singal mean
+  real(rk), dimension(loop)        :: cos_amp               ! cos-amplitudes
+  real(rk), dimension(loop)        :: sin_amp               ! sin-amplitudes
 
-  REAL(RK), PARAMETER              :: F(4) = [1._RK*0.123456789_RK,2._RK*0.123456789_RK,3._RK*0.123456789_RK,4._RK*0.123456789_RK]
-  REAL(RK), PARAMETER              :: A(4) = [1.0_RK,1.0E-1_RK,1.E-3_RK,0.0_RK]
-  REAL(RK), PARAMETER              :: B(4) = [1.0E-1_RK,5.0E-2_RK,0.0_RK,1.E-4_RK]
+  real(rk), parameter              :: f(4) = [1._rk*0.123456789_rk,2._rk*0.123456789_rk,3._rk*0.123456789_rk,4._rk*0.123456789_rk]
+  real(rk), parameter              :: a(4) = [1.0_rk,1.0e-1_rk,1.e-3_rk,0.0_rk]
+  real(rk), parameter              :: b(4) = [1.0e-1_rk,5.0e-2_rk,0.0_rk,1.e-4_rk]
 
-  INTEGER(IK)                      :: I
-  REAL(RK)                         :: ERROR
+  integer(ik)                      :: i
+  real(rk)                         :: error
 
-  ! SET COMPLEX FLAG (0/1 FOR REAL/COMPLEX SIGNAL)
-  FLAG = 1_IK
-  RANGE_MIN = 0.00_RK
-  RANGE_MAX = 0.99_RK
+  ! set complex flag (0/1 for real/complex signal)
+  flag = 1_ik
+  range_min = 0.00_rk
+  range_max = 0.99_rk
 
-  ! SET SIGNAL REAL AND IMAGINARY PARTS
-  SIGNAL_R = 1.0_RK
-  SIGNAL_I = 0.0_RK
-  DO I = 1_IK, LENGTH, 1_IK
-    SIGNAL_R(I) = &
-      A(1)*COS(TWO_PI*F(1)*REAL(I, RK)) + B(1)*SIN(TWO_PI*F(1)*REAL(I, RK)) + &
-      A(2)*COS(TWO_PI*F(2)*REAL(I, RK)) + B(2)*SIN(TWO_PI*F(2)*REAL(I, RK)) + &
-      A(3)*COS(TWO_PI*F(3)*REAL(I, RK)) + B(3)*SIN(TWO_PI*F(3)*REAL(I, RK)) + &
-      A(4)*COS(TWO_PI*F(4)*REAL(I, RK)) + B(4)*SIN(TWO_PI*F(4)*REAL(I, RK))
-    SIGNAL_I(I) = &
-      B(1)*COS(TWO_PI*F(1)*REAL(I, RK)) - A(1)*SIN(TWO_PI*F(1)*REAL(I, RK)) + &
-      B(2)*COS(TWO_PI*F(2)*REAL(I, RK)) - A(2)*SIN(TWO_PI*F(2)*REAL(I, RK)) + &
-      B(3)*COS(TWO_PI*F(3)*REAL(I, RK)) - A(3)*SIN(TWO_PI*F(3)*REAL(I, RK)) + &
-      B(4)*COS(TWO_PI*F(4)*REAL(I, RK)) - A(4)*SIN(TWO_PI*F(4)*REAL(I, RK))
-  END DO
+  ! set signal real and imaginary parts
+  signal_r = 1.0_rk
+  signal_i = 0.0_rk
+  do i = 1_ik, length, 1_ik
+    signal_r(i) = &
+      a(1)*cos(two_pi*f(1)*real(i, rk)) + b(1)*sin(two_pi*f(1)*real(i, rk)) + &
+      a(2)*cos(two_pi*f(2)*real(i, rk)) + b(2)*sin(two_pi*f(2)*real(i, rk)) + &
+      a(3)*cos(two_pi*f(3)*real(i, rk)) + b(3)*sin(two_pi*f(3)*real(i, rk)) + &
+      a(4)*cos(two_pi*f(4)*real(i, rk)) + b(4)*sin(two_pi*f(4)*real(i, rk))
+    signal_i(i) = &
+      b(1)*cos(two_pi*f(1)*real(i, rk)) - a(1)*sin(two_pi*f(1)*real(i, rk)) + &
+      b(2)*cos(two_pi*f(2)*real(i, rk)) - a(2)*sin(two_pi*f(2)*real(i, rk)) + &
+      b(3)*cos(two_pi*f(3)*real(i, rk)) - a(3)*sin(two_pi*f(3)*real(i, rk)) + &
+      b(4)*cos(two_pi*f(4)*real(i, rk)) - a(4)*sin(two_pi*f(4)*real(i, rk))
+  end do
 
-  ! FORMAT TEST SIGNAL
-  SIGNAL = 0.0_RK
-  IF(FLAG == 0_IK) THEN
-    CALL CONVERT_(LENGTH, SIGNAL_R, SIGNAL)
-  ELSE
-    CALL CONVERT_(LENGTH, SIGNAL_R, SIGNAL_I, SIGNAL)
-  END IF
+  ! format test signal
+  signal = 0.0_rk
+  if(flag == 0_ik) then
+    call convert_(length, signal_r, signal)
+  else
+    call convert_(length, signal_r, signal_i, signal)
+  end if
 
-  ! SET WINDOW AND WINDOW SUM
-  ORDER = 4_IK
-  CALL WINDOW_(LENGTH, ORDER, WINDOW)
-  TOTAL = SUM(WINDOW)
+  ! set window and window sum
+  order = 4_ik
+  call window_(length, order, window)
+  total = sum(window)
 
-  ! PRINT INPUT SIGNAL PARAMETERS
-  WRITE(*, '(1A)') "INPUT"
-  WRITE(*, '(3E32.16)') F(1), A(1), B(1)
-  WRITE(*, '(3E32.16)') F(2), A(2), B(2)
-  WRITE(*, '(3E32.16)') F(3), A(3), B(3)
-  WRITE(*, '(3E32.16)') F(4), A(4), B(4)
-  WRITE(*, *)
+  ! print input signal parameters
+  write(*, '(1a)') "input"
+  write(*, '(3e32.16)') f(1), a(1), b(1)
+  write(*, '(3e32.16)') f(2), a(2), b(2)
+  write(*, '(3e32.16)') f(3), a(3), b(3)
+  write(*, '(3e32.16)') f(4), a(4), b(4)
+  write(*, *)
 
-  ! ESTIMATE FREQUENCIES
-  WRITE(*, '(A)') "FREQUENCY (PEAKS)"
-  BLOCK
-    REAL(RK) :: RESULT
-    DO I = 1_IK, LOOP, 1_IK
-      RESULT = FREQUENCY_(FLAG,RANGE_MIN,RANGE_MAX,I,FREQUENCY_PARABOLA,LENGTH,LENGTH,TOTAL,WINDOW,SIGNAL)
-      WRITE(*, '(1E32.16)') RESULT
-    END DO
-  END BLOCK
-  WRITE(*, *)
+  ! estimate frequencies
+  write(*, '(a)') "frequency (peaks)"
+  block
+    real(rk) :: result
+    do i = 1_ik, loop, 1_ik
+      result = frequency_(flag,range_min,range_max,i,frequency_parabola,length,length,total,window,signal)
+      write(*, '(1e32.16)') result
+    end do
+  end block
+  write(*, *)
 
-  ! ESTIMATE FREQUENCIES AND AMPLITUDES USING PEAKS
-  ! ALL FREQUENCIES ARE ESTIMATED FROM INPUT SIGNAL
-  WRITE(*, '(A)') "DECOMPOSITION (PEAKS)"
-  METHOD = FREQUENCY_PARABOLA
-  MODE = DECOMPOSITION_PEAK
-  FREQUENCY = 0.0_RK
-  COS_AMP = 0.0_RK
-  SIN_AMP = 0.0_RK
-  CALL DECOMPOSITION_(FLAG,RANGE_MIN,RANGE_MAX,METHOD,MODE,LENGTH,LENGTH,TOTAL,WINDOW,SIGNAL,LOOP,FREQUENCY,COS_AMP,SIN_AMP)
-  DO I = 1_IK, LOOP, 1_IK
-    WRITE(*, '(3E32.16)') FREQUENCY(I), COS_AMP(I), SIN_AMP(I)
-  END DO
-  WRITE(*, *)
+  ! estimate frequencies and amplitudes using peaks
+  ! all frequencies are estimated from input signal
+  write(*, '(a)') "decomposition (peaks)"
+  method = frequency_parabola
+  mode = decomposition_peak
+  frequency = 0.0_rk
+  cos_amp = 0.0_rk
+  sin_amp = 0.0_rk
+  call decomposition_(flag,range_min,range_max,method,mode,length,length,total,window,signal,loop,frequency,cos_amp,sin_amp)
+  do i = 1_ik, loop, 1_ik
+    write(*, '(3e32.16)') frequency(i), cos_amp(i), sin_amp(i)
+  end do
+  write(*, *)
 
-  ! ESTIMATE FREQUENCIES USING PEAKS
-  ! ALL FREQUENCIES ARE ESTIMATED FROM INPUT SIGNAL
-  ! AMPLITUDES ARE COMPUTED, BUT ONLY FREQUENCIES ARE RETURNED
-  WRITE(*, '(A)') "FREQUENCY LIST (PEAKS)"
-  METHOD = FREQUENCY_PARABOLA
-  MODE = DECOMPOSITION_PEAK
-  FREQUENCY = 0.0_RK
-  COS_AMP = 0.0_RK
-  SIN_AMP = 0.0_RK
-  CALL FREQUENCY_LIST_(FLAG,RANGE_MIN,RANGE_MAX,METHOD,MODE,LENGTH,LENGTH,TOTAL,WINDOW,SIGNAL,LOOP,FREQUENCY)
-  DO I = 1_IK, LOOP, 1_IK
-    WRITE(*, '(1E32.16)') FREQUENCY(I)
-  END DO
-  WRITE(*, *)
+  ! estimate frequencies using peaks
+  ! all frequencies are estimated from input signal
+  ! amplitudes are computed, but only frequencies are returned
+  write(*, '(a)') "frequency list (peaks)"
+  method = frequency_parabola
+  mode = decomposition_peak
+  frequency = 0.0_rk
+  cos_amp = 0.0_rk
+  sin_amp = 0.0_rk
+  call frequency_list_(flag,range_min,range_max,method,mode,length,length,total,window,signal,loop,frequency)
+  do i = 1_ik, loop, 1_ik
+    write(*, '(1e32.16)') frequency(i)
+  end do
+  write(*, *)
 
-  ! ESTIMATE FREQUENCIES AND AMPLITUDES USING MAXIMUM BIN AND SUBTRACTION
-  ! FREQUENCIES ARE ESTIMATED FROM LARGEST BIN
-  WRITE(*, '(A)') "DECOMPOSITION (SUBTRACTION)"
-  METHOD = FREQUENCY_PARABOLA
-  MODE = DECOMPOSITION_SUBTRACT
-  FREQUENCY = 0.0_RK
-  COS_AMP = 0.0_RK
-  SIN_AMP = 0.0_RK
-  CALL DECOMPOSITION_(FLAG,RANGE_MIN,RANGE_MAX,METHOD,MODE,LENGTH,LENGTH,TOTAL,WINDOW,SIGNAL,LOOP,FREQUENCY,COS_AMP,SIN_AMP)
-  DO I = 1_IK, LOOP, 1_IK
-    WRITE(*, '(3E32.16)') FREQUENCY(I), COS_AMP(I), SIN_AMP(I)
-  END DO
-  WRITE(*, *)
+  ! estimate frequencies and amplitudes using maximum bin and subtraction
+  ! frequencies are estimated from largest bin
+  write(*, '(a)') "decomposition (subtraction)"
+  method = frequency_parabola
+  mode = decomposition_subtract
+  frequency = 0.0_rk
+  cos_amp = 0.0_rk
+  sin_amp = 0.0_rk
+  call decomposition_(flag,range_min,range_max,method,mode,length,length,total,window,signal,loop,frequency,cos_amp,sin_amp)
+  do i = 1_ik, loop, 1_ik
+    write(*, '(3e32.16)') frequency(i), cos_amp(i), sin_amp(i)
+  end do
+  write(*, *)
 
-  ! ESTIMATE FREQUENCIES AND AMPLITUDES USING MAXIMUM BIN AND SUBTRACTION
-  ! FREQUENCIES ARE ESTIMATED FROM LARGEST BIN
-  ! AMPLITUDES ARE COMPUTED, BUT ONLY FREQUENCIES ARE RETURNED
-  WRITE(*, '(A)') "FREQUENCY LIST (SUBTRACTION)"
-  METHOD = FREQUENCY_PARABOLA
-  MODE = DECOMPOSITION_SUBTRACT
-  FREQUENCY = 0.0_RK
-  COS_AMP = 0.0_RK
-  SIN_AMP = 0.0_RK
-  CALL FREQUENCY_LIST_(FLAG,RANGE_MIN,RANGE_MAX,METHOD,MODE,LENGTH,LENGTH,TOTAL,WINDOW,SIGNAL,LOOP,FREQUENCY)
-  DO I = 1_IK, LOOP, 1_IK
-    WRITE(*, '(1E32.16)') FREQUENCY(I)
-  END DO
-  WRITE(*, *)
+  ! estimate frequencies and amplitudes using maximum bin and subtraction
+  ! frequencies are estimated from largest bin
+  ! amplitudes are computed, but only frequencies are returned
+  write(*, '(a)') "frequency list (subtraction)"
+  method = frequency_parabola
+  mode = decomposition_subtract
+  frequency = 0.0_rk
+  cos_amp = 0.0_rk
+  sin_amp = 0.0_rk
+  call frequency_list_(flag,range_min,range_max,method,mode,length,length,total,window,signal,loop,frequency)
+  do i = 1_ik, loop, 1_ik
+    write(*, '(1e32.16)') frequency(i)
+  end do
+  write(*, *)
 
-  ! ESTIMATE AMPLITUDES FOR KNOWN FREQUENCIES (FOURIER)
-  WRITE(*, '(A)') "AMPLITUDES (FOURIER)"
-  MEAN = 0.0_RK
-  COS_AMP = 0.0_RK
-  SIN_AMP = 0.0_RK
-  MEAN = SUM(SIGNAL_R)/REAL(LENGTH,RK)
-  CALL AMPLITUDE_LIST_(FLAG, LENGTH, TOTAL, WINDOW, SIGNAL, LOOP, FREQUENCY, COS_AMP, SIN_AMP)
-  DO I = 1_IK, LOOP, 1_IK
-    WRITE(*, '(2E32.16)') COS_AMP(I), SIN_AMP(I)
-  END DO
-  WRITE(*, *)
+  ! estimate amplitudes for known frequencies (fourier)
+  write(*, '(a)') "amplitudes (fourier)"
+  mean = 0.0_rk
+  cos_amp = 0.0_rk
+  sin_amp = 0.0_rk
+  mean = sum(signal_r)/real(length,rk)
+  call amplitude_list_(flag, length, total, window, signal, loop, frequency, cos_amp, sin_amp)
+  do i = 1_ik, loop, 1_ik
+    write(*, '(2e32.16)') cos_amp(i), sin_amp(i)
+  end do
+  write(*, *)
 
-  ! ESTIMATE AMPLITUDES FOR KNOWN FREQUENCIES (LEAST SQUARES)
-  WRITE(*, '(A)') "AMPLITUDES (LEAST SQUARES)"
-  MEAN = 0.0_RK
-  COS_AMP = 0.0_RK
-  SIN_AMP = 0.0_RK
-  CALL FIT_(256_IK, SIGNAL_R(1_IK : 256_IK), LOOP, FREQUENCY, MEAN, COS_AMP, SIN_AMP, ERROR)
-  DO I = 1_IK, LOOP, 1_IK
-    WRITE(*, '(2E32.16)') COS_AMP(I), SIN_AMP(I)
-  END DO
-  WRITE(*, *)
+  ! estimate amplitudes for known frequencies (least squares)
+  write(*, '(a)') "amplitudes (least squares)"
+  mean = 0.0_rk
+  cos_amp = 0.0_rk
+  sin_amp = 0.0_rk
+  call fit_(256_ik, signal_r(1_ik : 256_ik), loop, frequency, mean, cos_amp, sin_amp, error)
+  do i = 1_ik, loop, 1_ik
+    write(*, '(2e32.16)') cos_amp(i), sin_amp(i)
+  end do
+  write(*, *)
 
-  ! COMPUTE AMPLITUDES FOR KNOWN FREQUENCY
-  WRITE(*, '(A)') "AMPLITUDES (STANDALONE FOURIER)"
-  BLOCK
-    REAL(RK) :: AMP_COS, AMP_SIN, AMP
-    DO I = 1_IK, LOOP, 1_IK
-      CALL AMPLITUDE_(FLAG, LENGTH, TOTAL, WINDOW, SIGNAL, FREQUENCY(I), AMP_COS, AMP_SIN, AMP)
-      WRITE(*, '(2E32.16)') AMP_COS, AMP_SIN
-    END DO
-  END BLOCK
-  WRITE(*, *)
+  ! compute amplitudes for known frequency
+  write(*, '(a)') "amplitudes (standalone fourier)"
+  block
+    real(rk) :: amp_cos, amp_sin, amp
+    do i = 1_ik, loop, 1_ik
+      call amplitude_(flag, length, total, window, signal, frequency(i), amp_cos, amp_sin, amp)
+      write(*, '(2e32.16)') amp_cos, amp_sin
+    end do
+  end block
+  write(*, *)
 
-END PROGRAM EXAMPLE
+end program example

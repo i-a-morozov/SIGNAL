@@ -1,93 +1,93 @@
-! EXAMPLE-04: HARMONIC SIGNAL DECOMPOSITION (LEAST SQUARES)
-PROGRAM EXAMPLE
+! example-04: harmonic signal decomposition (least squares)
+program example
 
-  USE :: SIGNAL
+  use :: signal
 
-  IMPLICIT NONE
+  implicit none
 
-  REAL(RK), PARAMETER :: A0 = 0.35_RK
+  real(rk), parameter :: a0 = 0.35_rk
 
-  REAL(RK), PARAMETER :: F1 = 1.0_RK*0.123456789_RK
-  REAL(RK), PARAMETER :: A1 = 1.0_RK
-  REAL(RK), PARAMETER :: B1 = 0.5_RK
+  real(rk), parameter :: f1 = 1.0_rk*0.123456789_rk
+  real(rk), parameter :: a1 = 1.0_rk
+  real(rk), parameter :: b1 = 0.5_rk
 
-  REAL(RK), PARAMETER :: F2 = 2.0_RK*0.123456789_RK
-  REAL(RK), PARAMETER :: A2 = 0.05_RK
-  REAL(RK), PARAMETER :: B2 = 0.01_RK
+  real(rk), parameter :: f2 = 2.0_rk*0.123456789_rk
+  real(rk), parameter :: a2 = 0.05_rk
+  real(rk), parameter :: b2 = 0.01_rk
 
-  REAL(RK), PARAMETER :: F3 = 3.0_RK*0.123456789_RK
-  REAL(RK), PARAMETER :: A3 = 0.001_RK
-  REAL(RK), PARAMETER :: B3 = 0.005_RK
+  real(rk), parameter :: f3 = 3.0_rk*0.123456789_rk
+  real(rk), parameter :: a3 = 0.001_rk
+  real(rk), parameter :: b3 = 0.005_rk
 
-  INTEGER(IK), PARAMETER :: LENGTH = 256_RK
-  REAL(RK), DIMENSION(LENGTH) :: SIGNAL
+  integer(ik), parameter :: length = 256_rk
+  real(rk), dimension(length) :: signal
 
-  INTEGER(IK) :: LIMIT
-  REAL(RK) :: MEAN
-  REAL(RK), DIMENSION(:), ALLOCATABLE :: FREQUENCY
-  REAL(RK), DIMENSION(:), ALLOCATABLE :: COS_AMP
-  REAL(RK), DIMENSION(:), ALLOCATABLE :: SIN_AMP
-  REAL(RK) :: ERROR
+  integer(ik) :: limit
+  real(rk) :: mean
+  real(rk), dimension(:), allocatable :: frequency
+  real(rk), dimension(:), allocatable :: cos_amp
+  real(rk), dimension(:), allocatable :: sin_amp
+  real(rk) :: error
 
-  INTEGER :: I
+  integer :: i
 
-  SIGNAL = A0
-  DO I = 1_IK, LENGTH, 1_IK
-    SIGNAL(I) = &
-      A1*COS(TWO_PI*F1*REAL(I, RK)) + B1*SIN(TWO_PI*F1*REAL(I, RK)) + &
-      A2*COS(TWO_PI*F2*REAL(I, RK)) + B2*SIN(TWO_PI*F2*REAL(I, RK)) + &
-      A3*COS(TWO_PI*F3*REAL(I, RK)) + B3*SIN(TWO_PI*F3*REAL(I, RK))
-  END DO
+  signal = a0
+  do i = 1_ik, length, 1_ik
+    signal(i) = &
+      a1*cos(two_pi*f1*real(i, rk)) + b1*sin(two_pi*f1*real(i, rk)) + &
+      a2*cos(two_pi*f2*real(i, rk)) + b2*sin(two_pi*f2*real(i, rk)) + &
+      a3*cos(two_pi*f3*real(i, rk)) + b3*sin(two_pi*f3*real(i, rk))
+  end do
 
-  ! FIT (ONE HARMONIC)
-  LIMIT = 1_IK
-  ALLOCATE(FREQUENCY(LIMIT))
-  ALLOCATE(COS_AMP(LIMIT))
-  ALLOCATE(SIN_AMP(LIMIT))
-  FREQUENCY = [F1,F2]
-  CALL FIT_(LENGTH, SIGNAL, LIMIT, FREQUENCY, MEAN, COS_AMP, SIN_AMP, ERROR)
-  WRITE(*,'(1E32.16)') ERROR
-  WRITE(*,'(1E32.16)') MEAN
-  DO I = 1_IK, LIMIT,1_IK
-    WRITE(*,'(2E32.16)') COS_AMP(I), SIN_AMP(I)
-  END DO
-  WRITE(*,*)
-  DEALLOCATE(FREQUENCY)
-  DEALLOCATE(COS_AMP)
-  DEALLOCATE(SIN_AMP)
+  ! fit (one harmonic)
+  limit = 1_ik
+  allocate(frequency(limit))
+  allocate(cos_amp(limit))
+  allocate(sin_amp(limit))
+  frequency = [f1,f2]
+  call fit_(length, signal, limit, frequency, mean, cos_amp, sin_amp, error)
+  write(*,'(1e32.16)') error
+  write(*,'(1e32.16)') mean
+  do i = 1_ik, limit,1_ik
+    write(*,'(2e32.16)') cos_amp(i), sin_amp(i)
+  end do
+  write(*,*)
+  deallocate(frequency)
+  deallocate(cos_amp)
+  deallocate(sin_amp)
 
-  ! FIT (TWO HARMONICS)
-  LIMIT = 2_IK
-  ALLOCATE(FREQUENCY(LIMIT))
-  ALLOCATE(COS_AMP(LIMIT))
-  ALLOCATE(SIN_AMP(LIMIT))
-  FREQUENCY = [F1,F2]
-  CALL FIT_(LENGTH, SIGNAL, LIMIT, FREQUENCY, MEAN, COS_AMP, SIN_AMP, ERROR)
-  WRITE(*,'(1E32.16)') ERROR
-  WRITE(*,'(1E32.16)') MEAN
-  DO I = 1_IK, LIMIT,1_IK
-    WRITE(*,'(2E32.16)') COS_AMP(I), SIN_AMP(I)
-  END DO
-  WRITE(*,*)
-  DEALLOCATE(FREQUENCY)
-  DEALLOCATE(COS_AMP)
-  DEALLOCATE(SIN_AMP)
+  ! fit (two harmonics)
+  limit = 2_ik
+  allocate(frequency(limit))
+  allocate(cos_amp(limit))
+  allocate(sin_amp(limit))
+  frequency = [f1,f2]
+  call fit_(length, signal, limit, frequency, mean, cos_amp, sin_amp, error)
+  write(*,'(1e32.16)') error
+  write(*,'(1e32.16)') mean
+  do i = 1_ik, limit,1_ik
+    write(*,'(2e32.16)') cos_amp(i), sin_amp(i)
+  end do
+  write(*,*)
+  deallocate(frequency)
+  deallocate(cos_amp)
+  deallocate(sin_amp)
 
-  ! FIT (THREE HARMONICS)
-  LIMIT = 3_IK
-  ALLOCATE(FREQUENCY(LIMIT))
-  ALLOCATE(COS_AMP(LIMIT))
-  ALLOCATE(SIN_AMP(LIMIT))
-  FREQUENCY = [F1,F2,F3]
-  CALL FIT_(LENGTH, SIGNAL, LIMIT, FREQUENCY, MEAN, COS_AMP, SIN_AMP, ERROR)
-  WRITE(*,'(1E32.16)') ERROR
-  WRITE(*,'(1E32.16)') MEAN
-  DO I = 1_IK, LIMIT,1_IK
-    WRITE(*,'(2E32.16)') COS_AMP(I), SIN_AMP(I)
-  END DO
-  WRITE(*,*)
-  DEALLOCATE(FREQUENCY)
-  DEALLOCATE(COS_AMP)
-  DEALLOCATE(SIN_AMP)
+  ! fit (three harmonics)
+  limit = 3_ik
+  allocate(frequency(limit))
+  allocate(cos_amp(limit))
+  allocate(sin_amp(limit))
+  frequency = [f1,f2,f3]
+  call fit_(length, signal, limit, frequency, mean, cos_amp, sin_amp, error)
+  write(*,'(1e32.16)') error
+  write(*,'(1e32.16)') mean
+  do i = 1_ik, limit,1_ik
+    write(*,'(2e32.16)') cos_amp(i), sin_amp(i)
+  end do
+  write(*,*)
+  deallocate(frequency)
+  deallocate(cos_amp)
+  deallocate(sin_amp)
 
-END PROGRAM EXAMPLE
+end program example

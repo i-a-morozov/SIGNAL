@@ -1,399 +1,399 @@
 
 #include "signal.inc"
 
-SUBMODULE (SIGNAL) DECOMPOSITION
-  IMPLICIT NONE
-  CONTAINS
+submodule (signal) decomposition
+  implicit none
+  contains
   ! ############################################################################################################################# !
-  ! ESTIMATE AMPLITUDE FOR GIVEN FREQUENCY
-  ! (SUBROUTINE) AMPLITUDE_(<FLAG>, <LENGTH>, <TOTAL>, <WINDOW>, <SEQUENCE>, <FREQUENCY>, <COS_AMP>, <SIN_AMP>, <AMP>)
-  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
-  ! <TOTAL>                -- (IN)     SUM(WINDOW) (RK)
-  ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <FREQUENCY>            -- (IN)     FREQUENCY (RK)
-  ! <COS_AMP>              -- (OUT)    COS AMPLITUDE (RK)
-  ! <SIN_AMP>              -- (OUT)    SIN AMPLITUDE (RK)
-  ! <AMP>                  -- (OUT)    ABS AMPLITUDE (RK)
+  ! estimate amplitude for given frequency
+  ! (subroutine) amplitude_(<flag>, <length>, <total>, <window>, <sequence>, <frequency>, <cos_amp>, <sin_amp>, <amp>)
+  ! <flag>                 -- (in)     complex flag (ik), 0/1 for real/complex input sequence
+  ! <length>               -- (in)     sequence length (ik)
+  ! <total>                -- (in)     sum(window) (rk)
+  ! <window>               -- (in)     window array (rk array of length = <length>)
+  ! <sequence>             -- (in)     input sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
+  ! <frequency>            -- (in)     frequency (rk)
+  ! <cos_amp>              -- (out)    cos amplitude (rk)
+  ! <sin_amp>              -- (out)    sin amplitude (rk)
+  ! <amp>                  -- (out)    abs amplitude (rk)
   ! void    amplitude_(int* flag, int* length, double* total, double* window, double* sequence, double* frequency, double* cos_amp, double* sin_amp, double* amp) ;
-  MODULE SUBROUTINE AMPLITUDE_(FLAG, LENGTH, TOTAL, WINDOW, SEQUENCE, FREQUENCY, COS_AMP, SIN_AMP, AMP) &
-    BIND(C, NAME = "amplutude_")
-    INTEGER(IK), INTENT(IN):: FLAG
-    INTEGER(IK), INTENT(IN):: LENGTH
-    REAL(RK), INTENT(IN) :: TOTAL
-    REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: WINDOW
-    REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
-    REAL(RK), INTENT(IN) :: FREQUENCY
-    REAL(RK), INTENT(OUT) :: COS_AMP
-    REAL(RK), INTENT(OUT) :: SIN_AMP
-    REAL(RK), INTENT(OUT) :: AMP
-    REAL(RK), DIMENSION(2_IK*LENGTH) :: LOCAL
-    REAL(RK), DIMENSION(LENGTH) :: LIST
-    REAL(RK), DIMENSION(2_IK*LENGTH) :: DELTA
-    INTEGER(IK) :: I
-    CALL REMOVE_WINDOW_MEAN_(LENGTH, TOTAL, WINDOW, SEQUENCE, LOCAL)
-    LIST = TWO_PI*REAL([(I, I=1_IK, LENGTH, 1_IK)], RK)
-    DELTA(1_IK::2_IK) = +COS(FREQUENCY*LIST)
-    DELTA(2_IK::2_IK) = -SIN(FREQUENCY*LIST)
-    COS_AMP = SUM(LOCAL(1_IK::2_IK)*DELTA(1_IK::2_IK)*WINDOW)+SUM(LOCAL(2_IK::2_IK)*DELTA(2_IK::2_IK)*WINDOW)
-    SIN_AMP = SUM(LOCAL(2_IK::2_IK)*DELTA(1_IK::2_IK)*WINDOW)-SUM(LOCAL(1_IK::2_IK)*DELTA(2_IK::2_IK)*WINDOW)
-    COS_AMP = 1.0_RK/TOTAL*COS_AMP
-    SIN_AMP = 1.0_RK/TOTAL*SIN_AMP
-    IF (FLAG == 0_IK) THEN
-      COS_AMP = 2.0_RK*COS_AMP
-      SIN_AMP = 2.0_RK*SIN_AMP
-    END IF
-    AMP = SQRT(COS_AMP**2_IK+SIN_AMP**2_IK)
-  END SUBROUTINE AMPLITUDE_
+  module subroutine amplitude_(flag, length, total, window, sequence, frequency, cos_amp, sin_amp, amp) &
+    bind(c, name = "amplutude_")
+    integer(ik), intent(in):: flag
+    integer(ik), intent(in):: length
+    real(rk), intent(in) :: total
+    real(rk), intent(in), dimension(length) :: window
+    real(rk), intent(in), dimension(2_ik*length) :: sequence
+    real(rk), intent(in) :: frequency
+    real(rk), intent(out) :: cos_amp
+    real(rk), intent(out) :: sin_amp
+    real(rk), intent(out) :: amp
+    real(rk), dimension(2_ik*length) :: local
+    real(rk), dimension(length) :: list
+    real(rk), dimension(2_ik*length) :: delta
+    integer(ik) :: i
+    call remove_window_mean_(length, total, window, sequence, local)
+    list = two_pi*real([(i, i=1_ik, length, 1_ik)], rk)
+    delta(1_ik::2_ik) = +cos(frequency*list)
+    delta(2_ik::2_ik) = -sin(frequency*list)
+    cos_amp = sum(local(1_ik::2_ik)*delta(1_ik::2_ik)*window)+sum(local(2_ik::2_ik)*delta(2_ik::2_ik)*window)
+    sin_amp = sum(local(2_ik::2_ik)*delta(1_ik::2_ik)*window)-sum(local(1_ik::2_ik)*delta(2_ik::2_ik)*window)
+    cos_amp = 1.0_rk/total*cos_amp
+    sin_amp = 1.0_rk/total*sin_amp
+    if (flag == 0_ik) then
+      cos_amp = 2.0_rk*cos_amp
+      sin_amp = 2.0_rk*sin_amp
+    end if
+    amp = sqrt(cos_amp**2_ik+sin_amp**2_ik)
+  end subroutine amplitude_
   ! ############################################################################################################################# !
-  ! SIGNAL DECOMPOSITION
-  ! (SUBROUTINE) DECOMPOSITION_(<FLAG>, <RANGE_MIN>, <RANGE_MAX>, <METHOD>, <MODE>, <LENGTH>, <PAD>, <TOTAL>, <WINDOW>, <SEQUENCE>, <LOOP>, <FREQUENCY>, <COS_AMP>, <SIN_AMP>)
-  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
-  ! <RANGE_MIN>            -- (IN)     (MIN) FREQUENCY RANGE (RK)
-  ! <RANGE_MAX>            -- (IN)     (MAX) FREQUENCY RANGE (RK)
-  ! <METHOD>               -- (IN)     FREQUENCY APPROXIMATION METHOD (IK), FREQUENCY_FFT = 0_IK, FREQUENCY_FFRFT = 1_IK, FREQUECY_PARABOLA = 2_IK
-  ! <MODE>                 -- (IN)     DECOMPOSTION MODE (IK), <MODE> = DECOMPOSITION_SUBTRACT = 0 OR <MODE> = DECOMPOSITION_PEAK = 1
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
-  ! <PAD>                  -- (IN)     PADDED SEQUENCE LENGTH (IK), IF PAD > LENGTH, INPUT SEQUENCE IS PADDED
-  ! <TOTAL>                -- (IN)     SUM(WINDOW) (RK)
-  ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <LOOP>                 -- (IN)     NUMBER OF ITERATIONS/PEAKS (IK)
-  ! <FREQUENCY>            -- (OUT)    FREQUENCY ARRAY (RK ARRAY OF LENGTH = <LOOP>)
-  ! <COS_AMP>              -- (OUT)    COS AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
-  ! <SIN_AMP>              -- (OUT)    SIN AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
+  ! signal decomposition
+  ! (subroutine) decomposition_(<flag>, <range_min>, <range_max>, <method>, <mode>, <length>, <pad>, <total>, <window>, <sequence>, <loop>, <frequency>, <cos_amp>, <sin_amp>)
+  ! <flag>                 -- (in)     complex flag (ik), 0/1 for real/complex input sequence
+  ! <range_min>            -- (in)     (min) frequency range (rk)
+  ! <range_max>            -- (in)     (max) frequency range (rk)
+  ! <method>               -- (in)     frequency approximation method (ik), frequency_fft = 0_ik, frequency_ffrft = 1_ik, frequecy_parabola = 2_ik
+  ! <mode>                 -- (in)     decompostion mode (ik), <mode> = decomposition_subtract = 0 or <mode> = decomposition_peak = 1
+  ! <length>               -- (in)     sequence length (ik)
+  ! <pad>                  -- (in)     padded sequence length (ik), if pad > length, input sequence is padded
+  ! <total>                -- (in)     sum(window) (rk)
+  ! <window>               -- (in)     window array (rk array of length = <length>)
+  ! <sequence>             -- (in)     input sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
+  ! <loop>                 -- (in)     number of iterations/peaks (ik)
+  ! <frequency>            -- (out)    frequency array (rk array of length = <loop>)
+  ! <cos_amp>              -- (out)    cos amplitude array (rk array of length = <loop>)
+  ! <sin_amp>              -- (out)    sin amplitude array (rk array of length = <loop>)
   ! void    decomposition_(int* flag, double* range_min, double* range_max, int* method, int* mode, int* length, int* pad, double* total, double* window, double* sequence, int* loop, double* frequency, double* cos_amp, double* sin_amp) ;
-  MODULE SUBROUTINE DECOMPOSITION_(FLAG, RANGE_MIN, RANGE_MAX, &
-    METHOD, MODE, LENGTH, PAD, TOTAL, WINDOW, SEQUENCE, LOOP, FREQUENCY, COS_AMP, SIN_AMP) &
-    BIND(C, NAME = "decomposition_")
-    INTEGER(IK), INTENT(IN):: FLAG
-    REAL(RK), INTENT(IN) :: RANGE_MIN
-    REAL(RK), INTENT(IN) :: RANGE_MAX
-    INTEGER(IK), INTENT(IN):: METHOD
-    INTEGER(IK), INTENT(IN):: MODE
-    INTEGER(IK), INTENT(IN):: LENGTH
-    INTEGER(IK), INTENT(IN):: PAD
-    REAL(RK), INTENT(IN) :: TOTAL
-    REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: WINDOW
-    REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
-    INTEGER(IK), INTENT(IN) :: LOOP
-    REAL(RK), DIMENSION(LOOP), INTENT(OUT) :: FREQUENCY
-    REAL(RK), DIMENSION(LOOP), INTENT(OUT) :: COS_AMP
-    REAL(RK), DIMENSION(LOOP), INTENT(OUT) :: SIN_AMP
-    REAL(RK), DIMENSION(2_IK*LENGTH) :: LOCAL
-    INTEGER(IK) :: I
-    REAL(RK), DIMENSION(LENGTH) :: LIST
-    REAL(RK), DIMENSION(2_IK*LENGTH) :: DELTA
-    INTEGER(IK), DIMENSION(LOOP) :: ORDERING
-    REAL(RK), DIMENSION(LOOP) :: AMPLITUDE
-    LOCAL = SEQUENCE
-    LIST = TWO_PI*REAL([(I, I=1_IK, LENGTH, 1_IK)], RK)
-    DO I = 1_IK, LOOP, 1_IK
-      IF (MODE == DECOMPOSITION_SUBTRACT) THEN
-        FREQUENCY(I) = FREQUENCY_(FLAG, RANGE_MIN, RANGE_MAX, 0_IK, METHOD, LENGTH, PAD, TOTAL, WINDOW, LOCAL)
-      ELSE
-        FREQUENCY(I) = FREQUENCY_(FLAG, RANGE_MIN, RANGE_MAX, I, METHOD, LENGTH, PAD, TOTAL, WINDOW, SEQUENCE)
-      END IF
-      DELTA(1_IK::2_IK) = +COS(FREQUENCY(I)*LIST)
-      DELTA(2_IK::2_IK) = -SIN(FREQUENCY(I)*LIST)
-      COS_AMP(I) = SUM(LOCAL(1_IK::2_IK)*DELTA(1_IK::2_IK)*WINDOW)+SUM(LOCAL(2_IK::2_IK)*DELTA(2_IK::2_IK)*WINDOW)
-      SIN_AMP(I) = SUM(LOCAL(2_IK::2_IK)*DELTA(1_IK::2_IK)*WINDOW)-SUM(LOCAL(1_IK::2_IK)*DELTA(2_IK::2_IK)*WINDOW)
-      COS_AMP(I) = 1.0_RK/TOTAL*COS_AMP(I)
-      SIN_AMP(I) = 1.0_RK/TOTAL*SIN_AMP(I)
-      LOCAL(1_IK::2_IK) = LOCAL(1_IK::2_IK)-COS_AMP(I)*DELTA(1_IK::2_IK)+SIN_AMP(I)*DELTA(2_IK::2_IK)
-      LOCAL(2_IK::2_IK) = LOCAL(2_IK::2_IK)-COS_AMP(I)*DELTA(2_IK::2_IK)-SIN_AMP(I)*DELTA(1_IK::2_IK)
-    END DO
-    IF (FLAG == 0_IK) THEN
-      COS_AMP = 2.0_RK*COS_AMP
-      SIN_AMP = 2.0_RK*SIN_AMP
-    END IF
-    AMPLITUDE = COS_AMP**2_IK+SIN_AMP**2_IK
-    DO I = 1_IK, LOOP, 1_IK
-      ORDERING(I) = __MAXLOC__(AMPLITUDE, 1_IK)
-      AMPLITUDE(ORDERING(I)) = 0.0_RK
-    END DO
-    FREQUENCY = FREQUENCY([ORDERING])
-    COS_AMP = COS_AMP([ORDERING])
-    SIN_AMP = SIN_AMP([ORDERING])
-  END SUBROUTINE DECOMPOSITION_
+  module subroutine decomposition_(flag, range_min, range_max, &
+    method, mode, length, pad, total, window, sequence, loop, frequency, cos_amp, sin_amp) &
+    bind(c, name = "decomposition_")
+    integer(ik), intent(in):: flag
+    real(rk), intent(in) :: range_min
+    real(rk), intent(in) :: range_max
+    integer(ik), intent(in):: method
+    integer(ik), intent(in):: mode
+    integer(ik), intent(in):: length
+    integer(ik), intent(in):: pad
+    real(rk), intent(in) :: total
+    real(rk), intent(in), dimension(length) :: window
+    real(rk), intent(in), dimension(2_ik*length) :: sequence
+    integer(ik), intent(in) :: loop
+    real(rk), dimension(loop), intent(out) :: frequency
+    real(rk), dimension(loop), intent(out) :: cos_amp
+    real(rk), dimension(loop), intent(out) :: sin_amp
+    real(rk), dimension(2_ik*length) :: local
+    integer(ik) :: i
+    real(rk), dimension(length) :: list
+    real(rk), dimension(2_ik*length) :: delta
+    integer(ik), dimension(loop) :: ordering
+    real(rk), dimension(loop) :: amplitude
+    local = sequence
+    list = two_pi*real([(i, i=1_ik, length, 1_ik)], rk)
+    do i = 1_ik, loop, 1_ik
+      if (mode == decomposition_subtract) then
+        frequency(i) = frequency_(flag, range_min, range_max, 0_ik, method, length, pad, total, window, local)
+      else
+        frequency(i) = frequency_(flag, range_min, range_max, i, method, length, pad, total, window, sequence)
+      end if
+      delta(1_ik::2_ik) = +cos(frequency(i)*list)
+      delta(2_ik::2_ik) = -sin(frequency(i)*list)
+      cos_amp(i) = sum(local(1_ik::2_ik)*delta(1_ik::2_ik)*window)+sum(local(2_ik::2_ik)*delta(2_ik::2_ik)*window)
+      sin_amp(i) = sum(local(2_ik::2_ik)*delta(1_ik::2_ik)*window)-sum(local(1_ik::2_ik)*delta(2_ik::2_ik)*window)
+      cos_amp(i) = 1.0_rk/total*cos_amp(i)
+      sin_amp(i) = 1.0_rk/total*sin_amp(i)
+      local(1_ik::2_ik) = local(1_ik::2_ik)-cos_amp(i)*delta(1_ik::2_ik)+sin_amp(i)*delta(2_ik::2_ik)
+      local(2_ik::2_ik) = local(2_ik::2_ik)-cos_amp(i)*delta(2_ik::2_ik)-sin_amp(i)*delta(1_ik::2_ik)
+    end do
+    if (flag == 0_ik) then
+      cos_amp = 2.0_rk*cos_amp
+      sin_amp = 2.0_rk*sin_amp
+    end if
+    amplitude = cos_amp**2_ik+sin_amp**2_ik
+    do i = 1_ik, loop, 1_ik
+      ordering(i) = __maxloc__(amplitude, 1_ik)
+      amplitude(ordering(i)) = 0.0_rk
+    end do
+    frequency = frequency([ordering])
+    cos_amp = cos_amp([ordering])
+    sin_amp = sin_amp([ordering])
+  end subroutine decomposition_
   ! ############################################################################################################################# !
-  ! SIGNAL DECOMPOSITION (MEMORIZATION)
-  ! (SUBROUTINE) DECOMPOSITION__(<FLAG>, <RANGE_MIN>, <RANGE_MAX>, <METHOD>, <MODE>, <LENGTH>, <PAD>, <TOTAL>, <WINDOW>, <SEQUENCE>, <LOOP>, <FREQUENCY>, <COS_AMP>, <SIN_AMP>)
-  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
-  ! <RANGE_MIN>            -- (IN)     (MIN) FREQUENCY RANGE (RK)
-  ! <RANGE_MAX>            -- (IN)     (MAX) FREQUENCY RANGE (RK)
-  ! <METHOD>               -- (IN)     FREQUENCY APPROXIMATION METHOD (IK), FREQUENCY_FFT = 0_IK, FREQUENCY_FFRFT = 1_IK, FREQUECY_PARABOLA = 2_IK
-  ! <MODE>                 -- (IN)     DECOMPOSTION MODE (IK), <MODE> = DECOMPOSITION_SUBTRACT = 0 OR <MODE> = DECOMPOSITION_PEAK = 1
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
-  ! <PAD>                  -- (IN)     PADDED SEQUENCE LENGTH (IK), IF PAD > LENGTH, INPUT SEQUENCE IS PADDED
-  ! <TOTAL>                -- (IN)     SUM(WINDOW) (RK)
-  ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <LOOP>                 -- (IN)     NUMBER OF ITERATIONS/PEAKS (IK)
-  ! <FREQUENCY>            -- (OUT)    FREQUENCY ARRAY (RK ARRAY OF LENGTH = <LOOP>)
-  ! <COS_AMP>              -- (OUT)    COS AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
-  ! <SIN_AMP>              -- (OUT)    SIN AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
+  ! signal decomposition (memorization)
+  ! (subroutine) decomposition__(<flag>, <range_min>, <range_max>, <method>, <mode>, <length>, <pad>, <total>, <window>, <sequence>, <loop>, <frequency>, <cos_amp>, <sin_amp>)
+  ! <flag>                 -- (in)     complex flag (ik), 0/1 for real/complex input sequence
+  ! <range_min>            -- (in)     (min) frequency range (rk)
+  ! <range_max>            -- (in)     (max) frequency range (rk)
+  ! <method>               -- (in)     frequency approximation method (ik), frequency_fft = 0_ik, frequency_ffrft = 1_ik, frequecy_parabola = 2_ik
+  ! <mode>                 -- (in)     decompostion mode (ik), <mode> = decomposition_subtract = 0 or <mode> = decomposition_peak = 1
+  ! <length>               -- (in)     sequence length (ik)
+  ! <pad>                  -- (in)     padded sequence length (ik), if pad > length, input sequence is padded
+  ! <total>                -- (in)     sum(window) (rk)
+  ! <window>               -- (in)     window array (rk array of length = <length>)
+  ! <sequence>             -- (in)     input sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
+  ! <loop>                 -- (in)     number of iterations/peaks (ik)
+  ! <frequency>            -- (out)    frequency array (rk array of length = <loop>)
+  ! <cos_amp>              -- (out)    cos amplitude array (rk array of length = <loop>)
+  ! <sin_amp>              -- (out)    sin amplitude array (rk array of length = <loop>)
   ! void    decomposition__(int* flag, double* range_min, double* range_max, int* method, int* mode, int* length, int* pad, double* total, double* window, double* sequence, int* loop, double* frequency, double* cos_amp, double* sin_amp) ;
-  MODULE SUBROUTINE DECOMPOSITION__(FLAG, RANGE_MIN, RANGE_MAX, &
-    METHOD, MODE, LENGTH, PAD, TOTAL, WINDOW, SEQUENCE, LOOP, FREQUENCY, COS_AMP, SIN_AMP) &
-    BIND(C, NAME = "decomposition__")
-    INTEGER(IK), INTENT(IN):: FLAG
-    REAL(RK), INTENT(IN) :: RANGE_MIN
-    REAL(RK), INTENT(IN) :: RANGE_MAX
-    INTEGER(IK), INTENT(IN):: METHOD
-    INTEGER(IK), INTENT(IN):: MODE
-    INTEGER(IK), INTENT(IN):: LENGTH
-    INTEGER(IK), INTENT(IN):: PAD
-    REAL(RK), INTENT(IN) :: TOTAL
-    REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: WINDOW
-    REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
-    INTEGER(IK), INTENT(IN) :: LOOP
-    REAL(RK), DIMENSION(LOOP), INTENT(OUT) :: FREQUENCY
-    REAL(RK), DIMENSION(LOOP), INTENT(OUT) :: COS_AMP
-    REAL(RK), DIMENSION(LOOP), INTENT(OUT) :: SIN_AMP
-    REAL(RK), DIMENSION(2_IK*LENGTH) :: LOCAL
-    INTEGER(IK) :: I
-    REAL(RK), DIMENSION(LENGTH) :: LIST
-    REAL(RK), DIMENSION(2_IK*LENGTH) :: DELTA
-    INTEGER(IK), DIMENSION(LOOP) :: ORDERING
-    REAL(RK), DIMENSION(LOOP) :: AMPLITUDE
-    LOCAL = SEQUENCE
-    LIST = TWO_PI*REAL([(I, I=1_IK, LENGTH, 1_IK)], RK)
-    DO I = 1_IK, LOOP, 1_IK
-      IF (MODE == DECOMPOSITION_SUBTRACT) THEN
-        FREQUENCY(I) = FREQUENCY__(FLAG, RANGE_MIN, RANGE_MAX, 0_IK, METHOD, LENGTH, PAD, TOTAL, WINDOW, LOCAL)
-      ELSE
-        FREQUENCY(I) = FREQUENCY__(FLAG, RANGE_MIN, RANGE_MAX, I, METHOD, LENGTH, PAD, TOTAL, WINDOW, SEQUENCE)
-      END IF
-      DELTA(1_IK::2_IK) = +COS(FREQUENCY(I)*LIST)
-      DELTA(2_IK::2_IK) = -SIN(FREQUENCY(I)*LIST)
-      COS_AMP(I) = SUM(LOCAL(1_IK::2_IK)*DELTA(1_IK::2_IK)*WINDOW)+SUM(LOCAL(2_IK::2_IK)*DELTA(2_IK::2_IK)*WINDOW)
-      SIN_AMP(I) = SUM(LOCAL(2_IK::2_IK)*DELTA(1_IK::2_IK)*WINDOW)-SUM(LOCAL(1_IK::2_IK)*DELTA(2_IK::2_IK)*WINDOW)
-      COS_AMP(I) = 1.0_RK/TOTAL*COS_AMP(I)
-      SIN_AMP(I) = 1.0_RK/TOTAL*SIN_AMP(I)
-      LOCAL(1_IK::2_IK) = LOCAL(1_IK::2_IK)-COS_AMP(I)*DELTA(1_IK::2_IK)+SIN_AMP(I)*DELTA(2_IK::2_IK)
-      LOCAL(2_IK::2_IK) = LOCAL(2_IK::2_IK)-COS_AMP(I)*DELTA(2_IK::2_IK)-SIN_AMP(I)*DELTA(1_IK::2_IK)
-    END DO
-    IF (FLAG == 0_IK) THEN
-      COS_AMP = 2.0_RK*COS_AMP
-      SIN_AMP = 2.0_RK*SIN_AMP
-    END IF
-    AMPLITUDE = COS_AMP**2_IK+SIN_AMP**2_IK
-    DO I = 1_IK, LOOP, 1_IK
-      ORDERING(I) = __MAXLOC__(AMPLITUDE, 1_IK)
-      AMPLITUDE(ORDERING(I)) = 0.0_RK
-    END DO
-    FREQUENCY = FREQUENCY([ORDERING])
-    COS_AMP = COS_AMP([ORDERING])
-    SIN_AMP = SIN_AMP([ORDERING])
-  END SUBROUTINE DECOMPOSITION__
+  module subroutine decomposition__(flag, range_min, range_max, &
+    method, mode, length, pad, total, window, sequence, loop, frequency, cos_amp, sin_amp) &
+    bind(c, name = "decomposition__")
+    integer(ik), intent(in):: flag
+    real(rk), intent(in) :: range_min
+    real(rk), intent(in) :: range_max
+    integer(ik), intent(in):: method
+    integer(ik), intent(in):: mode
+    integer(ik), intent(in):: length
+    integer(ik), intent(in):: pad
+    real(rk), intent(in) :: total
+    real(rk), intent(in), dimension(length) :: window
+    real(rk), intent(in), dimension(2_ik*length) :: sequence
+    integer(ik), intent(in) :: loop
+    real(rk), dimension(loop), intent(out) :: frequency
+    real(rk), dimension(loop), intent(out) :: cos_amp
+    real(rk), dimension(loop), intent(out) :: sin_amp
+    real(rk), dimension(2_ik*length) :: local
+    integer(ik) :: i
+    real(rk), dimension(length) :: list
+    real(rk), dimension(2_ik*length) :: delta
+    integer(ik), dimension(loop) :: ordering
+    real(rk), dimension(loop) :: amplitude
+    local = sequence
+    list = two_pi*real([(i, i=1_ik, length, 1_ik)], rk)
+    do i = 1_ik, loop, 1_ik
+      if (mode == decomposition_subtract) then
+        frequency(i) = frequency__(flag, range_min, range_max, 0_ik, method, length, pad, total, window, local)
+      else
+        frequency(i) = frequency__(flag, range_min, range_max, i, method, length, pad, total, window, sequence)
+      end if
+      delta(1_ik::2_ik) = +cos(frequency(i)*list)
+      delta(2_ik::2_ik) = -sin(frequency(i)*list)
+      cos_amp(i) = sum(local(1_ik::2_ik)*delta(1_ik::2_ik)*window)+sum(local(2_ik::2_ik)*delta(2_ik::2_ik)*window)
+      sin_amp(i) = sum(local(2_ik::2_ik)*delta(1_ik::2_ik)*window)-sum(local(1_ik::2_ik)*delta(2_ik::2_ik)*window)
+      cos_amp(i) = 1.0_rk/total*cos_amp(i)
+      sin_amp(i) = 1.0_rk/total*sin_amp(i)
+      local(1_ik::2_ik) = local(1_ik::2_ik)-cos_amp(i)*delta(1_ik::2_ik)+sin_amp(i)*delta(2_ik::2_ik)
+      local(2_ik::2_ik) = local(2_ik::2_ik)-cos_amp(i)*delta(2_ik::2_ik)-sin_amp(i)*delta(1_ik::2_ik)
+    end do
+    if (flag == 0_ik) then
+      cos_amp = 2.0_rk*cos_amp
+      sin_amp = 2.0_rk*sin_amp
+    end if
+    amplitude = cos_amp**2_ik+sin_amp**2_ik
+    do i = 1_ik, loop, 1_ik
+      ordering(i) = __maxloc__(amplitude, 1_ik)
+      amplitude(ordering(i)) = 0.0_rk
+    end do
+    frequency = frequency([ordering])
+    cos_amp = cos_amp([ordering])
+    sin_amp = sin_amp([ordering])
+  end subroutine decomposition__
   ! ############################################################################################################################# !
-  ! FREQUENCY LIST (PERFORM DECOMPOSITION AND RETURN LIST OF FREQUENCIES)
-  ! (SUBROUTINE) FREQUENCY_LIST_(<FLAG>, <RANGE_MIN>, <RANGE_MAX>, <METHOD>, <MODE>, <LENGTH>, <PAD>, <TOTAL>, <WINDOW>, <SEQUENCE>, <LOOP>, <FREQUENCY>, <COS_AMP>, <SIN_AMP>)
-  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
-  ! <RANGE_MIN>            -- (IN)     (MIN) FREQUENCY RANGE (RK)
-  ! <RANGE_MAX>            -- (IN)     (MAX) FREQUENCY RANGE (RK)
-  ! <METHOD>               -- (IN)     FREQUENCY APPROXIMATION METHOD (IK), FREQUENCY_FFT = 0_IK, FREQUENCY_FFRFT = 1_IK, FREQUECY_PARABOLA = 2_IK
-  ! <MODE>                 -- (IN)     DECOMPOSTION MODE (IK), <MODE> = DECOMPOSITION_SUBTRACT = 0 OR <MODE> = DECOMPOSITION_PEAK = 1
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
-  ! <PAD>                  -- (IN)     PADDED SEQUENCE LENGTH (IK), IF PAD > LENGTH, INPUT SEQUENCE IS PADDED
-  ! <TOTAL>                -- (IN)     SUM(WINDOW) (RK)
-  ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <LOOP>                 -- (IN)     NUMBER OF ITERATIONS/PEAKS (IK)
-  ! <FREQUENCY>            -- (OUT)    FREQUENCY ARRAY (RK ARRAY OF LENGTH = <LOOP>)
+  ! frequency list (perform decomposition and return list of frequencies)
+  ! (subroutine) frequency_list_(<flag>, <range_min>, <range_max>, <method>, <mode>, <length>, <pad>, <total>, <window>, <sequence>, <loop>, <frequency>, <cos_amp>, <sin_amp>)
+  ! <flag>                 -- (in)     complex flag (ik), 0/1 for real/complex input sequence
+  ! <range_min>            -- (in)     (min) frequency range (rk)
+  ! <range_max>            -- (in)     (max) frequency range (rk)
+  ! <method>               -- (in)     frequency approximation method (ik), frequency_fft = 0_ik, frequency_ffrft = 1_ik, frequecy_parabola = 2_ik
+  ! <mode>                 -- (in)     decompostion mode (ik), <mode> = decomposition_subtract = 0 or <mode> = decomposition_peak = 1
+  ! <length>               -- (in)     sequence length (ik)
+  ! <pad>                  -- (in)     padded sequence length (ik), if pad > length, input sequence is padded
+  ! <total>                -- (in)     sum(window) (rk)
+  ! <window>               -- (in)     window array (rk array of length = <length>)
+  ! <sequence>             -- (in)     input sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
+  ! <loop>                 -- (in)     number of iterations/peaks (ik)
+  ! <frequency>            -- (out)    frequency array (rk array of length = <loop>)
   ! void    frequency_list_(int* flag, double* range_min, double* range_max, int* method, int* mode, int* length, int* pad, double* total, double* window, double* sequence, int* loop, double* frequency) ;
-  MODULE SUBROUTINE FREQUENCY_LIST_(FLAG, RANGE_MIN, RANGE_MAX, &
-    METHOD, MODE, LENGTH, PAD, TOTAL, WINDOW, SEQUENCE, LOOP, FREQUENCY) &
-    BIND(C, NAME = "frequency_list_")
-    INTEGER(IK), INTENT(IN):: FLAG
-    REAL(RK), INTENT(IN) :: RANGE_MIN
-    REAL(RK), INTENT(IN) :: RANGE_MAX
-    INTEGER(IK), INTENT(IN):: METHOD
-    INTEGER(IK), INTENT(IN):: MODE
-    INTEGER(IK), INTENT(IN):: LENGTH
-    INTEGER(IK), INTENT(IN):: PAD
-    REAL(RK), INTENT(IN) :: TOTAL
-    REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: WINDOW
-    REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
-    INTEGER(IK), INTENT(IN) :: LOOP
-    REAL(RK), DIMENSION(LOOP), INTENT(OUT) :: FREQUENCY
-    REAL(RK), DIMENSION(LOOP) :: COS_AMP
-    REAL(RK), DIMENSION(LOOP) :: SIN_AMP
-    CALL DECOMPOSITION_(FLAG, RANGE_MIN, RANGE_MAX, &
-    METHOD, MODE, LENGTH, PAD, TOTAL, WINDOW, SEQUENCE, LOOP, FREQUENCY, COS_AMP, SIN_AMP)
-  END SUBROUTINE FREQUENCY_LIST_
+  module subroutine frequency_list_(flag, range_min, range_max, &
+    method, mode, length, pad, total, window, sequence, loop, frequency) &
+    bind(c, name = "frequency_list_")
+    integer(ik), intent(in):: flag
+    real(rk), intent(in) :: range_min
+    real(rk), intent(in) :: range_max
+    integer(ik), intent(in):: method
+    integer(ik), intent(in):: mode
+    integer(ik), intent(in):: length
+    integer(ik), intent(in):: pad
+    real(rk), intent(in) :: total
+    real(rk), intent(in), dimension(length) :: window
+    real(rk), intent(in), dimension(2_ik*length) :: sequence
+    integer(ik), intent(in) :: loop
+    real(rk), dimension(loop), intent(out) :: frequency
+    real(rk), dimension(loop) :: cos_amp
+    real(rk), dimension(loop) :: sin_amp
+    call decomposition_(flag, range_min, range_max, &
+    method, mode, length, pad, total, window, sequence, loop, frequency, cos_amp, sin_amp)
+  end subroutine frequency_list_
   ! ############################################################################################################################# !
-  ! FREQUENCY LIST (PERFORM DECOMPOSITION AND RETURN LIST OF FREQUENCIES) (MEMORIZATION)
-  ! (SUBROUTINE) FREQUENCY_LIST__(<FLAG>, <RANGE_MIN>, <RANGE_MAX>, <METHOD>, <MODE>, <LENGTH>, <PAD>, <TOTAL>, <WINDOW>, <SEQUENCE>, <LOOP>, <FREQUENCY>, <COS_AMP>, <SIN_AMP>)
-  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
-  ! <RANGE_MIN>            -- (IN)     (MIN) FREQUENCY RANGE (RK)
-  ! <RANGE_MAX>            -- (IN)     (MAX) FREQUENCY RANGE (RK)
-  ! <METHOD>               -- (IN)     FREQUENCY APPROXIMATION METHOD (IK), FREQUENCY_FFT = 0_IK, FREQUENCY_FFRFT = 1_IK, FREQUECY_PARABOLA = 2_IK
-  ! <MODE>                 -- (IN)     DECOMPOSTION MODE (IK), <MODE> = DECOMPOSITION_SUBTRACT = 0 OR <MODE> = DECOMPOSITION_PEAK = 1
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
-  ! <PAD>                  -- (IN)     PADDED SEQUENCE LENGTH (IK), IF PAD > LENGTH, INPUT SEQUENCE IS PADDED
-  ! <TOTAL>                -- (IN)     SUM(WINDOW) (RK)
-  ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <LOOP>                 -- (IN)     NUMBER OF ITERATIONS/PEAKS (IK)
-  ! <FREQUENCY>            -- (OUT)    FREQUENCY ARRAY (RK ARRAY OF LENGTH = <LOOP>)
+  ! frequency list (perform decomposition and return list of frequencies) (memorization)
+  ! (subroutine) frequency_list__(<flag>, <range_min>, <range_max>, <method>, <mode>, <length>, <pad>, <total>, <window>, <sequence>, <loop>, <frequency>, <cos_amp>, <sin_amp>)
+  ! <flag>                 -- (in)     complex flag (ik), 0/1 for real/complex input sequence
+  ! <range_min>            -- (in)     (min) frequency range (rk)
+  ! <range_max>            -- (in)     (max) frequency range (rk)
+  ! <method>               -- (in)     frequency approximation method (ik), frequency_fft = 0_ik, frequency_ffrft = 1_ik, frequecy_parabola = 2_ik
+  ! <mode>                 -- (in)     decompostion mode (ik), <mode> = decomposition_subtract = 0 or <mode> = decomposition_peak = 1
+  ! <length>               -- (in)     sequence length (ik)
+  ! <pad>                  -- (in)     padded sequence length (ik), if pad > length, input sequence is padded
+  ! <total>                -- (in)     sum(window) (rk)
+  ! <window>               -- (in)     window array (rk array of length = <length>)
+  ! <sequence>             -- (in)     input sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
+  ! <loop>                 -- (in)     number of iterations/peaks (ik)
+  ! <frequency>            -- (out)    frequency array (rk array of length = <loop>)
   ! void    frequency_list__(int* flag, double* range_min, double* range_max, int* method, int* mode, int* length, int* pad, double* total, double* window, double* sequence, int* loop, double* frequency) ;
-  MODULE SUBROUTINE FREQUENCY_LIST__(FLAG, RANGE_MIN, RANGE_MAX, &
-    METHOD, MODE, LENGTH, PAD, TOTAL, WINDOW, SEQUENCE, LOOP, FREQUENCY) &
-    BIND(C, NAME = "frequency_list__")
-    INTEGER(IK), INTENT(IN):: FLAG
-    REAL(RK), INTENT(IN) :: RANGE_MIN
-    REAL(RK), INTENT(IN) :: RANGE_MAX
-    INTEGER(IK), INTENT(IN):: METHOD
-    INTEGER(IK), INTENT(IN):: MODE
-    INTEGER(IK), INTENT(IN):: LENGTH
-    INTEGER(IK), INTENT(IN):: PAD
-    REAL(RK), INTENT(IN) :: TOTAL
-    REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: WINDOW
-    REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
-    INTEGER(IK), INTENT(IN) :: LOOP
-    REAL(RK), DIMENSION(LOOP), INTENT(OUT) :: FREQUENCY
-    REAL(RK), DIMENSION(LOOP) :: COS_AMP
-    REAL(RK), DIMENSION(LOOP) :: SIN_AMP
-    CALL DECOMPOSITION__(FLAG, RANGE_MIN, RANGE_MAX, &
-    METHOD, MODE, LENGTH, PAD, TOTAL, WINDOW, SEQUENCE, LOOP, FREQUENCY, COS_AMP, SIN_AMP)
-  END SUBROUTINE FREQUENCY_LIST__
+  module subroutine frequency_list__(flag, range_min, range_max, &
+    method, mode, length, pad, total, window, sequence, loop, frequency) &
+    bind(c, name = "frequency_list__")
+    integer(ik), intent(in):: flag
+    real(rk), intent(in) :: range_min
+    real(rk), intent(in) :: range_max
+    integer(ik), intent(in):: method
+    integer(ik), intent(in):: mode
+    integer(ik), intent(in):: length
+    integer(ik), intent(in):: pad
+    real(rk), intent(in) :: total
+    real(rk), intent(in), dimension(length) :: window
+    real(rk), intent(in), dimension(2_ik*length) :: sequence
+    integer(ik), intent(in) :: loop
+    real(rk), dimension(loop), intent(out) :: frequency
+    real(rk), dimension(loop) :: cos_amp
+    real(rk), dimension(loop) :: sin_amp
+    call decomposition__(flag, range_min, range_max, &
+    method, mode, length, pad, total, window, sequence, loop, frequency, cos_amp, sin_amp)
+  end subroutine frequency_list__
   ! ############################################################################################################################# !
-  ! AMPLITUDE LIST (COMPUTE AMPLITUDES FOR LIST OF GIVEN FREQUENCIES)
-  ! (SUBROUTINE) AMPLITUDE_LIST_(<FLAG>, <LENGTH>, <TOTAL>, <WINDOW>, <SEQUENCE>, <LOOP>, <FREQUENCY>, <COS_AMP>, <SIN_AMP>)
-  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
-  ! <TOTAL>                -- (IN)     SUM(WINDOW) (RK)
-  ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <SEQUENCE>             -- (IN)     INPUT SEQUENCE (RK ARRAY OF LENGTH = 2_IK*<LENGTH>), <SEQUENCE> = [..., SR_I, SI_I, ...]
-  ! <LOOP>                 -- (IN)     NUMBER OF ITERATIONS (IK)
-  ! <FREQUENCY>            -- (IN)     FREQUENCY ARRAY (RK ARRAY OF LENGTH = <LOOP>)
-  ! <COS_AMP>              -- (OUT)    COS AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
-  ! <SIN_AMP>              -- (OUT)    SIN AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
+  ! amplitude list (compute amplitudes for list of given frequencies)
+  ! (subroutine) amplitude_list_(<flag>, <length>, <total>, <window>, <sequence>, <loop>, <frequency>, <cos_amp>, <sin_amp>)
+  ! <flag>                 -- (in)     complex flag (ik), 0/1 for real/complex input sequence
+  ! <length>               -- (in)     sequence length (ik)
+  ! <total>                -- (in)     sum(window) (rk)
+  ! <window>               -- (in)     window array (rk array of length = <length>)
+  ! <sequence>             -- (in)     input sequence (rk array of length = 2_ik*<length>), <sequence> = [..., sr_i, si_i, ...]
+  ! <loop>                 -- (in)     number of iterations (ik)
+  ! <frequency>            -- (in)     frequency array (rk array of length = <loop>)
+  ! <cos_amp>              -- (out)    cos amplitude array (rk array of length = <loop>)
+  ! <sin_amp>              -- (out)    sin amplitude array (rk array of length = <loop>)
   ! void    amplitude_list_(int* flag, int* length, double* total, double* window, double* sequence, int* loop, double* frequency, double* cos_amp, double* sin_amp) ;
-  MODULE SUBROUTINE AMPLITUDE_LIST_(FLAG, LENGTH, TOTAL, WINDOW, SEQUENCE, LOOP, FREQUENCY, COS_AMP, SIN_AMP) &
-    BIND(C, NAME = "amplitude_list_")
-    INTEGER(IK), INTENT(IN):: FLAG
-    INTEGER(IK), INTENT(IN):: LENGTH
-    REAL(RK), INTENT(IN) :: TOTAL
-    REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: WINDOW
-    REAL(RK), INTENT(IN), DIMENSION(2_IK*LENGTH) :: SEQUENCE
-    INTEGER(IK), INTENT(IN) :: LOOP
-    REAL(RK), DIMENSION(LOOP), INTENT(IN) :: FREQUENCY
-    REAL(RK), DIMENSION(LOOP), INTENT(OUT) :: COS_AMP
-    REAL(RK), DIMENSION(LOOP), INTENT(OUT) :: SIN_AMP
-    INTEGER(IK) :: I
-    REAL(RK), DIMENSION(2_IK*LENGTH) :: LOCAL
-    REAL(RK), DIMENSION(LENGTH) :: LIST
-    REAL(RK), DIMENSION(2_IK*LENGTH) :: DELTA
-    CALL REMOVE_WINDOW_MEAN_(LENGTH, TOTAL, WINDOW, SEQUENCE, LOCAL)
-    LIST = TWO_PI*REAL([(I, I=1_IK, LENGTH, 1_IK)], RK)
-    DO I = 1_IK, LOOP, 1_IK
-      DELTA(1_IK::2_IK) = +COS(FREQUENCY(I)*LIST)
-      DELTA(2_IK::2_IK) = -SIN(FREQUENCY(I)*LIST)
-      COS_AMP(I) = SUM(LOCAL(1_IK::2_IK)*DELTA(1_IK::2_IK)*WINDOW)+SUM(LOCAL(2_IK::2_IK)*DELTA(2_IK::2_IK)*WINDOW)
-      SIN_AMP(I) = SUM(LOCAL(2_IK::2_IK)*DELTA(1_IK::2_IK)*WINDOW)-SUM(LOCAL(1_IK::2_IK)*DELTA(2_IK::2_IK)*WINDOW)
-      COS_AMP(I) = 1.0_RK/REAL(LENGTH, RK)*COS_AMP(I)
-      SIN_AMP(I) = 1.0_RK/REAL(LENGTH, RK)*SIN_AMP(I)
-      LOCAL(1_IK::2_IK) = LOCAL(1_IK::2_IK)-COS_AMP(I)*DELTA(1_IK::2_IK)+SIN_AMP(I)*DELTA(2_IK::2_IK)
-      LOCAL(2_IK::2_IK) = LOCAL(2_IK::2_IK)-COS_AMP(I)*DELTA(2_IK::2_IK)-SIN_AMP(I)*DELTA(1_IK::2_IK)
-    END DO
-    IF (FLAG == 0_IK) THEN
-      COS_AMP = 2.0_RK*COS_AMP
-      SIN_AMP = 2.0_RK*SIN_AMP
-    END IF
-  END SUBROUTINE AMPLITUDE_LIST_
+  module subroutine amplitude_list_(flag, length, total, window, sequence, loop, frequency, cos_amp, sin_amp) &
+    bind(c, name = "amplitude_list_")
+    integer(ik), intent(in):: flag
+    integer(ik), intent(in):: length
+    real(rk), intent(in) :: total
+    real(rk), intent(in), dimension(length) :: window
+    real(rk), intent(in), dimension(2_ik*length) :: sequence
+    integer(ik), intent(in) :: loop
+    real(rk), dimension(loop), intent(in) :: frequency
+    real(rk), dimension(loop), intent(out) :: cos_amp
+    real(rk), dimension(loop), intent(out) :: sin_amp
+    integer(ik) :: i
+    real(rk), dimension(2_ik*length) :: local
+    real(rk), dimension(length) :: list
+    real(rk), dimension(2_ik*length) :: delta
+    call remove_window_mean_(length, total, window, sequence, local)
+    list = two_pi*real([(i, i=1_ik, length, 1_ik)], rk)
+    do i = 1_ik, loop, 1_ik
+      delta(1_ik::2_ik) = +cos(frequency(i)*list)
+      delta(2_ik::2_ik) = -sin(frequency(i)*list)
+      cos_amp(i) = sum(local(1_ik::2_ik)*delta(1_ik::2_ik)*window)+sum(local(2_ik::2_ik)*delta(2_ik::2_ik)*window)
+      sin_amp(i) = sum(local(2_ik::2_ik)*delta(1_ik::2_ik)*window)-sum(local(1_ik::2_ik)*delta(2_ik::2_ik)*window)
+      cos_amp(i) = 1.0_rk/real(length, rk)*cos_amp(i)
+      sin_amp(i) = 1.0_rk/real(length, rk)*sin_amp(i)
+      local(1_ik::2_ik) = local(1_ik::2_ik)-cos_amp(i)*delta(1_ik::2_ik)+sin_amp(i)*delta(2_ik::2_ik)
+      local(2_ik::2_ik) = local(2_ik::2_ik)-cos_amp(i)*delta(2_ik::2_ik)-sin_amp(i)*delta(1_ik::2_ik)
+    end do
+    if (flag == 0_ik) then
+      cos_amp = 2.0_rk*cos_amp
+      sin_amp = 2.0_rk*sin_amp
+    end if
+  end subroutine amplitude_list_
   ! ############################################################################################################################# !
-  ! FREQUENCY CORRECTION
-  ! (SUBROUTINE) FREQUENCY_CORRECTION_(<FLAG>, <RANGE_MIN>, <RANGE_MAX>, <METHOD>, <MODE>, <LENGTH>, <PAD>, <TOTAL>, <WINDOW>, <LOOP>, <FREQUENCY>, <COS_AMP>, <SIN_AMP>)
-  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
-  ! <RANGE_MIN>            -- (IN)     (MIN) FREQUENCY RANGE (RK)
-  ! <RANGE_MAX>            -- (IN)     (MAX) FREQUENCY RANGE (RK)
-  ! <METHOD>               -- (IN)     FREQUENCY APPROXIMATION METHOD (IK), FREQUENCY_FFT = 0_IK, FREQUENCY_FFRFT = 1_IK, FREQUECY_PARABOLA = 2_IK
-  ! <MODE>                 -- (IN)     DECOMPOSTION MODE (IK), <MODE> = DECOMPOSITION_SUBTRACT = 0 OR <MODE> = DECOMPOSITION_PEAK = 1
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
-  ! <PAD>                  -- (IN)     PADDED SEQUENCE LENGTH (IK), IF PAD > LENGTH, INPUT SEQUENCE IS PADDED
-  ! <TOTAL>                -- (IN)     SUM(WINDOW) (RK)
-  ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <LOOP>                 -- (IN)     NUMBER OF ITERATIONS/PEAKS (IK)
-  ! <FREQUENCY>            -- (INOUT)  FREQUENCY ARRAY (RK ARRAY OF LENGTH = <LOOP>)
-  ! <COS_AMP>              -- (INOUT)  COS AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
-  ! <SIN_AMP>              -- (INOUT)  SIN AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
+  ! frequency correction
+  ! (subroutine) frequency_correction_(<flag>, <range_min>, <range_max>, <method>, <mode>, <length>, <pad>, <total>, <window>, <loop>, <frequency>, <cos_amp>, <sin_amp>)
+  ! <flag>                 -- (in)     complex flag (ik), 0/1 for real/complex input sequence
+  ! <range_min>            -- (in)     (min) frequency range (rk)
+  ! <range_max>            -- (in)     (max) frequency range (rk)
+  ! <method>               -- (in)     frequency approximation method (ik), frequency_fft = 0_ik, frequency_ffrft = 1_ik, frequecy_parabola = 2_ik
+  ! <mode>                 -- (in)     decompostion mode (ik), <mode> = decomposition_subtract = 0 or <mode> = decomposition_peak = 1
+  ! <length>               -- (in)     sequence length (ik)
+  ! <pad>                  -- (in)     padded sequence length (ik), if pad > length, input sequence is padded
+  ! <total>                -- (in)     sum(window) (rk)
+  ! <window>               -- (in)     window array (rk array of length = <length>)
+  ! <loop>                 -- (in)     number of iterations/peaks (ik)
+  ! <frequency>            -- (inout)  frequency array (rk array of length = <loop>)
+  ! <cos_amp>              -- (inout)  cos amplitude array (rk array of length = <loop>)
+  ! <sin_amp>              -- (inout)  sin amplitude array (rk array of length = <loop>)
   ! void    frequency_correction_(int* flag, double* range_min, double* range_max, int* method, int* mode, int* length, int* pad, double* total, double* window, int* loop, double* frequency, double* cos_amp, double* sin_amp) ;
-  MODULE SUBROUTINE FREQUENCY_CORRECTION_(FLAG, RANGE_MIN, RANGE_MAX, &
-    METHOD, MODE, LENGTH, PAD, TOTAL, WINDOW, LOOP, FREQUENCY, COS_AMP, SIN_AMP) &
-    BIND(C, NAME = "frequency_correction_")
-    INTEGER(IK), INTENT(IN):: FLAG
-    REAL(RK), INTENT(IN) :: RANGE_MIN
-    REAL(RK), INTENT(IN) :: RANGE_MAX
-    INTEGER(IK), INTENT(IN):: METHOD
-    INTEGER(IK), INTENT(IN):: MODE
-    INTEGER(IK), INTENT(IN):: LENGTH
-    INTEGER(IK), INTENT(IN):: PAD
-    REAL(RK), INTENT(IN) :: TOTAL
-    REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: WINDOW
-    INTEGER(IK), INTENT(IN) :: LOOP
-    REAL(RK), DIMENSION(LOOP), INTENT(INOUT) :: FREQUENCY
-    REAL(RK), DIMENSION(LOOP), INTENT(INOUT) :: COS_AMP
-    REAL(RK), DIMENSION(LOOP), INTENT(INOUT) :: SIN_AMP
-    REAL(RK), DIMENSION(2_IK*LENGTH) :: SEQUENCE
-    REAL(RK), DIMENSION(LOOP) :: F, C, S
-    F = FREQUENCY
-    C = COS_AMP
-    S = SIN_AMP
-    CALL GENERATE_SIGNAL_(FLAG, LENGTH, SEQUENCE, LOOP, FREQUENCY, COS_AMP, SIN_AMP)
-    CALL DECOMPOSITION_(FLAG, RANGE_MIN, RANGE_MAX, &
-    METHOD, MODE, LENGTH, PAD, TOTAL, WINDOW, SEQUENCE, LOOP, FREQUENCY, COS_AMP, SIN_AMP)
-    FREQUENCY = 2.0_RK*F - FREQUENCY
-    COS_AMP = 2.0_RK*C - COS_AMP
-    SIN_AMP = 2.0_RK*S - SIN_AMP
-  END SUBROUTINE FREQUENCY_CORRECTION_
+  module subroutine frequency_correction_(flag, range_min, range_max, &
+    method, mode, length, pad, total, window, loop, frequency, cos_amp, sin_amp) &
+    bind(c, name = "frequency_correction_")
+    integer(ik), intent(in):: flag
+    real(rk), intent(in) :: range_min
+    real(rk), intent(in) :: range_max
+    integer(ik), intent(in):: method
+    integer(ik), intent(in):: mode
+    integer(ik), intent(in):: length
+    integer(ik), intent(in):: pad
+    real(rk), intent(in) :: total
+    real(rk), intent(in), dimension(length) :: window
+    integer(ik), intent(in) :: loop
+    real(rk), dimension(loop), intent(inout) :: frequency
+    real(rk), dimension(loop), intent(inout) :: cos_amp
+    real(rk), dimension(loop), intent(inout) :: sin_amp
+    real(rk), dimension(2_ik*length) :: sequence
+    real(rk), dimension(loop) :: f, c, s
+    f = frequency
+    c = cos_amp
+    s = sin_amp
+    call generate_signal_(flag, length, sequence, loop, frequency, cos_amp, sin_amp)
+    call decomposition_(flag, range_min, range_max, &
+    method, mode, length, pad, total, window, sequence, loop, frequency, cos_amp, sin_amp)
+    frequency = 2.0_rk*f - frequency
+    cos_amp = 2.0_rk*c - cos_amp
+    sin_amp = 2.0_rk*s - sin_amp
+  end subroutine frequency_correction_
   ! ############################################################################################################################# !
-  ! FREQUENCY CORRECTION
-  ! (SUBROUTINE) FREQUENCY_CORRECTION_(<FLAG>, <RANGE_MIN>, <RANGE_MAX>, <METHOD>, <MODE>, <LENGTH>, <PAD>, <TOTAL>, <WINDOW>, <LOOP>, <FREQUENCY>, <COS_AMP>, <SIN_AMP>)
-  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX INPUT SEQUENCE
-  ! <RANGE_MIN>            -- (IN)     (MIN) FREQUENCY RANGE (RK)
-  ! <RANGE_MAX>            -- (IN)     (MAX) FREQUENCY RANGE (RK)
-  ! <METHOD>               -- (IN)     FREQUENCY APPROXIMATION METHOD (IK), FREQUENCY_FFT = 0_IK, FREQUENCY_FFRFT = 1_IK, FREQUECY_PARABOLA = 2_IK
-  ! <MODE>                 -- (IN)     DECOMPOSTION MODE (IK), <MODE> = DECOMPOSITION_SUBTRACT = 0 OR <MODE> = DECOMPOSITION_PEAK = 1
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
-  ! <PAD>                  -- (IN)     PADDED SEQUENCE LENGTH (IK), IF PAD > LENGTH, INPUT SEQUENCE IS PADDED
-  ! <TOTAL>                -- (IN)     SUM(WINDOW) (RK)
-  ! <WINDOW>               -- (IN)     WINDOW ARRAY (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <LOOP>                 -- (IN)     NUMBER OF ITERATIONS/PEAKS (IK)
-  ! <FREQUENCY>            -- (INOUT)  FREQUENCY ARRAY (RK ARRAY OF LENGTH = <LOOP>)
-  ! <COS_AMP>              -- (INOUT)  COS AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
-  ! <SIN_AMP>              -- (INOUT)  SIN AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
+  ! frequency correction
+  ! (subroutine) frequency_correction_(<flag>, <range_min>, <range_max>, <method>, <mode>, <length>, <pad>, <total>, <window>, <loop>, <frequency>, <cos_amp>, <sin_amp>)
+  ! <flag>                 -- (in)     complex flag (ik), 0/1 for real/complex input sequence
+  ! <range_min>            -- (in)     (min) frequency range (rk)
+  ! <range_max>            -- (in)     (max) frequency range (rk)
+  ! <method>               -- (in)     frequency approximation method (ik), frequency_fft = 0_ik, frequency_ffrft = 1_ik, frequecy_parabola = 2_ik
+  ! <mode>                 -- (in)     decompostion mode (ik), <mode> = decomposition_subtract = 0 or <mode> = decomposition_peak = 1
+  ! <length>               -- (in)     sequence length (ik)
+  ! <pad>                  -- (in)     padded sequence length (ik), if pad > length, input sequence is padded
+  ! <total>                -- (in)     sum(window) (rk)
+  ! <window>               -- (in)     window array (rk array of length = <length>)
+  ! <loop>                 -- (in)     number of iterations/peaks (ik)
+  ! <frequency>            -- (inout)  frequency array (rk array of length = <loop>)
+  ! <cos_amp>              -- (inout)  cos amplitude array (rk array of length = <loop>)
+  ! <sin_amp>              -- (inout)  sin amplitude array (rk array of length = <loop>)
   ! void    frequency_correction__(int* flag, double* range_min, double* range_max, int* method, int* mode, int* length, int* pad, double* total, double* window, int* loop, double* frequency, double* cos_amp, double* sin_amp) ;
-  MODULE SUBROUTINE FREQUENCY_CORRECTION__(FLAG, RANGE_MIN, RANGE_MAX, &
-    METHOD, MODE, LENGTH, PAD, TOTAL, WINDOW, LOOP, FREQUENCY, COS_AMP, SIN_AMP) &
-    BIND(C, NAME = "frequency_correction__")
-    INTEGER(IK), INTENT(IN):: FLAG
-    REAL(RK), INTENT(IN) :: RANGE_MIN
-    REAL(RK), INTENT(IN) :: RANGE_MAX
-    INTEGER(IK), INTENT(IN):: METHOD
-    INTEGER(IK), INTENT(IN):: MODE
-    INTEGER(IK), INTENT(IN):: LENGTH
-    INTEGER(IK), INTENT(IN):: PAD
-    REAL(RK), INTENT(IN) :: TOTAL
-    REAL(RK), INTENT(IN), DIMENSION(LENGTH) :: WINDOW
-    INTEGER(IK), INTENT(IN) :: LOOP
-    REAL(RK), DIMENSION(LOOP), INTENT(INOUT) :: FREQUENCY
-    REAL(RK), DIMENSION(LOOP), INTENT(INOUT) :: COS_AMP
-    REAL(RK), DIMENSION(LOOP), INTENT(INOUT) :: SIN_AMP
-    REAL(RK), DIMENSION(2_IK*LENGTH) :: SEQUENCE
-    REAL(RK), DIMENSION(LOOP) :: F, C, S
-    F = FREQUENCY
-    C = COS_AMP
-    S = SIN_AMP
-    CALL GENERATE_SIGNAL_(FLAG, LENGTH, SEQUENCE, LOOP, FREQUENCY, COS_AMP, SIN_AMP)
-    CALL DECOMPOSITION__(FLAG, RANGE_MIN, RANGE_MAX, &
-    METHOD, MODE, LENGTH, PAD, TOTAL, WINDOW, SEQUENCE, LOOP, FREQUENCY, COS_AMP, SIN_AMP)
-    FREQUENCY = 2.0_RK*F - FREQUENCY
-    COS_AMP = 2.0_RK*C - COS_AMP
-    SIN_AMP = 2.0_RK*S - SIN_AMP
-  END SUBROUTINE FREQUENCY_CORRECTION__
+  module subroutine frequency_correction__(flag, range_min, range_max, &
+    method, mode, length, pad, total, window, loop, frequency, cos_amp, sin_amp) &
+    bind(c, name = "frequency_correction__")
+    integer(ik), intent(in):: flag
+    real(rk), intent(in) :: range_min
+    real(rk), intent(in) :: range_max
+    integer(ik), intent(in):: method
+    integer(ik), intent(in):: mode
+    integer(ik), intent(in):: length
+    integer(ik), intent(in):: pad
+    real(rk), intent(in) :: total
+    real(rk), intent(in), dimension(length) :: window
+    integer(ik), intent(in) :: loop
+    real(rk), dimension(loop), intent(inout) :: frequency
+    real(rk), dimension(loop), intent(inout) :: cos_amp
+    real(rk), dimension(loop), intent(inout) :: sin_amp
+    real(rk), dimension(2_ik*length) :: sequence
+    real(rk), dimension(loop) :: f, c, s
+    f = frequency
+    c = cos_amp
+    s = sin_amp
+    call generate_signal_(flag, length, sequence, loop, frequency, cos_amp, sin_amp)
+    call decomposition__(flag, range_min, range_max, &
+    method, mode, length, pad, total, window, sequence, loop, frequency, cos_amp, sin_amp)
+    frequency = 2.0_rk*f - frequency
+    cos_amp = 2.0_rk*c - cos_amp
+    sin_amp = 2.0_rk*s - sin_amp
+  end subroutine frequency_correction__
   ! ############################################################################################################################# !
-END SUBMODULE DECOMPOSITION
+end submodule decomposition

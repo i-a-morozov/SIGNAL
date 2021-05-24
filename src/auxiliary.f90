@@ -1,166 +1,166 @@
 
 #include "signal.inc"
 
-SUBMODULE (SIGNAL) AUXILIARY
-  IMPLICIT NONE
-  CONTAINS
+submodule (signal) auxiliary
+  implicit none
+  contains
   ! ############################################################################################################################# !
-  ! FACTORIAL
-  ! (FUNCTION) FACTORIAL_(<NUMBER>)
-  ! <NUMBER>               -- (IN)     NUMBER (IK)
-  ! <FACTORIAL_>           -- (OUT)    FACTORIAL OF <N> (RK)
-  MODULE REAL(RK) FUNCTION FACTORIAL_(NUMBER)
-    INTEGER(IK), INTENT(IN) :: NUMBER
-    INTEGER(IK) :: I
-    FACTORIAL_ = 1.0_RK
-    DO I = 1_IK, NUMBER, 1_IK
-      FACTORIAL_ = REAL(I, RK)*FACTORIAL_
-    END DO
-  END FUNCTION FACTORIAL_
+  ! factorial
+  ! (function) factorial_(<number>)
+  ! <number>               -- (in)     number (ik)
+  ! <factorial_>           -- (out)    factorial of <n> (rk)
+  module real(rk) function factorial_(number)
+    integer(ik), intent(in) :: number
+    integer(ik) :: i
+    factorial_ = 1.0_rk
+    do i = 1_ik, number, 1_ik
+      factorial_ = real(i, rk)*factorial_
+    end do
+  end function factorial_
   ! ############################################################################################################################# !
-  ! GAMMA REGULARIZED
-  ! (FUNCTION) GAMMA_REGULARIZED_(<A>, <X>, <Y>)
-  ! <A>                    -- (IN)     A (RK)
-  ! <X>                    -- (IN)     X (RK)
-  ! <Y>                    -- (IN)     Y (RK)
-  ! <GAMMA_REGULARIZED_>   -- (OUT)    GAMMA REGULARIZED OF <A>, <X> AND <Y> (RK)
-  MODULE REAL(RK) FUNCTION GAMMA_REGULARIZED_(A, X, Y)
-    REAL(RK), INTENT(IN) :: A
-    REAL(RK), INTENT(IN) :: X
-    REAL(RK), INTENT(IN) :: Y
-    GAMMA_REGULARIZED_ = (GAMMA_(A, X)-GAMMA_(A, Y))/GAMMA_(A)
-  END FUNCTION GAMMA_REGULARIZED_
+  ! gamma regularized
+  ! (function) gamma_regularized_(<a>, <x>, <y>)
+  ! <a>                    -- (in)     a (rk)
+  ! <x>                    -- (in)     x (rk)
+  ! <y>                    -- (in)     y (rk)
+  ! <gamma_regularized_>   -- (out)    gamma regularized of <a>, <x> and <y> (rk)
+  module real(rk) function gamma_regularized_(a, x, y)
+    real(rk), intent(in) :: a
+    real(rk), intent(in) :: x
+    real(rk), intent(in) :: y
+    gamma_regularized_ = (gamma_(a, x)-gamma_(a, y))/gamma_(a)
+  end function gamma_regularized_
   ! ############################################################################################################################# !
-  ! MINLOC
-  ! (FUNCTION) MINLOC_(<SEQUENCE>)
-  ! <SEQUENCE>             -- (IN)     SEQUENCE (RK ARRAY)
-  ! <MINLOC_>              -- (OUT)    MINIMUM LOCATION (IK)
-  MODULE INTEGER(IK) FUNCTION MINLOC_(SEQUENCE, EMPTY)
-    REAL(RK), DIMENSION(:), CONTIGUOUS, INTENT(IN) :: SEQUENCE
-    INTEGER, INTENT(IN) :: EMPTY
-    REAL(RK) :: ELEMENT
-    INTEGER(IK) :: I
-    MINLOC_ = 0_IK
-    ELEMENT = MINVAL(SEQUENCE,EMPTY)
-    DO I = 1_IK, SIZE(SEQUENCE, KIND = IK), 1_IK
-      IF (SEQUENCE(I) == ELEMENT) THEN
-        MINLOC_ = I
-        RETURN
-      END IF
-    END DO
-  END FUNCTION MINLOC_
+  ! minloc
+  ! (function) minloc_(<sequence>)
+  ! <sequence>             -- (in)     sequence (rk array)
+  ! <minloc_>              -- (out)    minimum location (ik)
+  module integer(ik) function minloc_(sequence, empty)
+    real(rk), dimension(:), contiguous, intent(in) :: sequence
+    integer, intent(in) :: empty
+    real(rk) :: element
+    integer(ik) :: i
+    minloc_ = 0_ik
+    element = minval(sequence,empty)
+    do i = 1_ik, size(sequence, kind = ik), 1_ik
+      if (sequence(i) == element) then
+        minloc_ = i
+        return
+      end if
+    end do
+  end function minloc_
   ! ############################################################################################################################# !
-  ! MAXLOC
-  ! (FUNCTION) MAXLOC_(<SEQUENCE>)
-  ! <SEQUENCE>             -- (IN)     SEQUENCE (RK ARRAY)
-  ! <MAXLOC_>              -- (OUT)    MAXIMUM LOCATION (IK)
-  MODULE INTEGER(IK) FUNCTION MAXLOC_(SEQUENCE, EMPTY)
-    REAL(RK), DIMENSION(:), CONTIGUOUS, INTENT(IN) :: SEQUENCE
-    INTEGER, INTENT(IN) :: EMPTY
-    REAL(RK) :: ELEMENT
-    INTEGER(IK) :: I
-    MAXLOC_ = 0_IK
-    ELEMENT = MAXVAL(SEQUENCE, EMPTY)
-    DO I = 1_IK, SIZE(SEQUENCE, KIND = IK), 1_IK
-      IF (SEQUENCE(I) == ELEMENT) THEN
-        MAXLOC_ = I
-        RETURN
-      END IF
-    END DO
-  END FUNCTION MAXLOC_
+  ! maxloc
+  ! (function) maxloc_(<sequence>)
+  ! <sequence>             -- (in)     sequence (rk array)
+  ! <maxloc_>              -- (out)    maximum location (ik)
+  module integer(ik) function maxloc_(sequence, empty)
+    real(rk), dimension(:), contiguous, intent(in) :: sequence
+    integer, intent(in) :: empty
+    real(rk) :: element
+    integer(ik) :: i
+    maxloc_ = 0_ik
+    element = maxval(sequence, empty)
+    do i = 1_ik, size(sequence, kind = ik), 1_ik
+      if (sequence(i) == element) then
+        maxloc_ = i
+        return
+      end if
+    end do
+  end function maxloc_
   ! ############################################################################################################################# !
-  ! SORT (BUBBLE, DESCENDING)
-  ! (SUBROUTINE) SORT_BUBBLE_(<LENGTH>, <SEQUENCE>, <FST>, <LST>)
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
-  ! <SEQUENCE>             -- (IN)     (UNSORTED) SEQUENCE (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <SEQUENCE>             -- (OUT)    (SORTED, DESCENDING) SEQUENCE (RK ARRAY OF LENGTH = <LENGTH>)
-  MODULE SUBROUTINE SORT_BUBBLE_(LENGTH, SEQUENCE, FST, LST)
-    INTEGER(IK), INTENT(IN) :: LENGTH
-    REAL(RK), DIMENSION(LENGTH), INTENT(INOUT) :: SEQUENCE
-    INTEGER(IK), INTENT(IN) :: FST
-    INTEGER(IK), INTENT(IN) :: LST
-    INTEGER(IK) :: I, J
-    LOGICAL :: SWAPPED
-    IF (FST > LST) RETURN
-    DO I = LENGTH-1_IK, 1_IK, -1_IK
-      SWAPPED = .FALSE.
-      DO J = 1_IK, I, 1_IK
-        IF (SEQUENCE(J) < SEQUENCE(J+1_IK)) THEN
-          SEQUENCE(J:J+1_IK) = SEQUENCE([J+1_IK, J])
-          SWAPPED = .TRUE.
-        END IF
-      END DO
-      IF (.NOT. SWAPPED) EXIT
-    END DO
-  END SUBROUTINE SORT_BUBBLE_
+  ! sort (bubble, descending)
+  ! (subroutine) sort_bubble_(<length>, <sequence>, <fst>, <lst>)
+  ! <length>               -- (in)     sequence length (ik)
+  ! <sequence>             -- (in)     (unsorted) sequence (rk array of length = <length>)
+  ! <sequence>             -- (out)    (sorted, descending) sequence (rk array of length = <length>)
+  module subroutine sort_bubble_(length, sequence, fst, lst)
+    integer(ik), intent(in) :: length
+    real(rk), dimension(length), intent(inout) :: sequence
+    integer(ik), intent(in) :: fst
+    integer(ik), intent(in) :: lst
+    integer(ik) :: i, j
+    logical :: swapped
+    if (fst > lst) return
+    do i = length-1_ik, 1_ik, -1_ik
+      swapped = .false.
+      do j = 1_ik, i, 1_ik
+        if (sequence(j) < sequence(j+1_ik)) then
+          sequence(j:j+1_ik) = sequence([j+1_ik, j])
+          swapped = .true.
+        end if
+      end do
+      if (.not. swapped) exit
+    end do
+  end subroutine sort_bubble_
   ! ############################################################################################################################# !
-  ! SORT (QUICK, DESCENDING)
-  ! (SUBROUTINE) SORT_QUICK_(<LENGTH>, <SEQUENCE>, <FST>, <LST>)
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
-  ! <SEQUENCE>             -- (IN)     (UNSORTED) SEQUENCE (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <SEQUENCE>             -- (OUT)    (SORTED, DESCENDING) SEQUENCE (RK ARRAY OF LENGTH = <LENGTH>)
-  MODULE RECURSIVE SUBROUTINE SORT_QUICK_(LENGTH, SEQUENCE, FST, LST)
-    INTEGER(IK), INTENT(IN) :: LENGTH
-    REAL(RK), DIMENSION(:), INTENT(INOUT) :: SEQUENCE
-    INTEGER(IK), INTENT(IN) :: FST
-    INTEGER(IK), INTENT(IN) :: LST
-    REAL(RK) :: PIVOT, COPY
-    INTEGER(IK) :: I, J
-    PIVOT = SEQUENCE((FST+LST)/2_IK)
-    I = FST
-    J = LST
-    DO
-       DO WHILE(SEQUENCE(I) > PIVOT)
-          I = I+1_IK
-       END DO
-       DO WHILE(PIVOT > SEQUENCE(J))
-          J = J-1_IK
-       END DO
-       IF (I >= J) EXIT
-       COPY = SEQUENCE(I)
-       SEQUENCE(I) = SEQUENCE(J)
-       SEQUENCE(J) = COPY
-       I = I+1_IK
-       J = J-1_IK
-    END DO
-    IF (FST < I-1_IK) CALL SORT_QUICK_(LENGTH, SEQUENCE, FST, I-1_IK)
-    IF (J+1_IK < LST) CALL SORT_QUICK_(LENGTH, SEQUENCE, J+1_IK, LST)
-  END SUBROUTINE SORT_QUICK_
+  ! sort (quick, descending)
+  ! (subroutine) sort_quick_(<length>, <sequence>, <fst>, <lst>)
+  ! <length>               -- (in)     sequence length (ik)
+  ! <sequence>             -- (in)     (unsorted) sequence (rk array of length = <length>)
+  ! <sequence>             -- (out)    (sorted, descending) sequence (rk array of length = <length>)
+  module recursive subroutine sort_quick_(length, sequence, fst, lst)
+    integer(ik), intent(in) :: length
+    real(rk), dimension(:), intent(inout) :: sequence
+    integer(ik), intent(in) :: fst
+    integer(ik), intent(in) :: lst
+    real(rk) :: pivot, copy
+    integer(ik) :: i, j
+    pivot = sequence((fst+lst)/2_ik)
+    i = fst
+    j = lst
+    do
+       do while(sequence(i) > pivot)
+          i = i+1_ik
+       end do
+       do while(pivot > sequence(j))
+          j = j-1_ik
+       end do
+       if (i >= j) exit
+       copy = sequence(i)
+       sequence(i) = sequence(j)
+       sequence(j) = copy
+       i = i+1_ik
+       j = j-1_ik
+    end do
+    if (fst < i-1_ik) call sort_quick_(length, sequence, fst, i-1_ik)
+    if (j+1_ik < lst) call sort_quick_(length, sequence, j+1_ik, lst)
+  end subroutine sort_quick_
   ! ############################################################################################################################# !
-  ! GENERATE HARMONIC SIGNAL
-  ! (SUBROUTINE) GENERATE_SIGNAL_(<FLAG>, <LENGTH>, <SEQUENCE>, <LOOP>, <FREQUENCY>, <COS_AMP>, <SIN_AMP>)
-  ! <FLAG>                 -- (IN)     COMPLEX FLAG (IK), 0/1 FOR REAL/COMPLEX SEQUENCE
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
-  ! <SEQUENCE>             -- (OUT)    INPUT SEQUENCE (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <LOOP>                 -- (IN)     NUMBER OF HARMONICS (IK)
-  ! <FREQUENCY>            -- (IN)     FREQUENCY ARRAY (RK ARRAY OF LENGTH = <LOOP>)
-  ! <COS_AMP>              -- (IN)     COS AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
-  ! <SIN_AMP>              -- (IN)     SIN AMPLITUDE ARRAY (RK ARRAY OF LENGTH = <LOOP>)
+  ! generate harmonic signal
+  ! (subroutine) generate_signal_(<flag>, <length>, <sequence>, <loop>, <frequency>, <cos_amp>, <sin_amp>)
+  ! <flag>                 -- (in)     complex flag (ik), 0/1 for real/complex sequence
+  ! <length>               -- (in)     sequence length (ik)
+  ! <sequence>             -- (out)    input sequence (rk array of length = <length>)
+  ! <loop>                 -- (in)     number of harmonics (ik)
+  ! <frequency>            -- (in)     frequency array (rk array of length = <loop>)
+  ! <cos_amp>              -- (in)     cos amplitude array (rk array of length = <loop>)
+  ! <sin_amp>              -- (in)     sin amplitude array (rk array of length = <loop>)
   ! void    generate_signal_(int* flag, int* length, double* sequence, int* loop, double* frequency, double* cos_amp, double* sin_amp) ;
-  MODULE SUBROUTINE GENERATE_SIGNAL_(FLAG, LENGTH, SEQUENCE, LOOP, FREQUENCY, COS_AMP, SIN_AMP) &
-    BIND(C, NAME = "generate_signal_")
-    INTEGER(IK), INTENT(IN) :: FLAG
-    INTEGER(IK), INTENT(IN) :: LENGTH
-    REAL(RK), DIMENSION(2_IK*LENGTH), INTENT(OUT) :: SEQUENCE
-    INTEGER(IK), INTENT(IN) :: LOOP
-    REAL(RK), DIMENSION(LOOP), INTENT(IN) :: FREQUENCY
-    REAL(RK), DIMENSION(LOOP), INTENT(IN) :: COS_AMP
-    REAL(RK), DIMENSION(LOOP), INTENT(IN) :: SIN_AMP
-    REAL(RK), DIMENSION(LENGTH) :: RANGE
-    REAL(RK), DIMENSION(LENGTH) :: FC, FS
-    INTEGER(IK) :: I
-    RANGE = TWO_PI*REAL([(I, I = 1_IK, LENGTH, 1_IK)], RK)
-    SEQUENCE = 0.0_RK
-    DO I = 1_IK, LOOP, 1_IK
-      FC = COS(FREQUENCY(I)*RANGE)
-      FS = SIN(FREQUENCY(I)*RANGE)
-      IF (FLAG == 0_IK) THEN
-        SEQUENCE(1_IK::2_IK) = SEQUENCE(1_IK::2_IK)+COS_AMP(I)*FC+SIN_AMP(I)*FS
-      ELSE
-        SEQUENCE(1_IK::2_IK) = SEQUENCE(1_IK::2_IK)+COS_AMP(I)*FC+SIN_AMP(I)*FS
-        SEQUENCE(2_IK::2_IK) = SEQUENCE(2_IK::2_IK)+SIN_AMP(I)*FC-COS_AMP(I)*FS
-      END IF
-    END DO
-  END SUBROUTINE GENERATE_SIGNAL_
+  module subroutine generate_signal_(flag, length, sequence, loop, frequency, cos_amp, sin_amp) &
+    bind(c, name = "generate_signal_")
+    integer(ik), intent(in) :: flag
+    integer(ik), intent(in) :: length
+    real(rk), dimension(2_ik*length), intent(out) :: sequence
+    integer(ik), intent(in) :: loop
+    real(rk), dimension(loop), intent(in) :: frequency
+    real(rk), dimension(loop), intent(in) :: cos_amp
+    real(rk), dimension(loop), intent(in) :: sin_amp
+    real(rk), dimension(length) :: range
+    real(rk), dimension(length) :: fc, fs
+    integer(ik) :: i
+    range = two_pi*real([(i, i = 1_ik, length, 1_ik)], rk)
+    sequence = 0.0_rk
+    do i = 1_ik, loop, 1_ik
+      fc = cos(frequency(i)*range)
+      fs = sin(frequency(i)*range)
+      if (flag == 0_ik) then
+        sequence(1_ik::2_ik) = sequence(1_ik::2_ik)+cos_amp(i)*fc+sin_amp(i)*fs
+      else
+        sequence(1_ik::2_ik) = sequence(1_ik::2_ik)+cos_amp(i)*fc+sin_amp(i)*fs
+        sequence(2_ik::2_ik) = sequence(2_ik::2_ik)+sin_amp(i)*fc-cos_amp(i)*fs
+      end if
+    end do
+  end subroutine generate_signal_
   ! ############################################################################################################################# !
-END SUBMODULE AUXILIARY
+end submodule auxiliary

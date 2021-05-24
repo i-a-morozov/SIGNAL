@@ -1,112 +1,112 @@
 #include "signal.inc"
 
-SUBMODULE (SIGNAL) PEAKDETECT
-  IMPLICIT NONE
-  CONTAINS
+submodule (signal) peakdetect
+  implicit none
+  contains
   ! ############################################################################################################################# !
-  ! PEAK LIST
-  ! (SUBROUTINE) PEAK_LIST_(<LENGTH>, <SEQUENCE>, <PEAK_LIST>)
-  ! PEAK_WIDTH             -- (GLOBAL) PEAK WIDTH (IK)
-  ! PEAK_LEVEL             -- (GLOBAL) PEAK LEVEL THRESHOLD (RK)
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
-  ! <SEQUENCE>             -- (IN)     SEQUENCE (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <PEAK_LIST>            -- (OUT)    PEAK LIST (IK ARRAY OF LENGTH = <LENGTH>), VALUE OF ONE CORRESPOND TO PEAK LOCATION
-  MODULE SUBROUTINE PEAK_LIST_(LENGTH, SEQUENCE, PEAK_LIST)
-    INTEGER(IK), INTENT(IN) :: LENGTH
-    REAL(RK), DIMENSION(LENGTH), INTENT(IN) :: SEQUENCE
-    INTEGER(IK), DIMENSION(LENGTH), INTENT(OUT) :: PEAK_LIST
-    INTEGER(IK) :: I
-    INTEGER(IK), DIMENSION(LENGTH-(1_IK+2_IK*PEAK_WIDTH)) :: FST
-    INTEGER(IK), DIMENSION(LENGTH-2_IK) :: LST
-    REAL(RK) :: TOTAL
-    REAL(RK) :: LAST
-    REAL(RK), DIMENSION(LENGTH-2_IK*PEAK_WIDTH) :: LOCAL
-    LOGICAL :: THIS, NEXT
-    FST = 0_IK
-    TOTAL = SUM(SEQUENCE(1_IK:2_IK*PEAK_WIDTH))
-    LAST = 0.0_RK
-    LOCAL = SEQUENCE(1_IK+PEAK_WIDTH:LENGTH-PEAK_WIDTH) - PEAK_LEVEL
-    DO I = 0_IK, LENGTH-(1_IK+2_IK*PEAK_WIDTH)-1_IK, 1_IK
-      TOTAL = TOTAL+SEQUENCE(I+1_IK+2_IK*PEAK_WIDTH)-LAST
-      LAST = SEQUENCE(I+1_IK)
-      LOCAL(I+1_IK) = LOCAL(I+1_IK)-TOTAL/REAL(1_IK+2_IK*PEAK_WIDTH,RK)
-      IF (LOCAL(I+1_IK) >= 0.0_RK) THEN
-        FST(I+1_IK) = 1_IK
-      END IF
-    END DO
-    PEAK_LIST = [[(0_IK, I = 1_IK, PEAK_WIDTH, 1_IK)], FST, [(0_IK, I = 1_IK, PEAK_WIDTH, 1_IK)]]
-    LST = 0_IK
-    DO I = 1_IK, LENGTH-2_IK, 1_IK
-      THIS = INT(SIGN(1.0_RK, SEQUENCE(I+1_IK)-SEQUENCE(I)), IK) == +1_IK
-      NEXT = INT(SIGN(1.0_RK, SEQUENCE(I+2_IK)-SEQUENCE(I+1_IK)), IK) == -1_IK
-      IF (THIS .AND. NEXT) THEN
-        LST(I) = 1_IK
-      END IF
-    END DO
-    PEAK_LIST = PEAK_LIST*[0_IK, LST, 0_IK]
-  END SUBROUTINE PEAK_LIST_
+  ! peak list
+  ! (subroutine) peak_list_(<length>, <sequence>, <peak_list>)
+  ! peak_width             -- (global) peak width (ik)
+  ! peak_level             -- (global) peak level threshold (rk)
+  ! <length>               -- (in)     sequence length (ik)
+  ! <sequence>             -- (in)     sequence (rk array of length = <length>)
+  ! <peak_list>            -- (out)    peak list (ik array of length = <length>), value of one correspond to peak location
+  module subroutine peak_list_(length, sequence, peak_list)
+    integer(ik), intent(in) :: length
+    real(rk), dimension(length), intent(in) :: sequence
+    integer(ik), dimension(length), intent(out) :: peak_list
+    integer(ik) :: i
+    integer(ik), dimension(length-(1_ik+2_ik*peak_width)) :: fst
+    integer(ik), dimension(length-2_ik) :: lst
+    real(rk) :: total
+    real(rk) :: last
+    real(rk), dimension(length-2_ik*peak_width) :: local
+    logical :: this, next
+    fst = 0_ik
+    total = sum(sequence(1_ik:2_ik*peak_width))
+    last = 0.0_rk
+    local = sequence(1_ik+peak_width:length-peak_width) - peak_level
+    do i = 0_ik, length-(1_ik+2_ik*peak_width)-1_ik, 1_ik
+      total = total+sequence(i+1_ik+2_ik*peak_width)-last
+      last = sequence(i+1_ik)
+      local(i+1_ik) = local(i+1_ik)-total/real(1_ik+2_ik*peak_width,rk)
+      if (local(i+1_ik) >= 0.0_rk) then
+        fst(i+1_ik) = 1_ik
+      end if
+    end do
+    peak_list = [[(0_ik, i = 1_ik, peak_width, 1_ik)], fst, [(0_ik, i = 1_ik, peak_width, 1_ik)]]
+    lst = 0_ik
+    do i = 1_ik, length-2_ik, 1_ik
+      this = int(sign(1.0_rk, sequence(i+1_ik)-sequence(i)), ik) == +1_ik
+      next = int(sign(1.0_rk, sequence(i+2_ik)-sequence(i+1_ik)), ik) == -1_ik
+      if (this .and. next) then
+        lst(i) = 1_ik
+      end if
+    end do
+    peak_list = peak_list*[0_ik, lst, 0_ik]
+  end subroutine peak_list_
   ! ############################################################################################################################# !
-  ! TOTAL NUMBER OF PEAKS
-  ! (FUNCTION) PEAK_COUNT_(<LENGTH>, <PEAK_LIST>)
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
-  ! <PEAK_LIST>            -- (IN)     PEAK LIST (IK ARRAY OF LENGTH <LENGTH>)
-  ! <PEAK_COUNT_>          -- (OUT)    TOTAL NUMBER OF PEAKS (IK)
-  MODULE INTEGER(IK) FUNCTION PEAK_COUNT_(LENGTH, PEAK_LIST)
-    INTEGER(IK), INTENT(IN) :: LENGTH
-    INTEGER(IK), DIMENSION(LENGTH), INTENT(IN) :: PEAK_LIST
-    PEAK_COUNT_ = SUM(PEAK_LIST)
-  END FUNCTION PEAK_COUNT_
+  ! total number of peaks
+  ! (function) peak_count_(<length>, <peak_list>)
+  ! <length>               -- (in)     sequence length (ik)
+  ! <peak_list>            -- (in)     peak list (ik array of length <length>)
+  ! <peak_count_>          -- (out)    total number of peaks (ik)
+  module integer(ik) function peak_count_(length, peak_list)
+    integer(ik), intent(in) :: length
+    integer(ik), dimension(length), intent(in) :: peak_list
+    peak_count_ = sum(peak_list)
+  end function peak_count_
   ! ############################################################################################################################# !
-  ! DETECT SEVERAL PEAKS (LIST OF ORDERED PEAK POSITIONS)
-  ! (SUBROUTINE) PEAK_DETECT_(<LENGTH>, <SEQUENCE>, <PEAK_LENGTH>, <PEAK_ORDERED_LIST>)
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
-  ! <SEQUENCE>             -- (IN)     SEQUENCE (RK ARRAY OF LENGTH = <LENGTH>)
-  ! <PEAK_LENGTH>          -- (IN)     NUMBER OF PEAKS TO FIND (IK)
-  ! <PEAK_ORDERED_LIST>    -- (OUT)    PEAK POSITIONS (IK ARRAY OF LENGTH = <PEAK_LENGTH>)
-  MODULE SUBROUTINE PEAK_DETECT_(LENGTH, SEQUENCE, PEAK_LENGTH, PEAK_ORDERED_LIST)
-    INTEGER(IK), INTENT(IN) :: LENGTH
-    REAL(RK), DIMENSION(LENGTH), INTENT(IN) :: SEQUENCE
-    INTEGER(IK), INTENT(IN) :: PEAK_LENGTH
-    INTEGER(IK), DIMENSION(PEAK_LENGTH), INTENT(OUT) :: PEAK_ORDERED_LIST
-    INTEGER(IK), DIMENSION(LENGTH) :: PEAK_LIST
-    INTEGER(IK) :: LIMIT
-    INTEGER(IK) :: I, J
-    INTEGER(IK) :: POSITION
-    REAL(RK), DIMENSION(LENGTH) :: LOCAL
-    PEAK_LIST = 0_IK
-    CALL PEAK_LIST_(LENGTH, SEQUENCE, PEAK_LIST)
-    PEAK_ORDERED_LIST = 1_IK
-    LIMIT = PEAK_COUNT_(LENGTH, PEAK_LIST)
-    POSITION = 1_IK
-    DO I = 1_IK, LENGTH, 1_IK
-      IF (PEAK_LIST(I) == 1_IK) THEN
-        LOCAL(POSITION) = SEQUENCE(I)
-        POSITION = POSITION + 1_IK
-      END IF
-    END DO
-    CALL __SORT__(LIMIT, LOCAL, 1_IK, LIMIT)
-    DO I = 1_IK, MIN(PEAK_LENGTH, LIMIT), 1_IK
-      DO J = 1_IK, LENGTH, 1_IK
-        IF (LOCAL(I) == SEQUENCE(J)) PEAK_ORDERED_LIST(I) = J
-      END DO
-    END DO
-  END SUBROUTINE PEAK_DETECT_
+  ! detect several peaks (list of ordered peak positions)
+  ! (subroutine) peak_detect_(<length>, <sequence>, <peak_length>, <peak_ordered_list>)
+  ! <length>               -- (in)     sequence length (ik)
+  ! <sequence>             -- (in)     sequence (rk array of length = <length>)
+  ! <peak_length>          -- (in)     number of peaks to find (ik)
+  ! <peak_ordered_list>    -- (out)    peak positions (ik array of length = <peak_length>)
+  module subroutine peak_detect_(length, sequence, peak_length, peak_ordered_list)
+    integer(ik), intent(in) :: length
+    real(rk), dimension(length), intent(in) :: sequence
+    integer(ik), intent(in) :: peak_length
+    integer(ik), dimension(peak_length), intent(out) :: peak_ordered_list
+    integer(ik), dimension(length) :: peak_list
+    integer(ik) :: limit
+    integer(ik) :: i, j
+    integer(ik) :: position
+    real(rk), dimension(length) :: local
+    peak_list = 0_ik
+    call peak_list_(length, sequence, peak_list)
+    peak_ordered_list = 1_ik
+    limit = peak_count_(length, peak_list)
+    position = 1_ik
+    do i = 1_ik, length, 1_ik
+      if (peak_list(i) == 1_ik) then
+        local(position) = sequence(i)
+        position = position + 1_ik
+      end if
+    end do
+    call __sort__(limit, local, 1_ik, limit)
+    do i = 1_ik, min(peak_length, limit), 1_ik
+      do j = 1_ik, length, 1_ik
+        if (local(i) == sequence(j)) peak_ordered_list(i) = j
+      end do
+    end do
+  end subroutine peak_detect_
   ! ############################################################################################################################# !
-  ! PEAK (RANKED)
-  ! (FUNCTION) PEAK_(<LENGTH>, <SEQUENCE>, <PEAK_ID>)
-  ! <LENGTH>               -- (IN)     SEQUENCE LENGTH (IK)
-  ! <SEQUENCE>             -- (IN)     SEQUENCE (RK ARRAY OF LENGTH <LENGTH>)
-  ! <PEAK_ID>              -- (IN)     PEAK RANK (IK)
-  ! <PEAK_>                -- (OUT)    PEAK POSITION (IK)
+  ! peak (ranked)
+  ! (function) peak_(<length>, <sequence>, <peak_id>)
+  ! <length>               -- (in)     sequence length (ik)
+  ! <sequence>             -- (in)     sequence (rk array of length <length>)
+  ! <peak_id>              -- (in)     peak rank (ik)
+  ! <peak_>                -- (out)    peak position (ik)
   ! int     peak_(int* length, double* sequence, int* id) ;
-  MODULE INTEGER(IK) FUNCTION PEAK_(LENGTH, SEQUENCE, PEAK_ID) &
-    BIND(C, NAME = "peak_")
-    INTEGER(IK), INTENT(IN) :: LENGTH
-    REAL(RK), DIMENSION(LENGTH), INTENT(IN) :: SEQUENCE
-    INTEGER(IK), INTENT(IN) :: PEAK_ID
-    INTEGER(IK), DIMENSION(LENGTH) :: PEAK_LIST
-    CALL PEAK_DETECT_(LENGTH, SEQUENCE, LENGTH, PEAK_LIST)
-    PEAK_ = PEAK_LIST(PEAK_ID)
-  END FUNCTION PEAK_
+  module integer(ik) function peak_(length, sequence, peak_id) &
+    bind(c, name = "peak_")
+    integer(ik), intent(in) :: length
+    real(rk), dimension(length), intent(in) :: sequence
+    integer(ik), intent(in) :: peak_id
+    integer(ik), dimension(length) :: peak_list
+    call peak_detect_(length, sequence, length, peak_list)
+    peak_ = peak_list(peak_id)
+  end function peak_
   ! ############################################################################################################################# !
-END SUBMODULE PEAKDETECT
+end submodule peakdetect
