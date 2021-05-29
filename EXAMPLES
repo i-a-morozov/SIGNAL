@@ -20,5 +20,6 @@
 (* EXAMPLE-19 -- Anomaly detection and repair (autoencoder) *)
 (* EXAMPLE-20 -- Autoencoder based chaos indicator *)
 (* EXAMPLE-21 -- SVD & RPCA based sparse signal decomposition *)
+(* EXAMPLE-22 -- Separation of close frequencies *)
 
 (* 29_05_2021 *)
