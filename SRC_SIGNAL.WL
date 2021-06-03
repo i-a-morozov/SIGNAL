@@ -2427,7 +2427,7 @@ S$DMD$FORWARD[                      (* -- DMD FORWARD *)
   SAMPLE = Rescale[SAMPLE, MINMAX, List[0, 1]] ;
   X = S$MAKE$MATRIX[Take[SAMPLE, Plus[0, List[1, SIZE]]]] ;
   Y = S$MAKE$MATRIX[Take[SAMPLE, Plus[1, List[1, SIZE]]]] ;
-  Z = ConstantArray[0.0, COUNT]  ;
+  Z = ConstantArray[0.0, COUNT] ;
   ADVANCE = S$DMD$ADVANCE[X, Y] ;
   Do[
     Y = S$DMD$PREDICT[ADVANCE, X] ;
