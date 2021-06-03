@@ -565,12 +565,12 @@ S$RPCA::usage = "
 S$RPCA[MATRIX, MU, LAMBDA, TOLERANCE, LIMIT] -- perform RPCA decomposition for given matrix <MATRIX> (matrix), L2 penalty <MU> (real), L1 penalty <LAMBDA>, error tolerance <TOLERANCE> (real) and max number of iterations <LIMIT> (integer)
 S$RPCA[MATRIX, FACTOR, LIMIT] -- perform RPCA decomposition for given matrix <MATRIX> (matrix), error tolerance factor <FACTOR> (real) and max number of iterations <LIMIT> (integer)
 " ;
-Options[S$RPCA] = {
-  "RNK" -> Full,
-  "SVD" -> SingularValueDecomposition,
-  "ADAPTIVE" -> False,
-  "FACTOR" -> 1
-} ;
+Options[S$RPCA] = List[
+  Rule["RNK",Full],
+  Rule["SVD", SingularValueDecomposition],
+  Rule["ADAPTIVE", False],
+  Rule["FACTOR", 1]
+ ] ;
 (* HYPER-PARAMETERS *)
 (* MU        = 1/4*1/Norm[MATRIX, 1]*Apply[Times, Dimensions[MATRIX]] ; *)
 (* LAMBDA    = 1/Sqrt[N[Max[Dimensions[MATRIX]]]] ; *)
@@ -2386,6 +2386,59 @@ S$FLI$LAS = Composition[Last,S$FLI$ALL] ;
 ClearAll[S$FLI] ;
 S$FLI::usage = "S$FLI[VEC] -- compute FLI indicator using several (orthonormal) deviation vectors <VEC> given for all iterations, <VEC> = {<VEC>_1, <VEC>_2, ...}, <VEC>_I = {<VEC>_I_1, <VEC>_I_2, ...} (returns only last value) " ;
 S$FLI = S$FLI$LAS ;
+(* ################################################################################################################################################################ *)
+(* DMD (ADVANCE) *)
+(* ################################################################################################################################################################ *)
+ClearAll[S$DMD$ADVANCE] ;
+S$DMD$ADVANCE::usage = "
+S$DMD$ADVANCE[X, Y] -- compute DMD advance matrix for given sample matrix <X> (matrix) and its advanced version <Y> (matrix)
+" ;
+S$DMD$ADVANCE[                      (* -- DMD MATRIX *)
+  X_?MatrixQ,                       (* -- SIGNAL MATRIX AT T=0 (MATRIX) *)
+  Y_?MatrixQ                        (* -- SIGNAL MATRIX AT T=1 (MATRIX) *)
+] := Dot[Y, PseudoInverse[X]] /; Apply[SameQ, Map[Dimensions, List[X, Y]]] ;
+(* ################################################################################################################################################################ *)
+(* DMD (PREDICT) *)
+(* ################################################################################################################################################################ *)
+ClearAll[S$DMD$PREDICT] ;
+S$DMD$PREDICT::usage = "
+S$DMD$PREDICT[MATRIX, SIGNAL] -- predict advanced version of signal matrix <SIGNAL> (matrix) for given DMD matrix <MATRIX> (matrix)
+" ;
+S$DMD$PREDICT[                      (* -- DMD PREDICT *)
+  MATRIX_?MatrixQ,                  (* -- DMD MATRIX (MATRIX) *)
+  SIGNAL_?MatrixQ                   (* -- SIGNAL MATRIX (MATRIX) *)
+] := Dot[MATRIX, SIGNAL] ;
+(* ################################################################################################################################################################ *)
+(* DMD (FORWARD) *)
+(* ################################################################################################################################################################ *)
+ClearAll[S$DMD$FORWARD] ;
+S$DMD$FORWARD::usage = "
+S$DMD$FORWARD[SIGNAL, SIZE, COUNT, RECOMPUTE] -- predict signal evolution for given initial signal <SIGNAL> (list), sample size to use <SIZE> (integer), number of steps <COUNT> (integer) and recompute flag <RECOMPUTE> (logical)
+" ;
+S$DMD$FORWARD[                      (* -- DMD FORWARD *)
+  SIGNAL_,                          (* -- SIGNAL (LIST) *)
+  SIZE_,                            (* -- SIZE TO USE (INTEGER) *)
+  COUNT_,                           (* -- NUMBER OF STEPS TO MAKE (INTEGER) *)
+  RECOMPUTE_:True                   (* -- ADVANCE RECOMPUTE FLAG (LOGICAL) *)
+] := Block[
+  {SAMPLE, MINMAX, X, Y, Z, ADVANCE},
+  SAMPLE = SIGNAL ;
+  MINMAX = MinMax[SAMPLE] ;
+  SAMPLE = Rescale[SAMPLE, MINMAX, List[0, 1]] ;
+  X = S$MAKE$MATRIX[Take[SAMPLE, Plus[0, List[1, SIZE]]]] ;
+  Y = S$MAKE$MATRIX[Take[SAMPLE, Plus[1, List[1, SIZE]]]] ;
+  Z = ConstantArray[0.0, COUNT]  ;
+  ADVANCE = S$DMD$ADVANCE[X, Y] ;
+  Do[
+    Y = S$DMD$PREDICT[ADVANCE, X] ;
+    ADVANCE = If[RECOMPUTE, S$DMD$ADVANCE[X, Y], ADVANCE] ;
+    X = Y ;
+    Z[[INDEX]] = Last[X] ;
+    Z[[INDEX]] = Last[Z[[INDEX]]],
+    {INDEX, 1, COUNT}
+  ] ;
+  Flatten[List[Take[SIGNAL, Plus[0, List[1, SIZE]]], Rescale[Z, List[0, 1], MINMAX]]]
+] ;
 (* ################################################################################################################################################################ *)
 (* LINEAR OPTICS PARAMETERIZATION *)
 (* ################################################################################################################################################################ *)
