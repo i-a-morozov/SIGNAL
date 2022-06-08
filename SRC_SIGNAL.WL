@@ -440,7 +440,7 @@ S$OPTIMAL$SVD$TRUNCATION[           (* -- OPTIMAL SVD TRUNCATION *)
   {NR, NC, LIST, BETA, LAMBDA, TAU},
   {NR, NC} = Dimensions[MATRIX] ;
   LIST = SingularValueList[MATRIX, Min[{NR, NC}]] ;
-  BETA = N[Apply[Divide, {NR, NC}]] ;
+  BETA = N[Apply[Divide, Sort[{NR, NC}]]] ;
   LAMBDA = Sqrt[2*(BETA + 1) + 8*BETA/(BETA + 1 + Sqrt[BETA^2 + 14*BETA + 1])] ;
   TAU = LAMBDA*Sqrt[N[NC]]*SIGMA ;
   {Length[DeleteCases[Ramp[Subtract[LIST, TAU]], N[0]]], TAU, SIGMA}
@@ -452,7 +452,7 @@ S$OPTIMAL$SVD$TRUNCATION[           (* -- OPTIMAL SVD TRUNCATION *)
   {NR, NC} = Dimensions[MATRIX] ;
   LIST = SingularValueList[MATRIX, Min[{NR, NC}]] ;
   MEDIAN = Median[LIST] ;
-  BETA = N[Apply[Divide, {NR, NC}]] ;
+  BETA = N[Apply[Divide, Sort[{NR, NC}]]] ;
   LAMBDA = Sqrt[2*(BETA + 1) + 8*BETA/(BETA + 1 + Sqrt[BETA^2 + 14*BETA + 1])] ;
   OMEGA = 0.56*BETA^3 - 0.95*BETA^2 + 1.82*BETA + 1.43 ;
   TAU = OMEGA*MEDIAN ;
@@ -1078,7 +1078,8 @@ S$CANDAN[SIGNAL] -- estimate frequency for given input signal <SIGNAL> (list) us
 S$CANDAN[                           (* -- ESTIMATE FREQUENCY (CANDAN METHOD) *)
   SIGNAL_List                       (* -- INPUT SIGNAL (LIST) *)
 ] := Block[
-  {FOURIER, MAX, JACOBSENT, CANDAN},
+  {LENGTH, FOURIER, MAX, JACOBSENT, CANDAN},
+  LENGTH = Lenghth[SIGNAL] ;
   FOURIER = Fourier[SIGNAL] ;
   MAX = First[Flatten[Position[Abs[FOURIER], Max[Abs[FOURIER]]]]] ;
   JACOBSENT = Re[(FOURIER[[MAX - 1]] - FOURIER[[MAX + 1]])/(2*FOURIER[[MAX]] - FOURIER[[MAX - 1]]-FOURIER[[MAX + 1]])] ;
@@ -1686,6 +1687,7 @@ ClearAll[S$BINARIZE$REGION] ;
 S$BINARIZE$REGION::usage = "
 S$BINARIZE$REGION[{HBIN,HMIN,HMAX},{VBIN,VMIN,VMAX},DATA] -- binarize 3d data <DATA> = {...,{X_I,Y_I,Z_I},...} (list) based on 3rd dimension using <HBIN> (integer) and <VBIN> (integer) number of bins within rectangular region defined by {HMIN (real),HMAX (real)} and {VMIN (real),VMAX (real)}, returns sparse array with WM indexing
 S$BINARIZE$REGION[{BIN,HDEL,VDEL},DATA] -- binarize 3d data <DATA> = {...,{X_I,Y_I,Z_I},...} (list) based on 3rd dimension using <BIN> (integer) number of bins within square region defined by horizontal bin size <HDEL> (real) and verticle step size <VDEL> (real), returns sparse array with WM indexing
+S$BINARIZE$REGION[{...,BIN_I,...},{...,MIN_I,...},{...,MAX_I,...},DATA] -- binarize nd data <DATA> = {...,{X1_I,X2_I,...},...} (list) based on n'th dimension using bins {...,BIN_I,...} (list of integers) withing region defined by minumum {...,MIN_I,...} and maximum {...,MAX_I,...} values
 " ;
 Options[S$BINARIZE$REGION] = List[
   Rule["ERROR",10.^-10],            (* -- BINARIZATION CELL ERROR (REAL) *)
@@ -1733,6 +1735,43 @@ S$BINARIZE$REGION[                  (* -- BINARIZE 3D DATA BASED ON 3RD DIMENSIO
   DATA_List,                        (* -- INPUT DATA = {...,{X_I,Y_I,Z_I},...} (LIST) *)
   OPTIONS:OptionsPattern[]          (* -- OPTION(S) *)
 ] := S$BINARIZE$REGION[BIN*List[1,-0.5*HDEL,0.5*HDEL],BIN*List[1,-0.5*VDEL,0.5*VDEL],DATA,OPTIONS] ;
+S$BINARIZE$REGION[                  (* -- BINARIZE ND DATA BASED ON N'TH DIMENSION *)
+  List[BIN__Integer],               (* -- BIN VALUES (LIST) *)
+  List[MIN__?NumberQ],              (* -- MIN VALUES (LIST) *)
+  List[MAX__?NumberQ],              (* -- MAX VALUES (LIST) *)
+  DATA_List,                        (* -- INPUT DATA = {...,{X1_I,X2_I,X3_I, ...},...} (LIST) *)
+  OPTIONS:OptionsPattern[]          (* -- OPTION(S) *)
+] := Catch[
+  Block[
+    {FUNCTION,ERROR,DEFAULT,LOCAL,DIMENSION,ADD,INDEX,VALUE,SPARSE},
+    (* SET REPEATED ENTRIES FUNCTION HANDLER *)
+    FUNCTION = OptionValue["FUNCTION"] ;
+    (* SET BINARIZATION CELL ERROR *)
+    ERROR = N[Subtract[1,OptionValue["ERROR"]]] ;
+    (* SET DEFAULT VALUE *)
+    DEFAULT = OptionValue["DEFAULT"] ;
+    (* SELECTA DATA POINTS INSIDE GIVEN REGION *)
+    LOCAL = Select[DATA,Function[Apply[And,Thread[LessEqual[List[MIN],Most[Slot[1]],List[MAX]]]]]] ;
+    (* SET DATA DIMENSION *)
+    DIMENSION = Length[First[LOCAL]] - 1 ;
+    (* ADD CORNER MARKERS WITH DEFAULT VALUES *)
+    ADD = Flatten[Apply[Table, {Flatten[{Array[INDEX,DIMENSION], DEFAULT}], Apply[Sequence, Transpose[{Array[INDEX,DIMENSION] , Transpose[{{MIN}, {MAX}}]}]]}], DIMENSION - 1] ;
+    (* ADD CORNER MARKERS WITH DEFAULT VALUES *)
+    LOCAL = Developer`ToPackedArray[Join[LOCAL, ADD]] ;
+    (* SET LIST OF VALUES *)
+    VALUE = Part[LOCAL,All,Subtract[0,1]] ;
+    (* GENERATE INDEXES *)
+    INDEX = Table[Plus[1,Floor[ERROR*{BIN}[[INDEX]]*Rescale[Part[LOCAL,All,INDEX]]]] ,{INDEX, 1, DIMENSION }];
+    (* CHANGE REPEARTED ENTRIES HANDLER TO CUSTOM FUNCTION *)
+    System`SetSystemOptions["SparseArrayOptions" -> {"TreatRepeatedEntries" -> Composition[FUNCTION,List]}] ;
+    (* GENERATE SPARSE ARRAY *)
+    SPARSE = SparseArray[Rule[Transpose[INDEX],VALUE],List[BIN],DEFAULT] ;
+    (* CHANGE REPEARTED ENTRIES HANDLER TO DEFAULT FUNCTION *)
+    System`SetSystemOptions["SparseArrayOptions" -> {"TreatRepeatedEntries" -> First}] ;
+    (* RETURN *)
+    SPARSE
+  ]
+]  ;
 (* ################################################################################################################################################################ *)
 (* FIRST BOUNDARY LAYER (FMA/AUX) *)
 (* ################################################################################################################################################################ *)
