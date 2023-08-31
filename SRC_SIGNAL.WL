@@ -1,5 +1,5 @@
 (* ################################################################################################################################################################ *)
-(* SIGNAL (FREQUENCY IDENTIFICATION, QUASIPERIODIC SIGNAL DECOMPOSITION AND CHAOS INDICATORS), 2018-2021, I.A.MOROZOV@INP.NSK.SU *)
+(* SIGNAL (FREQUENCY IDENTIFICATION, QUASIPERIODIC SIGNAL DECOMPOSITION AND CHAOS INDICATORS), 2018-2023 *)
 (* ################################################################################################################################################################ *)
 ClearSystemCache[] ;                (* -- CLEAR SYSTEM CACHE *)
 Set[$HistoryLength,0] ;             (* -- NO HISTORY *)

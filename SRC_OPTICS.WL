@@ -1,5 +1,5 @@
 (* ################################################################################################################################################################ *)
-(* OPTICS (QUASIPERIODIC SIGNAL ANOMALY DETECTION, LINEAR OPTICS COMPUTATION), 2020-2021, I.A.MOROZOV@INP.NSK.SU *)
+(* OPTICS (QUASIPERIODIC SIGNAL ANOMALY DETECTION, LINEAR OPTICS COMPUTATION), 2020-2023 *)
 (* ################################################################################################################################################################ *)
 ClearSystemCache[] ;                (* -- CLEAR SYSTEM CACHE *)
 Set[$HistoryLength,0] ;             (* -- NO HISTORY *)

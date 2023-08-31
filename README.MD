@@ -1,5 +1,4 @@
-# SIGNAL, 2018-2021
-## i.a.morozov@inp.nsk.su
+# SIGNAL, 2018-2023
 
 Frequency estimation, quasiperiodic decomposition and chaos indicators
 
